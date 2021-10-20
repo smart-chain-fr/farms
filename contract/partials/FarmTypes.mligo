@@ -1,3 +1,5 @@
+
+
 type storage_farm = {
     admin: address;
     creation_time: timestamp;
@@ -7,14 +9,16 @@ type storage_farm = {
     smak_address: address;
     total_reward: nat;
     weeks: nat;
-    user_stakes : (address, nat) map
+    user_stakes : (address, nat) big_map;
+    user_points : (address, (nat, nat) map ) big_map;
+    farm_points : (nat, nat) map;
 }
 
 let noOperations : operation list = []
 
 type return = operation list * storage_farm
 
-let week_in_seconds : int  = 604800
+let week_in_seconds : nat  = 604800n
 
 type stake_param = nat
 
