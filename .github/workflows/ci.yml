@@ -1,0 +1,22 @@
+name: Run Python Tests
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    branches:
+      - master
+      - dev
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build docker image
+        run: |
+          docker build . -t farms
+      - name: Run tests
+        run: |
+          docker run farms:latest
