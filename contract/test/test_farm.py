@@ -9,7 +9,7 @@ bob = 'tz1c6PPijJnZYjKiSQND4pMtGMg6csGeAiiF'
 oscar = 'tz1Phy92c2n817D17dUGzxNgw1qCkNSTWZY2'
 fox = 'tz1XH5UyhRCUmCdUUbqD4tZaaqRTgGaFXt7q'
 
-compiled_contract_path = "../contract/main/compiled/Farm.tz"
+compiled_contract_path = "Farm.tz"
 # Permet de charger le smart contract zvec Pytest de le simuler avec un faux storage
 initial_storage = ContractInterface.from_file(compiled_contract_path).storage.dummy()
 initial_storage["admin"] = admin
