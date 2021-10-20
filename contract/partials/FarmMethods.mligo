@@ -9,7 +9,9 @@ let setAdmin(admin, s : address * storage_farm) : return =
     else (failwith(only_admin) : address) in 
     (noOperations, { s with admin = new_admin })
 
-let get_current_week(s : storage_farm) : nat = (Tezos.now - s.creation_time) / week_in_seconds
+let get_current_week(s : storage_farm) : int = 
+    let delay : int = Tezos.now - s.creation_time in
+    delay / week_in_seconds
 
 let stakeSome(lp_amount, s : nat * storage_farm) : return =
     let lp_contract_opt : parameter contract option = Tezos.get_contract_opt(s.lp_token_address) in

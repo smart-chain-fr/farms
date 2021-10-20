@@ -14,6 +14,8 @@ let noOperations : operation list = []
 
 type return = operation list * storage_farm
 
+let week_in_seconds : int  = 604800
+
 type stake_param = nat
 
 // Entrypoints
