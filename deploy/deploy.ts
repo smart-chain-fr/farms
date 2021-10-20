@@ -3,7 +3,10 @@ import { TezosToolkit } from '@taquito/taquito';
 import farm from './ressources/Farm.json';
 import dotenv from 'dotenv'
 
+dotenv.config(({path:__dirname+'/.env'}))
+
 const Tezos = new TezosToolkit('https://granadanet.api.tez.ie/');
+
 const pk: string = process.env.PK || "";
 const signer = new InMemorySigner(pk);
 Tezos.setProvider({ signer: signer })
@@ -40,7 +43,7 @@ async function orig() {
     ).catch(e => {
         console.log(e)
     })
-
 }
+ 
 
 orig();
