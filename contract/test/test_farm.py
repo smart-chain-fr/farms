@@ -52,7 +52,7 @@ class FarmsContractTest(TestCase):
         ################################
         # Admin sets new admin (works) #
         ################################
-        res = self.farms.default(bob).interpret(storage=init_storage, sender=admin)
+        res = self.farms.setAdmin(bob).interpret(storage=init_storage, sender=admin)
         self.assertEqual(bob, res.storage["admin"])
         self.assertEqual([], res.operations)
 
@@ -63,4 +63,4 @@ class FarmsContractTest(TestCase):
         # random user sets new admin (fails) #
         ######################################
         with self.raisesMichelsonError(only_admin):
-            self.farms.default(admin).interpret(storage=init_storage, sender=alice)
+            self.farms.setAdmin(admin).interpret(storage=init_storage, sender=alice)
