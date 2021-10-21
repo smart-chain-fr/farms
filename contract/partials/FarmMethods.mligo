@@ -11,13 +11,19 @@ let setAdmin(admin, s : address * storage_farm) : return =
 
 let get_current_week(s : storage_farm) : nat = 
     let delay : nat = abs(Tezos.now - s.creation_time) in
-    delay / week_in_seconds
+    let week_indice : nat = delay / week_in_seconds in 
+    week_indice + 1n
 
 let get_future_weeks_indices(first, last : nat * nat) : nat list =
     let rec append ( acc, elt, last: nat list * nat * nat) : nat list = if elt <= last then append (elt :: acc, elt + 1n, last) else acc in
     append(([]:nat list), first, last)
 
 let stakeSome(lp_amount, s : nat * storage_farm) : return =
+    let _check_amount_positive : bool = 
+        if (lp_amount > 0n) 
+        then True 
+        else (failwith("The staking amount amount must be greater than zero") : bool)
+    in
     let lp_contract_opt : parameter contract option = Tezos.get_contract_opt(s.lp_token_address) in
     let lp_contract : parameter contract = match lp_contract_opt with
         | None -> (failwith(unknown_lp_contract) : parameter contract)
@@ -37,7 +43,7 @@ let stakeSome(lp_amount, s : nat * storage_farm) : return =
     let endofweek_in_seconds : timestamp = s.creation_time + int(current_week * week_in_seconds) in
     
     //assert_some (Tezos.now - endofweek_in_seconds < 0)
-    let check_negative : bool = 
+    let _check_negative : bool = 
         if (Tezos.now - endofweek_in_seconds < 0) 
         then True 
         else (failwith("ERROR: The remaining time before end of week should be negative !! ") : bool)
