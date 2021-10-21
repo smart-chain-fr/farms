@@ -245,3 +245,10 @@ class FarmsContractTest(TestCase):
         self.assertDictEqual(res2.storage["farm_points"], final_farmpoint)
         self.assertDictEqual(res2.storage["user_points"], final_userpoint)
         self.assertEqual(res2.storage["user_stakes"][bob], 500)
+
+
+    def test_increase_reward(self):
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 20_000_000
+        res = self.farms.increaseReward(0).interpret(storage=init_storage, sender=bob)
+        print()
