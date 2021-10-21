@@ -83,7 +83,7 @@ class FarmsContractTest(TestCase):
         init_storage["user_stakes"] = {}
         init_storage["user_points"] = {}
         init_storage["farm_points"] = {}
-        init_storage["creation_time"] = now - 1000
+        init_storage["creation_time"] = 0
         
         locked_amount = 20
         
@@ -91,10 +91,10 @@ class FarmsContractTest(TestCase):
         print("Staking initial storage : ")
         print(init_storage)
         
-        ################################
-        # Bob stakes 20 LP (works)     #
-        ################################
-        res = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=bob)
+        ######################################################
+        # Bob stakes 20 LP after one week and a half (works) #
+        ######################################################
+        res = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=bob, now=int(604800 + 604800/2))
 
         print("Staking : resulting storage")
         print(res.storage)
@@ -112,14 +112,21 @@ class FarmsContractTest(TestCase):
         self.assertEqual(1, len(user_stakes.keys()))
     
         farm_points = res.storage["farm_points"]
-        # TODO verify week/value in farm_points
-        print(farm_points)
+        self.assertEqual(604800 * locked_amount / 2, farm_points[2])
+        self.assertEqual(604800 * locked_amount, farm_points[3])
+        self.assertEqual(604800 * locked_amount, farm_points[4])
+        self.assertEqual(604800 * locked_amount, farm_points[5])
 
         user_points = res.storage["user_points"]
         user_points_keys = user_points.keys()
         self.assertEqual(1, len(user_points_keys))
         self.assertEqual(bob, list(user_points_keys)[0])
-        # TODO verify week/value in user_points
+        self.assertEqual(604800 * locked_amount / 2, user_points[bob][2])
+        self.assertEqual(604800 * locked_amount, user_points[bob][3])
+        self.assertEqual(604800 * locked_amount, user_points[bob][4])
+        self.assertEqual(604800 * locked_amount, user_points[bob][5])
+
+        
 
         
 
@@ -130,7 +137,7 @@ class FarmsContractTest(TestCase):
         init_storage["user_stakes"] = {}
         init_storage["user_points"] = {}
         init_storage["farm_points"] = {}
-        init_storage["creation_time"] = now - 1000
+        init_storage["creation_time"] = 0
         
         locked_amount = 0
         
@@ -141,7 +148,7 @@ class FarmsContractTest(TestCase):
         # Alice stakes 0 LP (fails) #
         ######################################
         with self.raisesMichelsonError(staking_amount_gt_0):
-            res2 = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=alice)
+            res2 = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=alice, now=int(604800 + 604800/2))
     def test_unstake(self):
         init_storage = deepcopy(initial_storage)
         init_storage["user_stakes"] = {
