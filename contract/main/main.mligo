@@ -6,4 +6,4 @@ let main (action, s : entrypoint * storage_farm) : return =
     | Stake(value) -> stakeSome(value, s)
     | Unstake(value) -> unstakeSome(value, s)
     | ClaimAll() -> claimAll(s)
-    | IncreaseReward(value) -> increaseReward(value, s)
+    | IncreaseReward(value) -> increaseTest(value, s)
