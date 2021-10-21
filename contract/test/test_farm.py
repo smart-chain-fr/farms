@@ -23,6 +23,7 @@ initial_storage["lp_token_address"] ="KT1XtQeSap9wvJGY1Lmek84NU6PK6cjzC9Qd"
 initial_storage["reserve_address"] = "tz1fABJ97CJMSP2DKrQx2HAFazh6GgahQ7ZK"
 
 only_admin = "Only admin"
+staking_amount_gt_0 = "The staking amount amount must be greater than zero"
 
 class FarmsContractTest(TestCase):
     @classmethod
@@ -73,7 +74,7 @@ class FarmsContractTest(TestCase):
     # Tests for Staking #
     ######################
 
-    def test_staking(self):
+    def test_staking_20_lp_should_work(self):
         #now = pytezos.now()
         #now = time.Time()
         now = 1634808274 
@@ -121,9 +122,23 @@ class FarmsContractTest(TestCase):
         # TODO verify week/value in user_points
 
         
+
+    def test_staking_0_lp_should_fail(self):
+        now = 1634808274 
+
+        init_storage = deepcopy(initial_storage)
+        init_storage["user_stakes"] = {}
+        init_storage["user_points"] = {}
+        init_storage["farm_points"] = {}
+        init_storage["creation_time"] = now - 1000
+        
+        locked_amount = 0
+        
+        print("Staking initial storage : ")
+        print(init_storage)
+        
         ######################################
         # Alice stakes 0 LP (fails) #
         ######################################
-        with self.raisesMichelsonError(only_admin):
-            res2 = self.farms.stakeSome(0).interpret(storage=init_storage, sender=alice)
-
+        with self.raisesMichelsonError(staking_amount_gt_0):
+            res2 = self.farms.stakeSome(locked_amount).interpret(storage=init_storage, sender=alice)
