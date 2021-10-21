@@ -37,7 +37,7 @@ let stakeSome(lp_amount, s : nat * storage_farm) : return =
     let endofweek_in_seconds : timestamp = s.creation_time + int(current_week * week_in_seconds) in
     
     //assert_some (Tezos.now - endofweek_in_seconds < 0)
-    let check_negative : bool = 
+    let _check_negative : bool = 
         if (Tezos.now - endofweek_in_seconds < 0) 
         then True 
         else (failwith("ERROR: The remaining time before end of week should be negative !! ") : bool)
