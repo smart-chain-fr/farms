@@ -94,7 +94,7 @@ class FarmsContractTest(TestCase):
         ################################
         # Bob stakes 20 LP (works)     #
         ################################
-        res = self.farms.stakeSome(locked_amount).interpret(storage=init_storage, sender=bob)
+        res = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=bob)
 
         print("Staking : resulting storage")
         print(res.storage)
@@ -141,7 +141,7 @@ class FarmsContractTest(TestCase):
         # Alice stakes 0 LP (fails) #
         ######################################
         with self.raisesMichelsonError(staking_amount_gt_0):
-            res2 = self.farms.stakeSome(locked_amount).interpret(storage=init_storage, sender=alice)
+            res2 = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=alice)
     def test_unstake(self):
         init_storage = deepcopy(initial_storage)
         init_storage["user_stakes"] = {
@@ -181,16 +181,16 @@ class FarmsContractTest(TestCase):
             4: 250 * 604800,
             5: 250 * 604800
         }
-        res = self.farms.unstakeSome(250).interpret(sender=alice, storage=init_storage, now=int(604800 + 604800/2))
+        res = self.farms.unstake(250).interpret(sender=alice, storage=init_storage, now=int(604800 + 604800/2))
         self.assertDictEqual(res.storage["user_points"], final_userpoint)
         self.assertDictEqual(res.storage["farm_points"], final_farmpoint)
         self.assertEqual(res.storage["user_stakes"][alice], 250)
 
         with self.raisesMichelsonError("ERROR: Trying to unstake more than staked"):
-            self.farms.unstakeSome(501).interpret(sender=alice, storage=init_storage, now=int(604800 + 604800 / 2))
+            self.farms.unstake(501).interpret(sender=alice, storage=init_storage, now=int(604800 + 604800 / 2))
 
         with self.raisesMichelsonError("ERROR: user did not stake any token"):
-            self.farms.unstakeSome(10).interpret(storage=init_storage, sender=bob)
+            self.farms.unstake(10).interpret(storage=init_storage, sender=bob)
 
         init_storage["user_stakes"][bob] = 600
         init_storage["user_points"] = {
@@ -241,7 +241,7 @@ class FarmsContractTest(TestCase):
             4: int(500 * 604800 + (600 * (6 / 7) + 500 / 7) * 604800),
             5: 500 * 604800 + 500 * 604800
         }
-        res2 = self.farms.unstakeSome(100).interpret(storage=init_storage, sender=bob, now=int(3 * 604800 + 604800 * 6 / 7))
+        res2 = self.farms.unstake(100).interpret(storage=init_storage, sender=bob, now=int(3 * 604800 + 604800 * 6 / 7))
         self.assertDictEqual(res2.storage["farm_points"], final_farmpoint)
         self.assertDictEqual(res2.storage["user_points"], final_userpoint)
         self.assertEqual(res2.storage["user_stakes"][bob], 500)

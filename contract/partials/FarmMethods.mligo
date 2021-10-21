@@ -142,7 +142,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
     
 
     //assert_some (Tezos.now - endofweek_in_seconds < 0)
-    let check_negative : bool = 
+    let _check_negative : bool = 
         if (Tezos.now - endofweek_in_seconds < 0) 
         then True 
         else (failwith("ERROR: The remaining time before end of week should be negative !! ") : bool)
@@ -237,7 +237,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             | Some(x) -> x
         in
         // create a transfer transaction (for LP token contract)
-        let transfer_param : transfer = { address_from = s.reserve_address; address_to = Tezos.sender; value = token_amount } in 
+        let transfer_param : transfer = { address_from = s.reserve_address; address_to = user_address; value = token_amount } in 
         let op : operation = Tezos.transaction (Transfer(transfer_param)) 0mutez smak_contract in
         op
 
@@ -257,7 +257,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             let value_opt : nat option = Map.find_opt (week_indice+offset) themap in
             let new_map : (nat, nat) map = match value_opt with
             | None -> Map.add (week_indice+offset) result themap
-            | Some(v) -> Map.update (week_indice+offset) (Some(result)) themap
+            | Some(_v) -> Map.update (week_indice+offset) (Some(result)) themap
             in
             new_map
         in
