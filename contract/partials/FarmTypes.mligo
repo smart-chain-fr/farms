@@ -26,3 +26,4 @@ type stake_param = nat
 type entrypoint = 
 | SetAdmin of (address)
 | StakeSome of (stake_param)
+| UnstakeSome of (stake_param)

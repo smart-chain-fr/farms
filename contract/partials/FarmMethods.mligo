@@ -11,8 +11,7 @@ let setAdmin(admin, s : address * storage_farm) : return =
 
 let get_current_week(s : storage_farm) : nat = 
     let delay : nat = abs(Tezos.now - s.creation_time) in
-    let week_indice : nat = delay / week_in_seconds in 
-    week_indice + 1n
+    delay / week_in_seconds + 1n
 
 let get_future_weeks_indices(first, last : nat * nat) : nat list =
     let rec append ( acc, elt, last: nat list * nat * nat) : nat list = if elt <= last then append (elt :: acc, elt + 1n, last) else acc in
@@ -128,11 +127,14 @@ let stakeSome(lp_amount, s : nat * storage_farm) : return =
     let existing_bal_opt : nat option = Big_map.find_opt Tezos.sender s.user_stakes in
     let new_user_stakes : (address, nat) big_map = match existing_bal_opt with
         | None -> (failwith("ERROR: user did not stake any token"): (address, nat) big_map)
-        | Some(v) -> Big_map.update Tezos.sender (Some(abs(v - lp_amount))) s.user_stakes
+        | Some(v) -> if (v > lp_amount) 
+        then Big_map.update Tezos.sender (Some(abs(v - lp_amount))) s.user_stakes
+        else (failwith("ERROR: Trying to unstake more than staked"): (address, nat) big_map)
     in
     let current_week : nat = get_current_week(s) in
     let endofweek_in_seconds : timestamp = s.creation_time + int(current_week * week_in_seconds) in
     
+
     //assert_some (Tezos.now - endofweek_in_seconds < 0)
     let check_negative : bool = 
         if (Tezos.now - endofweek_in_seconds < 0) 

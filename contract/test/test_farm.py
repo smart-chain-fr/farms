@@ -142,3 +142,106 @@ class FarmsContractTest(TestCase):
         ######################################
         with self.raisesMichelsonError(staking_amount_gt_0):
             res2 = self.farms.stakeSome(locked_amount).interpret(storage=init_storage, sender=alice)
+    def test_unstake(self):
+        init_storage = deepcopy(initial_storage)
+        init_storage["user_stakes"] = {
+            alice: 500
+        }
+        init_storage["user_points"] = {
+            alice: {
+                1: int(500 * 604800/2),
+                2: 500 * 604800,
+                3: 500 * 604800,
+                4: 500 * 604800,
+                5: 500 * 604800
+            }
+        }
+        init_storage["farm_points"] = {
+            1: int(500 * 604800 / 2),
+            2: 500 * 604800,
+            3: 500 * 604800,
+            4: 500 * 604800,
+            5: 500 * 604800
+        }
+
+        final_userpoint = {
+            alice: {
+                1: int(500 * 604800/2),
+                2: int((500+250) * 604800/2),
+                3: 250 * 604800,
+                4: 250 * 604800,
+                5: 250 * 604800
+            }
+        }
+
+        final_farmpoint = {
+            1: int(500 * 604800 / 2),
+            2: int((500+250) * 604800/2),
+            3: 250 * 604800,
+            4: 250 * 604800,
+            5: 250 * 604800
+        }
+        res = self.farms.unstakeSome(250).interpret(sender=alice, storage=init_storage, now=int(604800 + 604800/2))
+        self.assertDictEqual(res.storage["user_points"], final_userpoint)
+        self.assertDictEqual(res.storage["farm_points"], final_farmpoint)
+        self.assertEqual(res.storage["user_stakes"][alice], 250)
+
+        with self.raisesMichelsonError("ERROR: Trying to unstake more than staked"):
+            self.farms.unstakeSome(501).interpret(sender=alice, storage=init_storage, now=int(604800 + 604800 / 2))
+
+        with self.raisesMichelsonError("ERROR: user did not stake any token"):
+            self.farms.unstakeSome(10).interpret(storage=init_storage, sender=bob)
+
+        init_storage["user_stakes"][bob] = 600
+        init_storage["user_points"] = {
+            bob: {
+                1: 0,
+                2: 0,
+                3: int(600 * 604800 / 3),
+                4: 600 * 604800,
+                5: 600 * 604800
+            },
+            alice: {
+                1: int(500 * 604800 / 2),
+                2: 500 * 604800,
+                3: 500 * 604800,
+                4: 500 * 604800,
+                5: 500 * 604800
+            }
+        }
+        init_storage["farm_points"] = {
+            1: int(500 * 604800 / 2),
+            2: 500 * 604800,
+            3: int(600 * 604800 / 3) + 500 * 604800,
+            4: 600 * 604800 + 500 * 604800,
+            5: 600 * 604800 + 500 * 604800
+        }
+
+        final_userpoint = {
+            bob: {
+                1: 0,
+                2: 0,
+                3: int(600 * 604800 / 3),
+                4: int((600 * (6 / 7) + 500 / 7) * 604800),
+                5: 500 * 604800
+            },
+            alice: {
+                1: int(500 * 604800 / 2),
+                2: 500 * 604800,
+                3: 500 * 604800,
+                4: 500 * 604800,
+                5: 500 * 604800
+            }
+        }
+
+        final_farmpoint = {
+            1: int(500 * 604800 / 2),
+            2: 500 * 604800,
+            3: int(600 * 604800 / 3) + 500 * 604800,
+            4: int(500 * 604800 + (600 * (6 / 7) + 500 / 7) * 604800),
+            5: 500 * 604800 + 500 * 604800
+        }
+        res2 = self.farms.unstakeSome(100).interpret(storage=init_storage, sender=bob, now=int(3 * 604800 + 604800 * 6 / 7))
+        self.assertDictEqual(res2.storage["farm_points"], final_farmpoint)
+        self.assertDictEqual(res2.storage["user_points"], final_userpoint)
+        self.assertEqual(res2.storage["user_stakes"][bob], 500)
