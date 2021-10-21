@@ -1,0 +1,367 @@
+{ parameter (or (address %setAdmin) (nat %stakeSome)) ;
+  storage
+    (pair (pair (pair (pair (address %admin) (timestamp %creation_time))
+                      (pair (map %farm_points nat nat) (address %lp_token_address)))
+                (pair (pair (nat %rate) (address %reserve_address))
+                      (pair (address %smak_address) (nat %total_reward))))
+          (pair (pair (big_map %user_points address (map nat nat))
+                      (big_map %user_stakes address nat))
+                (nat %weeks))) ;
+  code { PUSH nat 604800 ;
+         SWAP ;
+         UNPAIR ;
+         IF_LEFT
+           { DIG 2 ;
+             DROP ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CAR ;
+             CAR ;
+             CAR ;
+             CAR ;
+             SENDER ;
+             COMPARE ;
+             EQ ;
+             IF {} { DROP ; PUSH string "Only admin" ; FAILWITH } ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CDR ;
+             DUP 3 ;
+             CAR ;
+             CDR ;
+             DUP 4 ;
+             CAR ;
+             CAR ;
+             CDR ;
+             DIG 4 ;
+             CAR ;
+             CAR ;
+             CAR ;
+             CDR ;
+             DIG 4 ;
+             PAIR ;
+             PAIR ;
+             PAIR ;
+             PAIR ;
+             NIL operation ;
+             PAIR }
+           { SWAP ;
+             DUP ;
+             DUG 2 ;
+             CAR ;
+             CAR ;
+             CDR ;
+             CDR ;
+             CONTRACT
+               (or (or (or (pair %approve (address %spender) (nat %value))
+                           (pair %getAllowance
+                              (pair %request (address %owner) (address %spender))
+                              (contract %callback nat)))
+                       (or (pair %getBalance (address %owner) (contract %callback nat))
+                           (pair %getTotalSupply (unit %request) (contract %callback nat))))
+                   (or (pair %mintOrBurn (int %quantity) (address %target))
+                       (pair %transfer (address %from) (pair (address %to) (nat %value))))) ;
+             IF_NONE { PUSH string "Unknown LP contract" ; FAILWITH } {} ;
+             SENDER ;
+             SELF_ADDRESS ;
+             DUP 4 ;
+             SWAP ;
+             PAIR ;
+             SWAP ;
+             PAIR ;
+             SWAP ;
+             PUSH mutez 0 ;
+             DIG 2 ;
+             RIGHT (pair int address) ;
+             RIGHT
+               (or (or (pair address nat) (pair (pair address address) (contract nat)))
+                   (or (pair address (contract nat)) (pair unit (contract nat)))) ;
+             TRANSFER_TOKENS ;
+             DUP 3 ;
+             CDR ;
+             CAR ;
+             CDR ;
+             SENDER ;
+             GET ;
+             IF_NONE
+               { DUP 3 ; CDR ; CAR ; CDR ; DUP 3 ; SOME ; SENDER ; UPDATE }
+               { DUP 4 ; CDR ; CAR ; CDR ; SWAP ; DUP 4 ; ADD ; SOME ; SENDER ; UPDATE } ;
+             DUP 4 ;
+             CAR ;
+             CAR ;
+             CAR ;
+             CDR ;
+             NOW ;
+             SUB ;
+             ABS ;
+             DUP 6 ;
+             SWAP ;
+             EDIV ;
+             IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+             CAR ;
+             DUP 6 ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             MUL ;
+             INT ;
+             DUP 6 ;
+             CAR ;
+             CAR ;
+             CAR ;
+             CDR ;
+             ADD ;
+             PUSH int 0 ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             NOW ;
+             SUB ;
+             COMPARE ;
+             LT ;
+             IF {}
+                { PUSH string "ERROR: The remaining time before end of week should be negative !! " ;
+                  FAILWITH } ;
+             NOW ;
+             SUB ;
+             ABS ;
+             DUP 5 ;
+             SWAP ;
+             MUL ;
+             DIG 4 ;
+             DIG 6 ;
+             MUL ;
+             DUP 6 ;
+             CDR ;
+             CAR ;
+             CAR ;
+             SENDER ;
+             GET ;
+             IF_NONE
+               { DUP 6 ;
+                 CDR ;
+                 CAR ;
+                 CAR ;
+                 EMPTY_MAP nat nat ;
+                 DUP 4 ;
+                 DUP 6 ;
+                 SWAP ;
+                 SOME ;
+                 SWAP ;
+                 UPDATE ;
+                 SOME ;
+                 SENDER ;
+                 UPDATE }
+               { DUP ;
+                 DUP 5 ;
+                 GET ;
+                 IF_NONE
+                   { DROP ; EMPTY_MAP nat nat ; DUP 3 ; DUP 5 ; SWAP ; SOME ; SWAP ; UPDATE }
+                   { DUP 4 ; ADD ; SOME ; DUP 5 ; UPDATE } ;
+                 DUP 7 ;
+                 CDR ;
+                 CAR ;
+                 CAR ;
+                 SWAP ;
+                 SOME ;
+                 SENDER ;
+                 UPDATE } ;
+             DUP 7 ;
+             CAR ;
+             CAR ;
+             CDR ;
+             CAR ;
+             DUP 5 ;
+             GET ;
+             IF_NONE
+               { DUP 7 ;
+                 CAR ;
+                 CAR ;
+                 CDR ;
+                 CAR ;
+                 DIG 3 ;
+                 DUP 5 ;
+                 SWAP ;
+                 SOME ;
+                 SWAP ;
+                 UPDATE }
+               { DUP 8 ;
+                 CAR ;
+                 CAR ;
+                 CDR ;
+                 CAR ;
+                 DIG 4 ;
+                 DIG 2 ;
+                 ADD ;
+                 SOME ;
+                 DUP 5 ;
+                 UPDATE } ;
+             DUP 7 ;
+             CDR ;
+             CDR ;
+             PUSH nat 1 ;
+             DIG 5 ;
+             ADD ;
+             NIL nat ;
+             PAIR ;
+             PAIR ;
+             LEFT (list nat) ;
+             LOOP_LEFT
+               { UNPAIR ;
+                 UNPAIR ;
+                 DUP 3 ;
+                 DUP 3 ;
+                 COMPARE ;
+                 LE ;
+                 IF { DIG 2 ;
+                      PUSH nat 1 ;
+                      DUP 4 ;
+                      ADD ;
+                      DIG 2 ;
+                      DIG 3 ;
+                      CONS ;
+                      PAIR ;
+                      PAIR ;
+                      LEFT (list nat) }
+                    { SWAP ; DIG 2 ; DROP 2 ; RIGHT (pair (pair (list nat) nat) nat) } } ;
+             DUP ;
+             DUP 5 ;
+             DIG 4 ;
+             PAIR ;
+             PAIR ;
+             LEFT (big_map address (map nat nat)) ;
+             LOOP_LEFT
+               { UNPAIR ;
+                 UNPAIR ;
+                 DUP 3 ;
+                 IF_CONS { SWAP ; DROP ; SOME } { NONE nat } ;
+                 IF_NONE
+                   { SWAP ;
+                     DIG 2 ;
+                     DROP 2 ;
+                     RIGHT (pair (pair (big_map address (map nat nat)) nat) (list nat)) }
+                   { PAIR ;
+                     SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     SENDER ;
+                     DIG 2 ;
+                     UNPAIR ;
+                     SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     DUP 4 ;
+                     GET ;
+                     IF_NONE
+                       { DIG 2 ;
+                         DROP ;
+                         SWAP ;
+                         EMPTY_MAP nat nat ;
+                         DIG 3 ;
+                         DIG 3 ;
+                         SWAP ;
+                         SOME ;
+                         SWAP ;
+                         UPDATE ;
+                         SOME ;
+                         SENDER ;
+                         UPDATE }
+                       { DUP ;
+                         DUP 3 ;
+                         GET ;
+                         IF_NONE
+                           { DIG 4 ; DIG 2 ; SWAP ; SOME ; SWAP ; UPDATE }
+                           { SWAP ; DIG 5 ; DIG 2 ; ADD ; SOME ; DIG 2 ; UPDATE } ;
+                         SOME ;
+                         DIG 2 ;
+                         UPDATE } ;
+                     DIG 2 ;
+                     IF_CONS { DROP ; SOME } { NONE (list nat) } ;
+                     IF_NONE { NIL nat } {} ;
+                     DUG 2 ;
+                     PAIR ;
+                     PAIR ;
+                     LEFT (big_map address (map nat nat)) } } ;
+             SWAP ;
+             DIG 3 ;
+             DIG 3 ;
+             PAIR ;
+             PAIR ;
+             LEFT (map nat nat) ;
+             LOOP_LEFT
+               { UNPAIR ;
+                 UNPAIR ;
+                 DUP 3 ;
+                 IF_CONS { SWAP ; DROP ; SOME } { NONE nat } ;
+                 IF_NONE
+                   { SWAP ; DIG 2 ; DROP 2 ; RIGHT (pair (pair (map nat nat) nat) (list nat)) }
+                   { DUP 3 ;
+                     DUP 3 ;
+                     DUP 3 ;
+                     GET ;
+                     IF_NONE
+                       { DIG 2 ; SWAP ; DIG 2 ; SWAP ; SOME ; SWAP ; UPDATE }
+                       { DIG 3 ; DUG 2 ; ADD ; SOME ; DIG 2 ; UPDATE } ;
+                     DIG 2 ;
+                     IF_CONS { DROP ; SOME } { NONE (list nat) } ;
+                     IF_NONE { NIL nat } {} ;
+                     DUG 2 ;
+                     PAIR ;
+                     PAIR ;
+                     LEFT (map nat nat) } } ;
+             DUP 5 ;
+             CDR ;
+             CDR ;
+             DIG 3 ;
+             DUP 6 ;
+             CDR ;
+             CAR ;
+             CAR ;
+             PAIR ;
+             PAIR ;
+             DIG 4 ;
+             CAR ;
+             PAIR ;
+             DUP ;
+             CDR ;
+             CDR ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CDR ;
+             CAR ;
+             CDR ;
+             DIG 4 ;
+             PAIR ;
+             PAIR ;
+             SWAP ;
+             CAR ;
+             PAIR ;
+             DUP ;
+             CDR ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CAR ;
+             CDR ;
+             DUP 3 ;
+             CAR ;
+             CAR ;
+             CDR ;
+             CDR ;
+             DIG 4 ;
+             PAIR ;
+             DIG 3 ;
+             CAR ;
+             CAR ;
+             CAR ;
+             PAIR ;
+             PAIR ;
+             PAIR ;
+             NIL operation ;
+             DIG 2 ;
+             CONS ;
+             PAIR } } }
+

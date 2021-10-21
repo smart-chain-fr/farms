@@ -67,9 +67,7 @@ class FarmsContractTest(TestCase):
         # random user sets new admin (fails) #
         ######################################
         with self.raisesMichelsonError(only_admin):
-            res2 = self.farms.setAdmin(admin).interpret(storage=init_storage, sender=alice)
-
-
+            self.farms.setAdmin(admin).interpret(storage=init_storage, sender=alice)
 
     ######################
     # Tests for Staking #

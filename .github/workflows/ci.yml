@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build docker image
         run: |
-          docker build . -t farms
+          docker build . -t farms:latest
       - name: Run tests
         run: |
           docker run farms:latest
