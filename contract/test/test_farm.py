@@ -256,6 +256,18 @@ class FarmsContractTest(TestCase):
 
     def test_increase_reward(self):
         init_storage = deepcopy(initial_storage)
-        init_storage["total_reward"] = 20_000_000
+        init_storage["total_reward"] = 20_000
         res = self.farms.increaseReward(0).interpret(storage=init_storage, sender=bob)
-        print()
+
+        print("Increase reward : result")
+        print(res.storage["reward_at_week"])
+        reward_week_1 = int(res.storage["reward_at_week"][1] / 10000)
+        reward_week_2 = int(res.storage["reward_at_week"][2] / 10000)
+        reward_week_3 = int(res.storage["reward_at_week"][3] / 10000)
+        reward_week_4 = int(res.storage["reward_at_week"][4] / 10000)
+        reward_week_5 = int(res.storage["reward_at_week"][5] / 10000)
+        self.assertEqual(reward_week_1, 6556)
+        self.assertEqual(reward_week_2, 4917)
+        self.assertEqual(reward_week_3, 3688)
+        self.assertEqual(reward_week_4, 2765)
+        self.assertEqual(reward_week_5, 2074)
