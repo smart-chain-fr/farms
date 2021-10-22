@@ -321,7 +321,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             | None -> Map.add Tezos.sender (Map.empty : (nat, nat) map) themap
             | Some(wks) -> 
                 let modified_wks : (nat, nat) map = Map.add week_indice perc wks in
-                Map.add Tezos.sender modified_wks themap
+                Map.update Tezos.sender (Some(modified_wks)) themap
         in 
         let rec compute_func(acc, indices : (address, (nat, nat) map) map * nat list) : (address, (nat, nat) map) map = 
              let indice_opt : nat option = List.head_opt indices in
@@ -345,6 +345,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
                 | Some(rwwk) -> rwwk
                 in
                 let amount_to_send : nat = reward_for_week * percent / 10_000n in
+                let _check : unit = failwith(amount_to_send) in 
                 sendReward(amount_to_send, Tezos.sender, s) :: acc
             in
             Map.fold send_reward_func i.1 ops

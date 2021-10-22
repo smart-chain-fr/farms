@@ -304,3 +304,62 @@ class FarmsContractTest(TestCase):
         self.assertEqual(reward_week_4, 18981901)
         self.assertEqual(reward_week_5, 14236426)
 
+
+    ######################
+    # Tests for Staking #
+    ######################
+
+    def test_claimall_should_work(self):
+
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 20_000_000
+        init_storage["reward_at_week"] = {
+            1: 6555697,
+            2: 4916773,
+            3: 3687580,
+            4: 2765685,
+            5: 2074263
+        }
+        init_storage["creation_time"] = 0
+        init_storage["user_stakes"] = {
+            alice: 500
+        }
+        init_storage["user_points"] = {
+            alice: {
+                1: int(500 * 604800/2),
+                2: 500 * 604800,
+                3: 500 * 604800,
+                4: 500 * 604800,
+                5: 500 * 604800
+            }
+        }
+        init_storage["farm_points"] = {
+            1: int(500 * 604800 / 2),
+            2: 500 * 604800,
+            3: 500 * 604800,
+            4: 500 * 604800,
+            5: 500 * 604800
+        }
+        
+    
+
+        print("ClaimAll : ")
+        print(init_storage)
+        
+        ######################################################
+        # Alice claims after one week of staking (works)     #
+        ######################################################
+        res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(604800 + 604800/2))
+
+        print("ClaimAll : resulting storage")
+        print(res.storage)
+    
+        self.assertEqual(admin, res.storage["admin"])
+        transfer_txs = res.operations
+        print(transfer_txs)
+        #transfer_tx = res.operations[0]
+        #transfer_tx_params = transfer_tx["parameters"]["value"]['args'][0]['args'][0]['args']
+        #self.assertEqual(bob, transfer_tx_params[0]['string'])
+        # TODO retrieve address of THIS contract (instead of hard coded address)
+        #self.assertEqual("KT1BEqzn5Wx8uJrZNvuS9DVHmLvG9td3fDLi", transfer_tx_params[1]['string'])
+        #self.assertEqual(10, int(transfer_tx_params[2]['int']))
