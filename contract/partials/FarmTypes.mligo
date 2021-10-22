@@ -1,4 +1,5 @@
 
+type week = nat
 
 type storage_farm = {
     admin: address;
@@ -12,6 +13,7 @@ type storage_farm = {
     user_stakes : (address, nat) big_map;
     user_points : (address, (nat, nat) map ) big_map;
     farm_points : (nat, nat) map;
+    reward_at_week : (week, nat) map
 }
 
 let noOperations : operation list = []
@@ -21,9 +23,12 @@ type return = operation list * storage_farm
 let week_in_seconds : nat  = 604800n
 
 type stake_param = nat
+type reward_param = nat
 
 // Entrypoints
 type entrypoint = 
 | SetAdmin of (address)
-| StakeSome of (stake_param)
-| UnstakeSome of (stake_param)
+| Stake of (stake_param)
+| Unstake of (stake_param)
+| ClaimAll of (unit)
+| IncreaseReward of (reward_param)
