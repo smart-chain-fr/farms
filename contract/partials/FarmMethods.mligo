@@ -298,4 +298,57 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
 
 
 
-    let claimAll(s : storage_farm) : return = (noOperations, s)
+    let claimAll(s : storage_farm) : return = 
+        let current_week : nat = get_current_week(s) in
+        let weeks : nat list = get_weeks_indices(1n, abs(current_week - 1n)) in
+        let compute_percentage_func(week_indice, themap : nat * (address, (nat, nat) map) map) : (address, (nat, nat) map) map =
+            let points : nat = match (Big_map.find_opt Tezos.sender s.user_points) with
+                | None -> (failwith("Unknown user") : nat)
+                | Some(week_points_map) -> 
+                    let val_opt : nat option = Map.find_opt week_indice week_points_map in
+                    let computed_value : nat = match val_opt with
+                    | None -> 0n
+                    | Some(v) -> v
+                    in
+                    computed_value
+            in
+            let farm_points : nat = match Big_map.find_opt week_indice s.farm_points with
+            | None -> (failwith("Farm has no points for this week") : nat)
+            | Some(val) -> val
+            in
+            let perc : nat = points * 10_000n / farm_points in
+            match Map.find_opt Tezos.sender themap with
+            | None -> Map.add Tezos.sender (Map.empty : (nat, nat) map) themap
+            | Some(wks) -> 
+                let modified_wks : (nat, nat) map = Map.add week_indice perc wks in
+                Map.add Tezos.sender modified_wks themap
+        in 
+        let rec compute_func(acc, indices : (address, (nat, nat) map) map * nat list) : (address, (nat, nat) map) map = 
+             let indice_opt : nat option = List.head_opt indices in
+            match indice_opt with
+            | None -> acc
+            | Some(week_indice) -> 
+                let modified_acc : (address, (nat, nat) map) map = compute_percentage_func(week_indice, acc) in
+                let remaining_indices_opt : nat list option = List.tail_opt indices in
+                let remaining_indices : nat list = match remaining_indices_opt with
+                | None -> ([] : nat list)
+                | Some(l) -> l
+                in
+                compute_func(modified_acc, remaining_indices)
+        in
+        let percentages : (address, (nat, nat) map) map = compute_func((Map.empty : (address, (nat, nat) map) map), weeks) in
+        let compute_and_send_func(ops, i : operation list * (address * (nat, nat) map) ): operation list =
+            let send_reward_func(acc, elt : operation list * (nat * nat)) : operation list =
+                let (week_indice, percent) : nat * nat = elt in  
+                let reward_for_week : nat = match Map.find_opt week_indice s.reward_at_week with
+                | None -> 0n
+                | Some(rwwk) -> rwwk
+                in
+                let amount_to_send : nat = reward_for_week * percent / 10_000n in
+                sendReward(amount_to_send, Tezos.sender, s) :: acc
+            in
+            Map.fold send_reward_func i.1 ops
+        in
+        let operations : operation list = Map.fold compute_and_send_func percentages ([] : operation list) in
+
+        (operations, s)
