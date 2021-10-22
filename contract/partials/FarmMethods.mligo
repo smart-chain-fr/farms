@@ -250,12 +250,15 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
         let update_reward_per_week_func(week_indice, rate, weeks_max, reward_total, themap : nat * nat * nat * nat * (nat, nat) map): (nat, nat) map =
             let t_before : nat = power(rate, abs(week_indice - 1n)) in  
             let t_before_divisor : nat = power(10_000n, abs(week_indice - 1n)) in
-            let r_total : nat = reward_total in   
             let un_moins_rate : nat = abs(10_000n - rate) in 
+            let m_10000_4 : nat = power(10_000n, abs(weeks_max - 1n)) in
+            let numerator : nat = un_moins_rate * m_10000_4 in 
             let t_I_max : nat = power(rate, weeks_max) in 
-            let t_I_max_divisor : nat = power(10_000n, weeks_max) in
-            let un_moins_T_I_max : nat = abs(t_I_max_divisor - t_I_max) * 10_000n / t_I_max_divisor in
-            let result : nat = (t_before * 10_000n / t_before_divisor) * r_total * (un_moins_rate) / un_moins_T_I_max in
+            let m_10000_5 : nat = power(10_000n, weeks_max) in
+            let denominator : nat = abs(m_10000_5 - t_I_max) in
+            let final_denominator : nat = t_before_divisor * denominator in 
+            let final_numerator : nat = numerator * reward_total * t_before in 
+            let result : nat =  final_numerator / final_denominator in 
             let value_opt : nat option = Map.find_opt (week_indice+offset) themap in
             let new_map : (nat, nat) map = match value_opt with
             | None -> Map.add (week_indice+offset) result themap
@@ -278,21 +281,6 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
         in
         let final_rewards : (nat, nat) map = modify_rewards_func(s.reward_at_week, weeks) in
         { s with reward_at_week = final_rewards }
-
-
-
-    // let increaseReward(value, s : nat * storage_farm) : return = 
-    //     let current_week : nat = get_current_week(s) in
-    //     let delta : nat = value in
-    //     //sum (current_week , s.weeks) reward_at_week
-    //     let weeks_set : nat set = get_weeks_indices_as_set(current_week, s.weeks) in
-    //     let folded (acc, elt: nat * (nat * nat) ) : nat = if Set.mem elt.0 weeks_set then acc + elt.1 else acc in  
-    //     let sum_R : nat = Map.fold folded s.reward_at_week 0n in
-    //     let new_r_total : nat = delta + sum_R in
-    //     let new_i_max : nat = abs(s.weeks - current_week + 1n) in
-    //     let new_storage : storage_farm = { s with weeks=new_i_max; total_reward = new_r_total } in
-    //     let new_reward_storage : storage_farm = computeReward(abs(current_week - 1n), new_storage) in
-    //     (noOperations, new_reward_storage)
 
 
     let increaseReward(value, s : nat * storage_farm) : return = 
