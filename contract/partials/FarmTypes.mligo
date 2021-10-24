@@ -8,12 +8,12 @@ type storage_farm = {
     lp_token_address: address;
     rate: nat;
     reserve_address: address;
-    reward_at_week : (week, nat) map
+    reward_at_week : (week, nat) map;
     smak_address: address;
     total_reward: nat;
     user_points : (address, (nat, nat) map ) big_map;
     user_stakes : (address, nat) big_map;
-    weeks: nat;
+    weeks: nat
 }
 
 let noOperations : operation list = []
