@@ -15,7 +15,7 @@ compiled_contract_path = "Farm.tz"
 # Permet de charger le smart contract zvec Pytest de le simuler avec un faux storage
 initial_storage = ContractInterface.from_file(compiled_contract_path).storage.dummy()
 initial_storage["admin"] = admin
-initial_storage["total_reward"] = 10_000_000
+initial_storage["total_reward"] = 10000000
 initial_storage["weeks"] = 5
 initial_storage["rate"] = 7500
 initial_storage["smak_address"] = "KT1TwzD6zV3WeJ39ukuqxcfK2fJCnhvrdN1X"
@@ -340,26 +340,20 @@ class FarmsContractTest(TestCase):
             4: 500 * 604800,
             5: 500 * 604800
         }
-        
-    
-
-        print("ClaimAll : ")
-        print(init_storage)
-        
+            
         ######################################################
         # Alice claims after one week of staking (works)     #
         ######################################################
         res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(604800 + 604800/2))
 
-        print("ClaimAll : resulting storage")
-        print(res.storage)
-    
         self.assertEqual(admin, res.storage["admin"])
         transfer_txs = res.operations
+        print("ClaimAll : resulting operations")
         print(transfer_txs)
-        #transfer_tx = res.operations[0]
-        #transfer_tx_params = transfer_tx["parameters"]["value"]['args'][0]['args'][0]['args']
-        #self.assertEqual(bob, transfer_tx_params[0]['string'])
-        # TODO retrieve address of THIS contract (instead of hard coded address)
-        #self.assertEqual("KT1BEqzn5Wx8uJrZNvuS9DVHmLvG9td3fDLi", transfer_tx_params[1]['string'])
-        #self.assertEqual(10, int(transfer_tx_params[2]['int']))
+
+        self.assertEqual(1, len(transfer_txs))
+        self.assertEqual('transaction', transfer_txs[0]["kind"])
+        transfer_tx_params = transfer_txs[0]["parameters"]["value"]['args'][0]['args'][0]['args']
+        self.assertEqual("tz1fABJ97CJMSP2DKrQx2HAFazh6GgahQ7ZK", transfer_tx_params[0]['string']) 
+        self.assertEqual("tz1hNVs94TTjZh6BZ1PM5HL83A7aiZXkQ8ur", transfer_tx_params[1]['string']) 
+        self.assertEqual("6555697", transfer_tx_params[2]['int'])

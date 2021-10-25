@@ -318,8 +318,10 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             in
             let perc : nat = points * 10_000n / farm_points in
             match Map.find_opt Tezos.sender themap with
-            | None -> Map.add Tezos.sender (Map.empty : (nat, nat) map) themap
-            | Some(wks) -> 
+            | None ->
+                let modified_wks : (nat, nat) map = Map.add week_indice perc (Map.empty : (nat, nat) map) in
+                Map.add Tezos.sender modified_wks themap
+            | Some(wks) ->  
                 let modified_wks : (nat, nat) map = Map.add week_indice perc wks in
                 Map.update Tezos.sender (Some(modified_wks)) themap
         in 
@@ -339,13 +341,13 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
         let percentages : (address, (nat, nat) map) map = compute_func((Map.empty : (address, (nat, nat) map) map), weeks) in
         let compute_and_send_func(ops, i : operation list * (address * (nat, nat) map) ): operation list =
             let send_reward_func(acc, elt : operation list * (nat * nat)) : operation list =
-                let (week_indice, percent) : nat * nat = elt in  
+                let (week_indice, percent) : nat * nat = elt in 
+                
                 let reward_for_week : nat = match Map.find_opt week_indice s.reward_at_week with
                 | None -> 0n
                 | Some(rwwk) -> rwwk
                 in
                 let amount_to_send : nat = reward_for_week * percent / 10_000n in
-                let _check : unit = failwith(amount_to_send) in 
                 sendReward(amount_to_send, Tezos.sender, s) :: acc
             in
             Map.fold send_reward_func i.1 ops
