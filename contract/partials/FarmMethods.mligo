@@ -300,6 +300,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
 
     let claimAll(s : storage_farm) : return = 
         let current_week : nat = get_current_week(s) in
+        let precision : nat = 100_000_000n in 
         let weeks : nat list = get_weeks_indices(1n, abs(current_week - 1n)) in
         let compute_percentage_func(week_indice, themap : nat * (address, (nat, nat) map) map) : (address, (nat, nat) map) map =
             let points : nat = match (Big_map.find_opt Tezos.sender s.user_points) with
@@ -316,7 +317,9 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             | None -> (failwith("Farm has no points for this week") : nat)
             | Some(val_) -> val_
             in
-            let perc : nat = points * 10_000n / farm_points in
+            let perc : nat = if points = 0n then 0n else points * precision / farm_points in
+            //let _check_perc : unit = if week_indice = 3n then failwith(perc) else unit in
+            if perc = 0n then themap else
             match Map.find_opt Tezos.sender themap with
             | None ->
                 let modified_wks : (nat, nat) map = Map.add week_indice perc (Map.empty : (nat, nat) map) in
@@ -347,7 +350,8 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
                 | None -> 0n
                 | Some(rwwk) -> rwwk
                 in
-                let amount_to_send : nat = reward_for_week * percent / 10_000n in
+                let amount_to_send : nat = reward_for_week * percent / precision in
+                //let _check_perc : unit = if week_indice = 3n then failwith(amount_to_send) else unit in
                 sendReward(amount_to_send, Tezos.sender, s) :: acc
             in
             Map.fold send_reward_func i.1 ops
