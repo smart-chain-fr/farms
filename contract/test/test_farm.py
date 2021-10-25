@@ -15,7 +15,7 @@ compiled_contract_path = "Farm.tz"
 # Permet de charger le smart contract zvec Pytest de le simuler avec un faux storage
 initial_storage = ContractInterface.from_file(compiled_contract_path).storage.dummy()
 initial_storage["admin"] = admin
-initial_storage["total_reward"] = 10_000_000
+initial_storage["total_reward"] = 10000000
 initial_storage["weeks"] = 5
 initial_storage["rate"] = 7500
 initial_storage["smak_address"] = "KT1TwzD6zV3WeJ39ukuqxcfK2fJCnhvrdN1X"
@@ -304,3 +304,56 @@ class FarmsContractTest(TestCase):
         self.assertEqual(reward_week_4, 18981901)
         self.assertEqual(reward_week_5, 14236426)
 
+
+    ######################
+    # Tests for Staking #
+    ######################
+
+    def test_claimall_should_work(self):
+
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 20_000_000
+        init_storage["reward_at_week"] = {
+            1: 6555697,
+            2: 4916773,
+            3: 3687580,
+            4: 2765685,
+            5: 2074263
+        }
+        init_storage["creation_time"] = 0
+        init_storage["user_stakes"] = {
+            alice: 500
+        }
+        init_storage["user_points"] = {
+            alice: {
+                1: int(500 * 604800/2),
+                2: 500 * 604800,
+                3: 500 * 604800,
+                4: 500 * 604800,
+                5: 500 * 604800
+            }
+        }
+        init_storage["farm_points"] = {
+            1: int(500 * 604800 / 2),
+            2: 500 * 604800,
+            3: 500 * 604800,
+            4: 500 * 604800,
+            5: 500 * 604800
+        }
+            
+        ######################################################
+        # Alice claims after one week of staking (works)     #
+        ######################################################
+        res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(604800 + 604800/2))
+
+        self.assertEqual(admin, res.storage["admin"])
+        transfer_txs = res.operations
+        print("ClaimAll : resulting operations")
+        print(transfer_txs)
+
+        self.assertEqual(1, len(transfer_txs))
+        self.assertEqual('transaction', transfer_txs[0]["kind"])
+        transfer_tx_params = transfer_txs[0]["parameters"]["value"]['args'][0]['args'][0]['args']
+        self.assertEqual("tz1fABJ97CJMSP2DKrQx2HAFazh6GgahQ7ZK", transfer_tx_params[0]['string']) 
+        self.assertEqual("tz1hNVs94TTjZh6BZ1PM5HL83A7aiZXkQ8ur", transfer_tx_params[1]['string']) 
+        self.assertEqual("6555697", transfer_tx_params[2]['int'])
