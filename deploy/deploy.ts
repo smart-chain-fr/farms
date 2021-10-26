@@ -3,20 +3,21 @@ import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
 import farm from './ressources/Farm.json';
 import dotenv from 'dotenv'
 
-dotenv.config(({path:__dirname+'/.env'}))
+//dotenv.config(({path:__dirname+'/.env'}))
 
-const Tezos = new TezosToolkit('https://granadanet.api.tez.ie/');
-const pk: string = process.env.PK || "";
+const rpc = process.env.RPC || "http://127.0.0.1:20000/"
+const pk: string = process.env.SAND_PK || "edsk3QoqBuvdamxouPhin7swCvkQNgq4jP5KZPbwWNnwdZpSpJiEbq";
+const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
 Tezos.setProvider({ signer: signer })
 
-const admin = process.env.ADMIN || "";
+const admin = process.env.SAND_ADMIN || "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb";
 const creation_time = new Date();
 let farm_points = new MichelsonMap();
 const lp = 'KT1W12FCPyUC79RGfWXTvnTKBtPBLraoDcqM';
 const rate = 7500;
 let reward_at_week = new MichelsonMap();
-const smak = "KT1XtQeSap9wvJGY1Lmek84NU6PK6cjzC9Qd";
+const smak = process.env.SMAK || lp;
 const rewards = 2500000;
 let user_points = new MichelsonMap();
 let user_stakes = new MichelsonMap();
@@ -48,11 +49,13 @@ async function orig() {
     console.log(`Waiting for ${originated.contractAddress} to be confirmed...`);
     await originated.confirmation(2);
     console.log('confirmed: ', originated.contractAddress);
-    const op = await (await Tezos.contract.at(smak)).methods.approve(originated.contractAddress, rewards ).send();
-    console.log(`Waiting for ${op.hash} to be confirmed...`);
-    await op.confirmation(3);
-    console.log('confirmed: ', op.hash);
+    if (smak !== lp) {
+        const op = await (await Tezos.contract.at(smak)).methods.approve(originated.contractAddress, rewards ).send();
+        console.log(`Waiting for ${op.hash} to be confirmed...`);
+        await op.confirmation(3);
+        console.log('confirmed: ', op.hash);
+    }
 }
- 
+
 
 orig();
