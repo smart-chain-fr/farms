@@ -318,7 +318,6 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             | Some(val_) -> val_
             in
             let perc : nat = if points = 0n then 0n else points * precision / farm_points in
-            //let _check_perc : unit = if week_indice = 3n then failwith(perc) else unit in
             if perc = 0n then themap else
             match Map.find_opt Tezos.sender themap with
             | None ->
@@ -345,17 +344,33 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
         let compute_and_send_func(ops, i : operation list * (address * (nat, nat) map) ): operation list =
             let send_reward_func(acc, elt : operation list * (nat * nat)) : operation list =
                 let (week_indice, percent) : nat * nat = elt in 
-                
                 let reward_for_week : nat = match Map.find_opt week_indice s.reward_at_week with
                 | None -> 0n
                 | Some(rwwk) -> rwwk
                 in
                 let amount_to_send : nat = reward_for_week * percent / precision in
-                //let _check_perc : unit = if week_indice = 3n then failwith(amount_to_send) else unit in
                 sendReward(amount_to_send, Tezos.sender, s) :: acc
             in
             Map.fold send_reward_func i.1 ops
         in
         let operations : operation list = Map.fold compute_and_send_func percentages ([] : operation list) in
-
-        (operations, s)
+        let remove_points (acc, percentages_i : (address, (nat, nat) map) big_map * (address * (nat, nat) map) ) : (address, (nat, nat) map) big_map = 
+            let user : address = percentages_i.0 in
+            let percs : (nat, nat) map = percentages_i.1 in 
+            let rem(week_points, j : (nat, nat) map * (nat * nat)) : (nat, nat) map = 
+                let week_indice : nat = j.0 in
+                match Map.find_opt week_indice week_points with
+                | None -> week_points
+                | Some(_pts) -> Map.update week_indice (Some(0n)) week_points
+            in
+            // acc[user]
+            let week_points_for_user : (nat, nat) map = match Big_map.find_opt user acc with
+            | None -> (failwith("reward sent but missing points in map !!! ") : (nat, nat) map)
+            | Some(wk_pts) -> wk_pts
+            in
+            let new_week_points : (nat, nat) map = Map.fold rem percs week_points_for_user in 
+            let modified_map : (address, (nat, nat) map) big_map = Map.update user (Some(new_week_points)) acc in 
+            modified_map
+        in
+        let remove_points_map : (address, (nat, nat) map) big_map = Map.fold remove_points percentages s.user_points in 
+        (operations, { s with user_points = remove_points_map })
