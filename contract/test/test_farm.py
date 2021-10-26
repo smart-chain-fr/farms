@@ -348,8 +348,8 @@ class FarmsContractTest(TestCase):
 
         self.assertEqual(admin, res.storage["admin"])
         transfer_txs = res.operations
-        print("ClaimAll : resulting operations")
-        print(transfer_txs)
+        #print("ClaimAll : resulting operations")
+        #print(transfer_txs)
 
         self.assertEqual(1, len(transfer_txs))
         self.assertEqual('transaction', transfer_txs[0]["kind"])
@@ -357,6 +357,14 @@ class FarmsContractTest(TestCase):
         self.assertEqual(initial_storage["reserve_address"], transfer_tx_params[0]['string']) 
         self.assertEqual(alice, transfer_tx_params[1]['string']) 
         self.assertEqual(str(init_storage["reward_at_week"][1]), transfer_tx_params[2]['int'])
+
+        alice_points = res.storage["user_points"][alice]
+        self.assertEqual(alice_points[1], 0)
+        self.assertEqual(alice_points[2], 500 * 604800)
+        self.assertEqual(alice_points[3], 500 * 604800)
+        self.assertEqual(alice_points[4], 500 * 604800)
+        self.assertEqual(alice_points[5], 500 * 604800)
+
         
 
     def test_claimall_3rd_week_should_work(self):
@@ -415,6 +423,14 @@ class FarmsContractTest(TestCase):
         self.assertEqual(alice, transfer_tx_1_params[1]['string']) 
         self.assertEqual(str(init_storage["reward_at_week"][2]), transfer_tx_1_params[2]['int'])
 
+        alice_points = res.storage["user_points"][alice]
+        self.assertEqual(alice_points[1], 0)
+        self.assertEqual(alice_points[2], 0)
+        self.assertEqual(alice_points[3], 500 * 604800)
+        self.assertEqual(alice_points[4], 500 * 604800)
+        self.assertEqual(alice_points[5], 500 * 604800)
+
+
 
     def test_claimall_with_2_stakers_should_work(self):
 
@@ -466,8 +482,6 @@ class FarmsContractTest(TestCase):
 
         self.assertEqual(admin, res.storage["admin"])
         transfer_txs = res.operations
-        #print("ClaimAll : resulting operations")
-        #print(transfer_txs)
         self.assertEqual(2, len(transfer_txs))
 
         # week 3
@@ -476,8 +490,6 @@ class FarmsContractTest(TestCase):
         self.assertEqual(initial_storage["reserve_address"], transfer_tx_3_params[0]['string']) 
         self.assertEqual(alice, transfer_tx_3_params[1]['string']) 
         expected_value_3 = int(init_storage["reward_at_week"][3] *  init_storage["user_points"][alice][3] / init_storage["farm_points"][3])
-        #print("Pyth: exp val 3: ", expected_value_3)
-        #print(transfer_tx_3_params)
         self.assertEqual(str(expected_value_3), transfer_tx_3_params[2]['int'])
 
         # # week 2
@@ -486,6 +498,11 @@ class FarmsContractTest(TestCase):
         self.assertEqual(initial_storage["reserve_address"], transfer_tx_2_params[0]['string']) 
         self.assertEqual(alice, transfer_tx_2_params[1]['string']) 
         expected_value_2 = int(init_storage["reward_at_week"][2] * (500 * 604800 * 1/3) / init_storage["farm_points"][2])
-        #print(expected_value_2)
         self.assertEqual(str(expected_value_2), transfer_tx_2_params[2]['int'])
 
+        alice_points = res.storage["user_points"][alice]
+        self.assertEqual(alice_points[1], 0)
+        self.assertEqual(alice_points[2], 0)
+        self.assertEqual(alice_points[3], 0)
+        self.assertEqual(alice_points[4], 500 * 604800)
+        self.assertEqual(alice_points[5], 500 * 604800)
