@@ -70,6 +70,22 @@ class FarmsContractTest(TestCase):
         with self.raisesMichelsonError(only_admin):
             self.farms.setAdmin(admin).interpret(storage=init_storage, sender=alice)
 
+    def test_setAdmin_with_amount_should_fail(self):
+        init_storage = deepcopy(initial_storage)
+        
+        ################################
+        # Admin sets new admin (works) #
+        ################################
+        res = self.farms.setAdmin(bob).interpret(storage=init_storage, sender=admin)
+        self.assertEqual(bob, res.storage["admin"])
+        self.assertEqual([], res.operations)
+
+        ######################################
+        # random user sets new admin (fails) #
+        ######################################
+        with self.raisesMichelsonError(only_admin):
+            self.farms.setAdmin(admin).interpret(storage=init_storage, sender=alice, amount=1)    
+
     ######################
     # Tests for Staking #
     ######################
