@@ -3,23 +3,95 @@
 
 ![Vortex logo](https://gateway.pinata.cloud/ipfs/QmSMzh5JEuPgPNHns9Svk25aPwQn2NtR1TFkd7n3mj2Ktp)
 
-#### Run and compile test files with Docker
-1. Run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract main/main.mligo > main/test/Farm.tz`
-2. In the test repository, run `pytest [-k "filename"] [-s]` (in option to display console logs)
 
-#### CLI on Granada Testnet (testing / in progress)
-Reference: https://tezos.gitlab.io/active/cli-commands.html
 
-* Approval request:
-from fa1.2 contract [FA1.2 contract address] as [Admin address] approve 20000 from [Farms.tz contract address]
+## Summary
 
-* get contract entrypoints for [Farms.tz]
+###### I. Install the tools
 
-* get contract entrypoint type of [entrypoint] for [Farms.tz]
+###### II. Tests and compilation
 
-#### Originate Smart Contracts
-1. Run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/main.mligo --michelson-format json > deploy/ressources/Farm.json`
-2. Run `chmod +x deploy.sh && ./deploy.sh` or `bash deploy.sh`
+###### III. Deployment
 
-#### [In progress]
-1. In deploy folder, run `npm run storage` to generate the storage.json file in correct format.
+
+
+## I. Install the tools
+
+#### I. 1) Install LIGO
+
+OpenTezos offers great documentation so we will use it as a reference:
+https://opentezos.com/ligo/installation
+
+_You may simply execute LIGO through Docker to run the ligo CLI:_
+`docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 [command without "ligo"]`
+
+_Example:_
+_To compile a smart-contract, you may use:_
+`docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract [args]`
+
+The list of ligo CLI is available on LIGOland:
+https://ligolang.org/docs/api/cli-commands/
+
+#### I. 2) Install Node
+Node 14 or higher is required to run the originate function.
+
+###### Install node on MAC
+Go to https://nodejs.org/en/download/ and choose "macOS Installer".
+Follow the instructions on the wizard.
+Once it is complete, to check that the installation was successful, run:
+`node -v`
+`npm -v`
+
+###### Install node on Linux
+Open your terminal, and run:
+sudo apt update
+sudo apt install nodejs npm
+Once it is complete, to check that the installation was successful, run:
+`node -v`
+`npm -v`
+
+#### I.3) Install Taquito
+
+_cf._ https://opentezos.com/dapp/taquito
+
+#### I.4) Install Python
+
+You may download from Python (https://wiki.python.org/moin/BeginnersGuide/Download) or install it from the CLI.
+You may use python3.
+
+#### I.5) Install Pytezos
+
+_cf._ https://pypi.org/project/pytezos/
+
+
+
+## II. Compilation and tests
+
+#### II.1) Compilation
+
+Run `ligo compile contract contract/main/main.ligo > contract/main/Farms.tz`
+OR
+docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/main.mligo -e main > contract/test/Farm.tz
+
+#### II.2) Tests
+
+In the contract/test/ repository, run `pytest [-k "filename"] [-s]`
+
+
+## III. Deployment
+
+#### III.1) Originate Smart Contracts
+
+a) Go to the /deploy folder
+`cd deploy`
+
+a) Install dependencies
+Run `npm install`
+
+c) Run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/main.mligo --michelson-format json > deploy/ressources/Farm.json`
+
+d) Run `chmod +x deploy.sh && ./deploy.sh` or `bash deploy.sh`
+
+
+![Staking schema](https://i.ibb.co/PQmf81L/Farm-staking-1-light.png)
+![Staking schema - night mode](https://i.ibb.co/QbXzjWM/Farm-staking-1.png)
