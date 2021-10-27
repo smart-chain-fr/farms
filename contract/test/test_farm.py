@@ -23,7 +23,7 @@ initial_storage["lp_token_address"] ="KT1XtQeSap9wvJGY1Lmek84NU6PK6cjzC9Qd"
 initial_storage["reserve_address"] = "tz1fABJ97CJMSP2DKrQx2HAFazh6GgahQ7ZK"
 
 only_admin = "Only admin"
-staking_amount_gt_0 = "The staking amount amount must be greater than zero"
+staking_amount_gt_0 = "The staking amount must be greater than zero"
 
 class FarmsContractTest(TestCase):
     @classmethod
@@ -127,8 +127,26 @@ class FarmsContractTest(TestCase):
         self.assertEqual(604800 * locked_amount, user_points[bob][5])
 
         
+    def test_staking_20_lp_with_amount_should_fail(self):
+          
+            init_storage = deepcopy(initial_storage)
+            init_storage["user_stakes"] = {}
+            init_storage["user_points"] = {}
+            init_storage["farm_points"] = {}
+            init_storage["creation_time"] = 0
+            
+            locked_amount = 20
+            
+            print("Staking initial storage : ")
+            print(init_storage)
+            
+            ######################################################
+            # Bob stakes 20 LP after one week and a half (works) #
+            ######################################################
 
-        
+            with self.raisesMichelsonError("You must not send tez to the smart contract"):
+                res = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=bob, now=int(604800 + 604800/2), amount=1)
+            
     ######################################
     # Alice stakes 0 LP (fails) #
     ######################################
@@ -188,11 +206,13 @@ class FarmsContractTest(TestCase):
         self.assertDictEqual(res.storage["user_points"], final_userpoint)
         self.assertDictEqual(res.storage["farm_points"], final_farmpoint)
         self.assertEqual(res.storage["user_stakes"][alice], 250)
+        
 
-        with self.raisesMichelsonError("ERROR: Trying to unstake more than staked"):
+
+        with self.raisesMichelsonError("Trying to unstake more than staked"):
             self.farms.unstake(501).interpret(sender=alice, storage=init_storage, now=int(604800 + 604800 / 2))
 
-        with self.raisesMichelsonError("ERROR: user did not stake any token"):
+        with self.raisesMichelsonError("User did not stake any token"):
             self.farms.unstake(10).interpret(storage=init_storage, sender=bob)
 
         init_storage["user_stakes"][bob] = 600
@@ -249,6 +269,51 @@ class FarmsContractTest(TestCase):
         self.assertDictEqual(res2.storage["user_points"], final_userpoint)
         self.assertEqual(res2.storage["user_stakes"][bob], 500)
 
+    ##################################################
+    # Alice unstakes 250 with amount of tez (fails) #
+    #################################################
+    def test_unstake_with_amount_should_fail(self):
+        init_storage = deepcopy(initial_storage)
+        init_storage["user_stakes"] = {
+            alice: 500
+        }
+        init_storage["user_points"] = {
+            alice: {
+                1: int(500 * 604800/2),
+                2: 500 * 604800,
+                3: 500 * 604800,
+                4: 500 * 604800,
+                5: 500 * 604800
+            }
+        }
+        init_storage["farm_points"] = {
+            1: int(500 * 604800 / 2),
+            2: 500 * 604800,
+            3: 500 * 604800,
+            4: 500 * 604800,
+            5: 500 * 604800
+        }
+
+        final_userpoint = {
+            alice: {
+                1: int(500 * 604800/2),
+                2: int((500+250) * 604800/2),
+                3: 250 * 604800,
+                4: 250 * 604800,
+                5: 250 * 604800
+            }
+        }
+
+        final_farmpoint = {
+            1: int(500 * 604800 / 2),
+            2: int((500+250) * 604800/2),
+            3: 250 * 604800,
+            4: 250 * 604800,
+            5: 250 * 604800
+        }
+
+        with self.raisesMichelsonError("You must not send tez to the smart contract"):
+            res = self.farms.unstake(250).interpret(sender=alice, storage=init_storage, now=int(604800 + 604800/2), amount=1)
 
     ######################################
     # Admin initialize rewards (works)   #
@@ -304,7 +369,20 @@ class FarmsContractTest(TestCase):
         self.assertEqual(reward_week_4, 18981901)
         self.assertEqual(reward_week_5, 14236426)
 
+    def test_increase_reward_with_amont_should_fail(self):
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 20_000_000
+        init_storage["reward_at_week"] = {
+            1: 6555697,
+            2: 4916773,
+            3: 3687580,
+            4: 2765685,
+            5: 2074263
+        }
 
+
+        with self.raisesMichelsonError("You must not send tez to the smart contract"):
+            res = self.farms.increaseReward(50_000_000).interpret(storage=init_storage, sender=admin, now=int(604800 * 2 + 604800/2), amount=1)
     ######################
     # Tests for ClaimAll #
     ######################
@@ -345,7 +423,7 @@ class FarmsContractTest(TestCase):
         # Alice claims after one week of staking (works)     #
         ######################################################
         res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(604800 + 604800/2))
-
+        
         self.assertEqual(admin, res.storage["admin"])
         transfer_txs = res.operations
         #print("ClaimAll : resulting operations")
@@ -354,10 +432,11 @@ class FarmsContractTest(TestCase):
         self.assertEqual(1, len(transfer_txs))
         self.assertEqual('transaction', transfer_txs[0]["kind"])
         transfer_tx_params = transfer_txs[0]["parameters"]["value"]['args'][0]['args'][0]['args']
+
         self.assertEqual(initial_storage["reserve_address"], transfer_tx_params[0]['string']) 
         self.assertEqual(alice, transfer_tx_params[1]['string']) 
         self.assertEqual(str(init_storage["reward_at_week"][1]), transfer_tx_params[2]['int'])
-
+        
         alice_points = res.storage["user_points"][alice]
         self.assertEqual(alice_points[1], 0)
         self.assertEqual(alice_points[2], 500 * 604800)
@@ -365,10 +444,44 @@ class FarmsContractTest(TestCase):
         self.assertEqual(alice_points[4], 500 * 604800)
         self.assertEqual(alice_points[5], 500 * 604800)
 
+    ##################################################################
+    #   Alice claims after one week of staking with amount (fails)   #
+    ##################################################################
+    def test_claimall_with_amount_should_fail(self):
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 20_000_000
+        init_storage["reward_at_week"] = {
+            1: 6555697,
+            2: 4916773,
+            3: 3687580,
+            4: 2765685,
+            5: 2074263
+        }
+        init_storage["creation_time"] = 0
+        init_storage["user_stakes"] = {
+            alice: 500
+        }
+        init_storage["user_points"] = {
+            alice: {
+                1: int(500 * 604800/2),
+                2: 500 * 604800,
+                3: 500 * 604800,
+                4: 500 * 604800,
+                5: 500 * 604800
+            }
+        }
+        init_storage["farm_points"] = {
+            1: int(500 * 604800 / 2),
+            2: 500 * 604800,
+            3: 500 * 604800,
+            4: 500 * 604800,
+            5: 500 * 604800
+        }
+
+        with self.raisesMichelsonError("You must not send tez to the smart contract"):
+            res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(604800 + 604800/2), amount=1)
         
-
     def test_claimall_3rd_week_should_work(self):
-
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 20_000_000
         init_storage["reward_at_week"] = {
@@ -399,9 +512,6 @@ class FarmsContractTest(TestCase):
             5: 500 * 604800
         }
             
-        ######################################################
-        # Alice claims after one week of staking (works)     #
-        ######################################################
         res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(604800 * 2 + 604800/2))
 
         self.assertEqual(admin, res.storage["admin"])
@@ -429,8 +539,6 @@ class FarmsContractTest(TestCase):
         self.assertEqual(alice_points[3], 500 * 604800)
         self.assertEqual(alice_points[4], 500 * 604800)
         self.assertEqual(alice_points[5], 500 * 604800)
-
-
 
     def test_claimall_with_2_stakers_should_work(self):
 
@@ -506,3 +614,4 @@ class FarmsContractTest(TestCase):
         self.assertEqual(alice_points[3], 0)
         self.assertEqual(alice_points[4], 500 * 604800)
         self.assertEqual(alice_points[5], 500 * 604800)
+
