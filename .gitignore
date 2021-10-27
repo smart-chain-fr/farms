@@ -1,12 +1,18 @@
 # Environment file
 .env
 
+# Deploy files
+
 /deploy/deploy.js
+/deploy/package-lock.json
+/deploy/node_modules
+/deploy/ressources/Farm.json
 
 # Test files
-/main/compiled/Farm.tz
-/test/__pycache__
-/test/.pytest_cache
+/contract/test/Farm.tz
+/contract/test/Farms.tz
+/contract/test/__pycache__
+/contract/test/.pytest_cache
 .pytest_cache
 .idea
 # Created by https://www.toptal.com/developers/gitignore/api/node

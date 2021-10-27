@@ -20,3 +20,10 @@ jobs:
       - name: Run tests
         run: |
           docker run farms:latest
+      - name: Deployment
+        working-directory: ./deploy
+        run: |
+          docker pull tqtezos/flextesa:20211025
+          docker run --rm --name hangz --detach -p 20000:20000 tqtezos/flextesa:20211025 hangzbox start
+          npm i
+          bash deploy.sh
