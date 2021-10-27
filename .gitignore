@@ -3,11 +3,12 @@
 
 # Deploy files
 
+/deploy/deployFarmDb.js
 /deploy/deploy.js
 /deploy/package-lock.json
 /deploy/node_modules
 /deploy/ressources/Farm.json
-
+/deploy/ressources/Farms.json
 # Test files
 /contract/test/Farm.tz
 /contract/test/Farms.tz

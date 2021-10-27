@@ -3,13 +3,15 @@ import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
 import farm from './ressources/Farm.json';
 import dotenv from 'dotenv'
 
-//dotenv.config(({path:__dirname+'/.env'}))
+dotenv.config(({path:__dirname+'/.env'}))
 
 const rpc = process.env.RPC || "http://127.0.0.1:20000/"
 const pk: string = process.env.SAND_PK || "edsk3QoqBuvdamxouPhin7swCvkQNgq4jP5KZPbwWNnwdZpSpJiEbq";
 const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
 Tezos.setProvider({ signer: signer })
+
+const farms = process.env.FARMS || ""
 
 const admin = process.env.SAND_ADMIN || "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb";
 const creation_time = new Date();
@@ -54,6 +56,16 @@ async function orig() {
         console.log(`Waiting for ${op.hash} to be confirmed...`);
         await op.confirmation(3);
         console.log('confirmed: ', op.hash);
+    }
+
+    if (farms !== "") {
+        const params = {
+            'farm_address': originated.contractAddress,
+            'lp_address': lp,
+            'farm_lp_info': 'SMAK-XTZ'
+        }
+        const op2 = await (await Tezos.contract.at(farms)).methods.AddFarm(params).send();
+        console.log(op2.hash)
     }
 }
 
