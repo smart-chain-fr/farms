@@ -69,7 +69,14 @@ class FarmsContractTest(TestCase):
         ######################################
         with self.raisesMichelsonError(only_admin):
             self.farms.setAdmin(admin).interpret(storage=init_storage, sender=alice)
+    ##################################################
+    # random user sets new admin with amount (fails) #
+    ##################################################
+    def test_setAdmin_with_amount_should_fail(self):
+        init_storage = deepcopy(initial_storage)
 
+        with self.raisesMichelsonError("You must not send tez to the smart contract"):
+            self.farms.setAdmin(admin).interpret(storage=init_storage, sender=alice, amount=1)    
     ######################
     # Tests for Staking #
     ######################
