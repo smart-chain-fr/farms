@@ -87,38 +87,38 @@ In the contract/test/ repository, run `pytest [-k "filename"] [-s]`
 
 ## III. Deployment
 
-#### III.1) Originate Smart Contract Farm
+#### III.1) Initialisation
 
-a) Go to the /deploy folder
+* Run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/main.mligo --michelson-format json > deploy/ressources/Farm.json`
+
+* Go to the /deploy folder
 `cd deploy`
 
-b) Install dependencies
+* Install dependencies
 Run `npm install`
 
-c) Run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/main.mligo --michelson-format json > deploy/ressources/Farm.json`
+#### III.2) [Only once] Originate the smart-contract FARMS
 
-d) Run `chmod +x deploy.sh && ./deploy.sh` or `bash deploy.sh`
+From the root, run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/farms.mligo --michelson-format json > deploy/ressources/Farms.json`
 
-#### III.2) Allow transfers on FA12 contracts (SMAK contract, LP contract) 
+This contract reference all farm pools and it is generated only once at the start of the project.
+In the folder /deploy, run `tsc deployFarmDb.ts --resolveJsonModule -esModuleInterop` then `node deployFarmDb.js`.
 
-e) Call "approve" entrypoint on LP contract (Allow the Farm contract to use LP tokens owned by the user)
+#### III.3) Originate a farm pool
 
-f) approve on SMAK contract (allow to transfer some SMAK token to the claiming user)
+In the folder /deploy, run `chmod +x deploy.sh && ./deploy.sh` or `bash deploy.sh`
 
-#### III.3) Compute rewards for the smart contract Farm
+It will:
+* originate a new farm contract with the storage in the .ts file
+* call the entrypoint increaseReward (with 0 as argument)
+* approve the newly created farm smart-contract to spend SMAK for the amount in total_reward (will allow to transfer some SMAK tokens to the claiming users)
+* call the entrypoint addFarm in the FARMS contract to register the newly created farm
 
-g) Execute the IncreaseReward entrypoint (with 0 as argument)
 
-#### III.4) Originate Smart Contract Farms (if not already deployed)
+## IV. Staking
 
-h) deploy Farms
+The front-end will call the entry point approve on the LP token contract in order to allow the farm contract to use LP tokens owned by the user.
 
-#### III.5) Add the new Farm contract into the Farms referentiel
-
-i) Execute entrypoint AddFarm (with following arguments)
-- Farms contract address
-- LP contract address
-- string info "SMAK-XTZ"
-
+###### Staking mechanism schema
 ![Staking schema](https://i.ibb.co/PQmf81L/Farm-staking-1-light.png)
 ![Staking schema - night mode](https://i.ibb.co/QbXzjWM/Farm-staking-1.png)
