@@ -1,7 +1,7 @@
 import { InMemorySigner } from '@taquito/signer';
 import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
 import farms from './ressources/Farms.json';
-import dotenv from 'dotenv'
+import * as dotenv from 'dotenv'
 
 dotenv.config(({path:__dirname+'/.env'}))
 const rpc = process.env.RPC || "http://127.0.0.1:20000/"
