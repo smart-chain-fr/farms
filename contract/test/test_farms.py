@@ -23,6 +23,7 @@ lp_address ="KT1XtQeSap9wvJGY1Lmek84NU6PK6cjzC9Qd"
 farm_lp_info = "pair colibri-pouet"
 
 only_admin = "Only admin"
+amount_zero = "This smart contract does not accept tez"
 
 class FarmsContractTest(TestCase):
     @classmethod
@@ -61,7 +62,7 @@ class FarmsContractTest(TestCase):
     ######################################
     # random user add a new farm (fails) #
     ######################################
-    def test_addFarm_fails(self):
+    def test_addFarm_not_admin_fails(self):
         init_storage = deepcopy(initial_storage)
         input = {}
         input["farm_address"] = farm_address
@@ -70,3 +71,17 @@ class FarmsContractTest(TestCase):
 
         with self.raisesMichelsonError(only_admin):
             self.farms.addFarm(input).interpret(storage=init_storage, sender=alice)
+
+    ######################################
+    # Admin add a new farm with some tez (fails) #
+    ######################################
+    def test_addFarm_with_amount_fails(self):
+        init_storage = deepcopy(initial_storage)
+        input = {}
+        input["farm_address"] = farm_address
+        input["lp_address"] = lp_address
+        input["farm_lp_info"] = farm_lp_info
+
+        with self.raisesMichelsonError(amount_zero):
+            self.farms.addFarm(input).interpret(storage=init_storage, sender=admin, amount=1)
+

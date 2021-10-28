@@ -9,6 +9,10 @@
           (pair (pair (nat %total_reward) (big_map %user_points address (map nat nat)))
                 (pair (big_map %user_stakes address nat) (nat %weeks)))) ;
   code { PUSH string "Unknown LP contract" ;
+         PUSH string "Unknown user" ;
+         PUSH string "You must not send tez to the smart contract" ;
+         PUSH string "Try again later" ;
+         PUSH string "User did not have any point" ;
          NIL operation ;
          PUSH nat 604800 ;
          DUP ;
@@ -88,16 +92,235 @@
                       PAIR ;
                       PAIR ;
                       LEFT nat } } } ;
-         DIG 6 ;
+         DIG 10 ;
          UNPAIR ;
          IF_LEFT
-           { IF_LEFT
+           { DIG 7 ;
+             DROP ;
+             IF_LEFT
                { DIG 5 ;
                  DIG 7 ;
-                 DROP 2 ;
+                 DIG 10 ;
+                 DROP 3 ;
                  IF_LEFT
-                   { DIG 2 ; DIG 3 ; DIG 4 ; DROP 4 ; SWAP ; PAIR }
-                   { SWAP ;
+                   { DIG 2 ;
+                     DIG 5 ;
+                     DROP 3 ;
+                     PUSH mutez 0 ;
+                     AMOUNT ;
+                     COMPARE ;
+                     EQ ;
+                     IF { DIG 3 ; DROP } { DIG 3 ; FAILWITH } ;
+                     DUP ;
+                     DIG 3 ;
+                     SWAP ;
+                     EXEC ;
+                     PUSH nat 100000000 ;
+                     PUSH nat 1 ;
+                     DIG 2 ;
+                     SUB ;
+                     ABS ;
+                     PUSH nat 1 ;
+                     PAIR ;
+                     DIG 3 ;
+                     SWAP ;
+                     EXEC ;
+                     EMPTY_MAP address (map nat nat) ;
+                     PAIR ;
+                     LEFT (map address (map nat nat)) ;
+                     LOOP_LEFT
+                       { UNPAIR ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
+                         IF_CONS { SWAP ; DROP ; SOME } { NONE nat } ;
+                         IF_NONE
+                           { SWAP ; DROP ; RIGHT (pair (map address (map nat nat)) (list nat)) }
+                           { DUP 5 ;
+                             CDR ;
+                             CAR ;
+                             CDR ;
+                             SENDER ;
+                             GET ;
+                             IF_NONE
+                               { DUP 6 ; FAILWITH }
+                               { SWAP ; DUP ; DUG 2 ; GET ; IF_NONE { PUSH nat 0 } {} } ;
+                             DUP 6 ;
+                             CAR ;
+                             CAR ;
+                             CDR ;
+                             CAR ;
+                             DUP 3 ;
+                             GET ;
+                             IF_NONE { PUSH string "Farm has no points for this week" ; FAILWITH } {} ;
+                             PUSH nat 0 ;
+                             DUP 3 ;
+                             COMPARE ;
+                             EQ ;
+                             IF { DROP 2 ; PUSH nat 0 }
+                                { DUP 6 ;
+                                  DIG 2 ;
+                                  MUL ;
+                                  EDIV ;
+                                  IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+                                  CAR } ;
+                             PUSH nat 0 ;
+                             SWAP ;
+                             DUP ;
+                             DUG 2 ;
+                             COMPARE ;
+                             EQ ;
+                             IF { DROP 2 }
+                                { DUP 3 ;
+                                  SENDER ;
+                                  GET ;
+                                  IF_NONE
+                                    { DIG 2 ;
+                                      EMPTY_MAP nat nat ;
+                                      DIG 2 ;
+                                      DIG 3 ;
+                                      SWAP ;
+                                      SOME ;
+                                      SWAP ;
+                                      UPDATE ;
+                                      SOME ;
+                                      SENDER ;
+                                      UPDATE }
+                                    { DIG 3 ;
+                                      SWAP ;
+                                      DIG 2 ;
+                                      DIG 3 ;
+                                      SWAP ;
+                                      SOME ;
+                                      SWAP ;
+                                      UPDATE ;
+                                      SOME ;
+                                      SENDER ;
+                                      UPDATE } } ;
+                             SWAP ;
+                             IF_CONS { DROP ; SOME } { NONE (list nat) } ;
+                             IF_NONE { NIL nat } {} ;
+                             SWAP ;
+                             PAIR ;
+                             LEFT (map address (map nat nat)) } } ;
+                     DIG 3 ;
+                     DROP ;
+                     NIL operation ;
+                     SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     ITER { CDR ;
+                            ITER { UNPAIR ;
+                                   DUP 5 ;
+                                   DIG 2 ;
+                                   DUP 7 ;
+                                   CAR ;
+                                   CDR ;
+                                   CDR ;
+                                   CAR ;
+                                   DIG 3 ;
+                                   GET ;
+                                   IF_NONE { PUSH nat 0 } {} ;
+                                   MUL ;
+                                   EDIV ;
+                                   IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+                                   CAR ;
+                                   SWAP ;
+                                   DUP 5 ;
+                                   SENDER ;
+                                   DIG 3 ;
+                                   DUP 3 ;
+                                   CAR ;
+                                   CDR ;
+                                   CDR ;
+                                   CDR ;
+                                   CONTRACT
+                                     (or (or (or (pair %approve (address %spender) (nat %value))
+                                                 (pair %getAllowance
+                                                    (pair %request (address %owner) (address %spender))
+                                                    (contract %callback nat)))
+                                             (or (pair %getBalance (address %owner) (contract %callback nat))
+                                                 (pair %getTotalSupply (unit %request) (contract %callback nat))))
+                                         (or (pair %mintOrBurn (int %quantity) (address %target))
+                                             (pair %transfer (address %from) (pair (address %to) (nat %value))))) ;
+                                   IF_NONE { PUSH string "Unknown SMAK contract" ; FAILWITH } {} ;
+                                   PUSH mutez 0 ;
+                                   DIG 4 ;
+                                   CAR ;
+                                   CDR ;
+                                   CAR ;
+                                   CDR ;
+                                   DIG 4 ;
+                                   DIG 4 ;
+                                   SWAP ;
+                                   PAIR ;
+                                   SWAP ;
+                                   PAIR ;
+                                   RIGHT (pair int address) ;
+                                   RIGHT
+                                     (or (or (pair address nat) (pair (pair address address) (contract nat)))
+                                         (or (pair address (contract nat)) (pair unit (contract nat)))) ;
+                                   TRANSFER_TOKENS ;
+                                   CONS } } ;
+                     DIG 2 ;
+                     DROP ;
+                     DUP 3 ;
+                     CDR ;
+                     CAR ;
+                     CDR ;
+                     DIG 2 ;
+                     ITER { DUP ;
+                            DUG 2 ;
+                            CAR ;
+                            SWAP ;
+                            DUP ;
+                            DUG 2 ;
+                            SWAP ;
+                            DUP ;
+                            DUG 2 ;
+                            GET ;
+                            IF_NONE
+                              { PUSH string "reward sent but missing points in map !!! " ; FAILWITH }
+                              {} ;
+                            DIG 3 ;
+                            CDR ;
+                            ITER { CAR ;
+                                   SWAP ;
+                                   DUP ;
+                                   DUG 2 ;
+                                   SWAP ;
+                                   DUP ;
+                                   DUG 2 ;
+                                   GET ;
+                                   IF_NONE { DROP } { DROP ; SWAP ; PUSH nat 0 ; SOME ; DIG 2 ; UPDATE } } ;
+                            DIG 2 ;
+                            SWAP ;
+                            SOME ;
+                            DIG 2 ;
+                            UPDATE } ;
+                     DUP 3 ;
+                     CDR ;
+                     CDR ;
+                     SWAP ;
+                     DUP 4 ;
+                     CDR ;
+                     CAR ;
+                     CAR ;
+                     PAIR ;
+                     PAIR ;
+                     DIG 2 ;
+                     CAR ;
+                     PAIR ;
+                     SWAP ;
+                     PAIR }
+                   { DIG 7 ;
+                     DROP ;
+                     PUSH mutez 0 ;
+                     AMOUNT ;
+                     COMPARE ;
+                     EQ ;
+                     IF { DIG 6 ; DROP } { DIG 6 ; FAILWITH } ;
+                     SWAP ;
                      DUP ;
                      DUG 2 ;
                      DIG 5 ;
@@ -249,25 +472,47 @@
                              DUP 10 ;
                              SWAP ;
                              EXEC ;
+                             PUSH nat 1 ;
                              DUP 5 ;
+                             SUB ;
+                             ABS ;
                              PUSH nat 10000 ;
+                             PAIR ;
+                             DUP 11 ;
+                             SWAP ;
+                             EXEC ;
+                             DUP 6 ;
+                             PUSH nat 10000 ;
+                             SUB ;
+                             ABS ;
+                             PUSH nat 1 ;
+                             DUP 5 ;
+                             SUB ;
+                             ABS ;
+                             PUSH nat 10000 ;
+                             PAIR ;
+                             DUP 13 ;
+                             SWAP ;
+                             EXEC ;
+                             SWAP ;
+                             MUL ;
+                             DUP 4 ;
+                             DIG 7 ;
+                             PAIR ;
+                             DUP 12 ;
+                             SWAP ;
+                             EXEC ;
+                             DIG 4 ;
+                             PUSH nat 10000 ;
+                             PAIR ;
+                             DUP 12 ;
+                             SWAP ;
+                             EXEC ;
                              SUB ;
                              ABS ;
                              DIG 2 ;
-                             DIG 5 ;
-                             PAIR ;
-                             DUP 10 ;
-                             SWAP ;
-                             EXEC ;
-                             PUSH nat 10000 ;
-                             SWAP ;
-                             EDIV ;
-                             IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
-                             CAR ;
-                             PUSH nat 1 ;
-                             SUB ;
-                             ABS ;
-                             SWAP ;
+                             MUL ;
+                             DIG 2 ;
                              DIG 3 ;
                              DIG 3 ;
                              MUL ;
@@ -316,13 +561,20 @@
                      SWAP ;
                      PAIR } }
                { DIG 2 ;
-                 DROP ;
+                 DIG 9 ;
+                 DROP 2 ;
                  IF_LEFT
                    { DIG 2 ;
                      DIG 3 ;
                      DIG 4 ;
                      DIG 6 ;
-                     DROP 4 ;
+                     DIG 8 ;
+                     DROP 5 ;
+                     PUSH mutez 0 ;
+                     AMOUNT ;
+                     COMPARE ;
+                     EQ ;
+                     IF { DIG 3 ; DROP } { DIG 3 ; FAILWITH } ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
@@ -359,6 +611,11 @@
                      PAIR }
                    { DIG 5 ;
                      DROP ;
+                     PUSH mutez 0 ;
+                     AMOUNT ;
+                     COMPARE ;
+                     EQ ;
+                     IF { DIG 6 ; DROP } { DIG 6 ; FAILWITH } ;
                      PUSH nat 0 ;
                      SWAP ;
                      DUP ;
@@ -366,8 +623,7 @@
                      COMPARE ;
                      GT ;
                      IF {}
-                        { PUSH string "The staking amount amount must be greater than zero" ;
-                          FAILWITH } ;
+                        { PUSH string "The staking amount must be greater than zero" ; FAILWITH } ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
@@ -384,7 +640,7 @@
                                    (pair %getTotalSupply (unit %request) (contract %callback nat))))
                            (or (pair %mintOrBurn (int %quantity) (address %target))
                                (pair %transfer (address %from) (pair (address %to) (nat %value))))) ;
-                     IF_NONE { DIG 5 ; FAILWITH } { DIG 6 ; DROP } ;
+                     IF_NONE { DIG 6 ; FAILWITH } { DIG 7 ; DROP } ;
                      SENDER ;
                      SELF_ADDRESS ;
                      DUP 4 ;
@@ -433,9 +689,7 @@
                      SUB ;
                      COMPARE ;
                      LT ;
-                     IF {}
-                        { PUSH string "ERROR: The remaining time before end of week should be negative !! " ;
-                          FAILWITH } ;
+                     IF { DIG 8 ; DROP } { DIG 8 ; FAILWITH } ;
                      NOW ;
                      SUB ;
                      ABS ;
@@ -660,6 +914,11 @@
            { DIG 2 ;
              DIG 6 ;
              DROP 2 ;
+             PUSH mutez 0 ;
+             AMOUNT ;
+             COMPARE ;
+             EQ ;
+             IF { DIG 7 ; DROP } { DIG 7 ; FAILWITH } ;
              SWAP ;
              DUP ;
              DUG 2 ;
@@ -669,7 +928,7 @@
              SENDER ;
              GET ;
              IF_NONE
-               { PUSH string "ERROR: user did not stake any token" ; FAILWITH }
+               { PUSH string "User did not stake any token" ; FAILWITH }
                { SWAP ;
                  DUP ;
                  DUG 2 ;
@@ -689,7 +948,7 @@
                       SOME ;
                       SENDER ;
                       UPDATE }
-                    { DROP ; PUSH string "ERROR: Trying to unstake more than staked" ; FAILWITH } } ;
+                    { DROP ; PUSH string "Trying to unstake more than staked" ; FAILWITH } } ;
              DUP 3 ;
              DIG 5 ;
              SWAP ;
@@ -714,9 +973,7 @@
              SUB ;
              COMPARE ;
              LT ;
-             IF {}
-                { PUSH string "ERROR: The remaining time before end of week should be negative !! " ;
-                  FAILWITH } ;
+             IF { DIG 8 ; DROP } { DIG 8 ; FAILWITH } ;
              NOW ;
              SUB ;
              ABS ;
@@ -733,12 +990,12 @@
              SENDER ;
              GET ;
              IF_NONE
-               { PUSH string "ERROR: user did not have any point" ; FAILWITH }
+               { DUP 8 ; FAILWITH }
                { DUP ;
                  DUP 5 ;
                  GET ;
                  IF_NONE
-                   { DROP ; PUSH string "ERROR: user did not have any point" ; FAILWITH }
+                   { DROP ; DUP 8 ; FAILWITH }
                    { SWAP ; DUP 4 ; DIG 2 ; SUB ; ABS ; SOME ; DUP 5 ; UPDATE } ;
                  DUP 7 ;
                  CDR ;
@@ -756,7 +1013,7 @@
              DUP 5 ;
              GET ;
              IF_NONE
-               { DIG 2 ; DROP ; PUSH string "ERROR: user did not have any point" ; FAILWITH }
+               { DIG 2 ; DROP ; DUP 8 ; FAILWITH }
                { DUP 8 ;
                  CAR ;
                  CAR ;
@@ -809,7 +1066,7 @@
                      DUP 4 ;
                      GET ;
                      IF_NONE
-                       { DROP 4 ; PUSH string "ERROR: user does not exist" ; FAILWITH }
+                       { DROP 4 ; DUP 10 ; FAILWITH }
                        { DUP ;
                          DUP 3 ;
                          GET ;
@@ -817,7 +1074,7 @@
                            { SWAP ;
                              DIG 4 ;
                              DROP 3 ;
-                             PUSH string "ERROR: user does not have a stake for this week" ;
+                             PUSH string "User does not have a stake for this week" ;
                              FAILWITH }
                            { SWAP ; DIG 5 ; DIG 2 ; SUB ; ABS ; SOME ; DIG 2 ; UPDATE } ;
                          SOME ;
@@ -830,6 +1087,8 @@
                      PAIR ;
                      PAIR ;
                      LEFT (big_map address (map nat nat)) } } ;
+             DIG 8 ;
+             DROP ;
              SWAP ;
              DIG 3 ;
              DIG 3 ;
@@ -848,7 +1107,7 @@
                      DUP 3 ;
                      GET ;
                      IF_NONE
-                       { DROP 3 ; PUSH string "ERROR: no point in farm point map" ; FAILWITH }
+                       { DROP 3 ; DUP 7 ; FAILWITH }
                        { DIG 3 ; DUG 2 ; SUB ; ABS ; SOME ; DIG 2 ; UPDATE } ;
                      DIG 2 ;
                      IF_CONS { DROP ; SOME } { NONE (list nat) } ;
@@ -857,6 +1116,8 @@
                      PAIR ;
                      PAIR ;
                      LEFT (map nat nat) } } ;
+             DIG 5 ;
+             DROP ;
              DUP 5 ;
              CAR ;
              CAR ;

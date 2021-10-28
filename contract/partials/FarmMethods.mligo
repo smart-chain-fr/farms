@@ -5,6 +5,7 @@
 // Should update the admin
 // Params : admin (address) 
 let setAdmin(admin, s : address * storage_farm) : return =
+    let _check_if_no_tez : bool = if Tezos.amount = 0tez then true else (failwith(amount_must_be_zero_tez) : bool) in
     let new_admin = if Tezos.sender = s.admin then admin
     else (failwith(only_admin) : address) in 
     (noOperations, { s with admin = new_admin })
@@ -24,10 +25,11 @@ let get_weeks_indices_as_set(first, last : nat * nat) : nat set =
 
 
 let stakeSome(lp_amount, s : nat * storage_farm) : return =
+    let _check_if_no_tez : bool = if Tezos.amount = 0tez then true else (failwith(amount_must_be_zero_tez) : bool) in
     let _check_amount_positive : bool = 
         if (lp_amount > 0n) 
         then true 
-        else (failwith("The staking amount amount must be greater than zero") : bool)
+        else (failwith(amount_lower_than_zero) : bool)
     in
     let lp_contract_opt : parameter contract option = Tezos.get_contract_opt(s.lp_token_address) in
     let lp_contract : parameter contract = match lp_contract_opt with
@@ -51,7 +53,7 @@ let stakeSome(lp_amount, s : nat * storage_farm) : return =
     let _check_negative : bool = 
         if (Tezos.now - endofweek_in_seconds < 0) 
         then true 
-        else (failwith("ERROR: The remaining time before end of week should be negative !! ") : bool)
+        else (failwith(time_too_early) : bool)
     in
     let before_end_week : nat = abs(Tezos.now - endofweek_in_seconds) in 
     let points_current_week : nat = before_end_week * lp_amount in
@@ -128,14 +130,14 @@ let stakeSome(lp_amount, s : nat * storage_farm) : return =
 
 
 let unstakeSome(lp_amount, s : nat * storage_farm) : return =
-    
+    let _check_if_no_tez : bool = if Tezos.amount = 0tez then true else (failwith(amount_must_be_zero_tez) : bool) in
     // update current storage with updated user_stakes map
     let existing_bal_opt : nat option = Big_map.find_opt Tezos.sender s.user_stakes in
     let new_user_stakes : (address, nat) big_map = match existing_bal_opt with
-        | None -> (failwith("ERROR: user did not stake any token"): (address, nat) big_map)
+        | None -> (failwith(no_stakes): (address, nat) big_map)
         | Some(v) -> if (v > lp_amount) 
         then Big_map.update Tezos.sender (Some(abs(v - lp_amount))) s.user_stakes
-        else (failwith("ERROR: Trying to unstake more than staked"): (address, nat) big_map)
+        else (failwith(unstake_more_than_stake): (address, nat) big_map)
     in
     let current_week : nat = get_current_week(s) in
     let endofweek_in_seconds : timestamp = s.creation_time + int(current_week * week_in_seconds) in
@@ -145,7 +147,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
     let _check_negative : bool = 
         if (Tezos.now - endofweek_in_seconds < 0) 
         then true 
-        else (failwith("ERROR: The remaining time before end of week should be negative !! ") : bool)
+        else (failwith(time_too_early) : bool)
     in
     let before_end_week : nat = abs(Tezos.now - endofweek_in_seconds) in 
     let points_current_week : nat = before_end_week * lp_amount in
@@ -154,17 +156,17 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
     //user_points[user_address][current_week] += before_end_week * lp_amount
     let user_weeks_opt : (nat, nat) map option = Big_map.find_opt Tezos.sender s.user_points in
     let new_user_points : (address, (nat, nat) map ) big_map = match user_weeks_opt with
-    | None -> (failwith("ERROR: user did not have any point"): (address, (nat, nat) map ) big_map)
+    | None -> (failwith(user_no_points): (address, (nat, nat) map ) big_map)
     | Some(m) -> 
         let modified_current_week : (nat, nat) map = match (Map.find_opt current_week m) with
-        | None -> (failwith("ERROR: user did not have any point"): (nat, nat) map)
+        | None -> (failwith(user_no_points): (nat, nat) map)
         | Some(wpts) -> (Map.update current_week (Some(abs(wpts - points_current_week))) m)
         in
         Big_map.update Tezos.sender (Some(modified_current_week)) s.user_points
     in 
     //farm_points[current_week] += before_end_week * lp_amount
     let new_farm_points = match Map.find_opt current_week s.farm_points with
-    | None -> (failwith("ERROR: user did not have any point"):  (nat, nat) map)
+    | None -> (failwith(user_no_points):  (nat, nat) map)
     | Some(val_) -> Map.update current_week (Some(abs(val_ - points_current_week))) s.farm_points
     in
     //for (i = current_week + 1; i <= s.weeks; i++) 
@@ -172,10 +174,10 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
     let future_weeks : nat list = get_weeks_indices(current_week + 1n, s.weeks) in
     let update_user_points_func = fun (a, v, i, m : address * nat * nat * (address, (nat, nat) map ) big_map) -> 
         match Big_map.find_opt a m with
-        | None -> (failwith("ERROR: user does not exist"):  (address, (nat , nat) map)big_map)
+        | None -> (failwith(unknown_user):  (address, (nat , nat) map)big_map)
         | Some(weeks_map) ->
             let new_weeks_map : (nat, nat) map = match Map.find_opt i weeks_map with
-            | None -> (failwith("ERROR: user does not have a stake for this week"): (nat , nat) map)
+            | None -> (failwith(user_no_stakes_week): (nat , nat) map)
             | Some(value) -> Map.update i (Some(abs(value - v))) weeks_map
             in
             Big_map.update a (Some(new_weeks_map)) m
@@ -188,7 +190,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             let modified : (address, (nat, nat) map ) big_map = update_user_points_func(Tezos.sender, modificateur, week_indice, resulting_acc) in
             let remaining_weeks_opt : nat list option = List.tail_opt weeks_indices in
             let remaining_weeks : nat list = match remaining_weeks_opt with
-            | None -> ([] : nat list)
+            | None -> ([] : nat list)        
             | Some(l) -> l
             in
             modify_user_points_func(modified, modificateur, remaining_weeks)
@@ -200,7 +202,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
     //    farm_points[i] += week_in_seconds * lp_amount 
     let update_farm_points_func = fun (v, i, m : nat * nat * (nat, nat) map) ->
         match (Map.find_opt i m) with
-        | None -> (failwith("ERROR: no point in farm point map"):  (nat, nat) map)
+        | None -> (failwith(user_no_points):  (nat, nat) map)
         | Some(entry) -> Map.update i (Some(abs(entry-v))) m
     in
     let rec modify_farm_points_func(farm_result, delta, weeks_indices : (nat, nat) map * nat * nat list) : (nat, nat) map =
@@ -284,6 +286,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
 
 
     let increaseReward(value, s : nat * storage_farm) : return = 
+        let _check_if_no_tez : bool = if Tezos.amount = 0tez then true else (failwith(amount_must_be_zero_tez) : bool) in
         let current_week : nat = get_current_week(s) in
         let delta : nat = value in
         //sum (current_week , s.weeks) reward_at_week
@@ -298,13 +301,14 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
 
 
 
-    let claimAll(s : storage_farm) : return = 
+   let claimAll(s : storage_farm) : return = 
+        let _check_if_no_tez : bool = if Tezos.amount = 0tez then true else (failwith(amount_must_be_zero_tez) : bool) in
         let current_week : nat = get_current_week(s) in
         let precision : nat = 100_000_000n in 
         let weeks : nat list = get_weeks_indices(1n, abs(current_week - 1n)) in
         let compute_percentage_func(week_indice, themap : nat * (address, (nat, nat) map) map) : (address, (nat, nat) map) map =
             let points : nat = match (Big_map.find_opt Tezos.sender s.user_points) with
-                | None -> (failwith("Unknown user") : nat)
+                | None -> (failwith(unknown_user) : nat)
                 | Some(week_points_map) -> 
                     let val_opt : nat option = Map.find_opt week_indice week_points_map in
                     let computed_value : nat = match val_opt with
@@ -314,7 +318,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
                     computed_value
             in
             let farm_points : nat = match Big_map.find_opt week_indice s.farm_points with
-            | None -> (failwith("Farm has no points for this week") : nat)
+            | None -> (failwith(farm_empty_week) : nat)
             | Some(val_) -> val_
             in
             let perc : nat = if points = 0n then 0n else points * precision / farm_points in
