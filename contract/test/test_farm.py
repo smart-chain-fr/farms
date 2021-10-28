@@ -23,7 +23,7 @@ initial_storage["lp_token_address"] ="KT1XtQeSap9wvJGY1Lmek84NU6PK6cjzC9Qd"
 initial_storage["reserve_address"] = "tz1fABJ97CJMSP2DKrQx2HAFazh6GgahQ7ZK"
 
 only_admin = "Only admin"
-staking_amount_gt_0 = "The staking amount amount must be greater than zero"
+staking_amount_gt_0 = "The staking amount must be greater than zero"
 
 class FarmsContractTest(TestCase):
     @classmethod
@@ -444,7 +444,7 @@ class FarmsContractTest(TestCase):
             5: 250 * 604800
         }
 
-        with self.raisesMichelsonError("ERROR: Trying to unstake more than staked"):
+        with self.raisesMichelsonError("Trying to unstake more than staked"):
             self.farms.unstake(501).interpret(sender=alice, storage=init_storage, now=int(604800 + 604800 / 2))
 
     def test_unstaking_unstake_with_0_staked_should_fail(self):
@@ -487,7 +487,7 @@ class FarmsContractTest(TestCase):
             4: 250 * 604800,
             5: 250 * 604800
         }
-        with self.raisesMichelsonError("ERROR: user did not stake any token"):
+        with self.raisesMichelsonError("User did not stake any token"):
             self.farms.unstake(10).interpret(storage=init_storage, sender=bob)
 
     def test_unstaking_unstake_with_two_users_should_work(self):
