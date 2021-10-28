@@ -16,18 +16,14 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build docker image
         run: |
-          docker build . -t farms:latest
+          docker build -f Dockerfile.test . -t farms:latest
       - name: Run tests
         run: |
           docker run farms:latest
       - name: Deployment
         working-directory: ./deploy
         run: |
-          docker pull tqtezos/flextesa:20211025
-          docker run --rm --name hangz --detach -p 20000:20000 tqtezos/flextesa:20211025 hangzbox start
-          npm i
-          tsc
-          node deployFarmDb.js > .env
-          node deploy.js
+          docker-compose build
+          docker-compose up
 
 
