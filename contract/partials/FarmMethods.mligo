@@ -233,14 +233,14 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
 
 
     let sendReward(token_amount, user_address, s : nat * address * storage_farm) : operation = 
-        let smak_contract_opt : parameter contract option = Tezos.get_contract_opt(s.smak_address) in
-        let smak_contract : parameter contract = match smak_contract_opt with
-            | None -> (failwith(unknown_smak_contract) : parameter contract)
-            | Some(x) -> x
+        let smak_contract_otp : smak_transfer contract option = Tezos.get_entrypoint_opt "%transfer" s.smak_address in
+        let transfer_smak : smak_transfer contract = match smak_contract_otp with
+            | Some c -> c
+            | None -> (failwith unknown_smak_contract:  smak_transfer contract)
         in
         // create a transfer transaction (for LP token contract)
-        let transfer_param : transfer = { address_from = s.reserve_address; address_to = user_address; value = token_amount } in 
-        let op : operation = Tezos.transaction (Transfer(transfer_param)) 0mutez smak_contract in
+        let transfer_param : smak_transfer = { from = s.reserve_address; to = user_address; value = token_amount } in 
+        let op : operation = Tezos.transaction (transfer_param) 0mutez transfer_smak in
         op
 
     let power(x, y: nat * nat) : nat = 
