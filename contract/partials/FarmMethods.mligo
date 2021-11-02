@@ -304,8 +304,12 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
    let claimAll(s : storage_farm) : return = 
         let _check_if_no_tez : bool = if Tezos.amount = 0tez then true else (failwith(amount_must_be_zero_tez) : bool) in
         let current_week : nat = get_current_week(s) in
-        let precision : nat = 100_000_000n in 
-        let weeks : nat list = get_weeks_indices(1n, abs(current_week - 1n)) in
+        let precision : nat = 100_000_000n in
+        let weeks : nat list =
+            if (current_week > s.weeks) 
+            then get_weeks_indices(1n, s.weeks) 
+            else get_weeks_indices(1n, abs(current_week - 1n))
+        in
         let compute_percentage_func(week_indice, themap : nat * (address, (nat, nat) map) map) : (address, (nat, nat) map) map =
             let points : nat = match (Big_map.find_opt Tezos.sender s.user_points) with
                 | None -> (failwith(unknown_user) : nat)
