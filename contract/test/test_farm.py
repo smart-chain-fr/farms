@@ -714,9 +714,9 @@ class FarmsContractTest(TestCase):
             5: (500 + 100) * 604800
         }
             
-        ######################################################
-        # Alice claims after one week of staking (works)     #
-        ######################################################
+
+        # Alice claims after one week of staking (works)
+
         #print("Claim : result")
         #print(init_storage)
 
