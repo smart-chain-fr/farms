@@ -29,7 +29,7 @@ let stakeSome(lp_amount, s : nat * storage_farm) : return =
     let _check_amount_positive : bool = 
         if (lp_amount > 0n) 
         then true 
-        else (failwith(amount_lower_than_zero) : bool)
+        else (failwith(amount_is_null) : bool)
     in
     let lp_contract_opt : parameter contract option = Tezos.get_contract_opt(s.lp_token_address) in
     let lp_contract : parameter contract = match lp_contract_opt with
@@ -286,6 +286,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
 
 
     let increaseReward(value, s : nat * storage_farm) : return = 
+        let _check_if_admin : bool = if Tezos.sender = s.admin then true else (failwith(only_admin) : bool) in
         let _check_if_no_tez : bool = if Tezos.amount = 0tez then true else (failwith(amount_must_be_zero_tez) : bool) in
         let current_week : nat = get_current_week(s) in
         let delta : nat = value in
@@ -373,7 +374,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             in
             // acc[user]
             let week_points_for_user : (nat, nat) map = match Big_map.find_opt user acc with
-            | None -> (failwith("reward sent but missing points in map !!! ") : (nat, nat) map)
+            | None -> (failwith(rewards_sent_but_missing_points) : (nat, nat) map)
             | Some(wk_pts) -> wk_pts
             in
             let new_week_points : (nat, nat) map = Map.fold rem percs week_points_for_user in 
