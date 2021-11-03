@@ -22,8 +22,19 @@ initial_storage["smak_address"] = "KT1TwzD6zV3WeJ39ukuqxcfK2fJCnhvrdN1X"
 initial_storage["lp_token_address"] ="KT1XtQeSap9wvJGY1Lmek84NU6PK6cjzC9Qd"
 initial_storage["reserve_address"] = "tz1fABJ97CJMSP2DKrQx2HAFazh6GgahQ7ZK"
 
-only_admin = "Only admin"
-staking_amount_gt_0 = "The staking amount must be greater than zero"
+only_admin = "Only the contract admin can change the contract administrator or increase reward"
+unknown_lp_contract = "This farm works with a different LP token"
+unknown_smak_contract  = "Cannot connect to the SMAK contract"
+unknown_user = "You neither have any LP token to unstake nor any reward to claim"
+farm_empty_week = "Farm has no cumulated stake for one week" # TEST : if no one stakes 1st week
+amount_is_null = "The staking amount must be greater than zero"
+amount_must_be_zero_tez = "You must not send Tezos to the smart contract"
+time_too_early ="Please try again in few seconds" #Happens when you stake or unstake exactly at the end of the farm
+no_stakes  = "You did not stake any token yet"
+unstake_more_than_stake  = "You cannot unstake more than your staking"
+user_no_points = "You do not have or no longer have any rewards"
+user_no_stakes_week = "You do not have any LP token to unstake"
+rewards_sent_but_missing_points = "You do not have any reward to claim"
 
 class FarmsContractTest(TestCase):
     @classmethod
@@ -350,7 +361,7 @@ class FarmsContractTest(TestCase):
         init_storage["creation_time"] = 0
         locked_amount = 0
 
-        with self.raisesMichelsonError(staking_amount_gt_0):
+        with self.raisesMichelsonError(amount_is_nullamount_lower_than_zeroamount_lower_than_zero):
             res = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=alice, now=int(604800 + 604800/2))
 
 
@@ -444,7 +455,7 @@ class FarmsContractTest(TestCase):
             5: 250 * 604800
         }
 
-        with self.raisesMichelsonError("Trying to unstake more than staked"):
+        with self.raisesMichelsonError(unstake_more_than_stake):
             self.farms.unstake(501).interpret(sender=alice, storage=init_storage, now=int(604800 + 604800 / 2))
 
     def test_unstaking_unstake_with_0_staked_should_fail(self):
@@ -487,7 +498,7 @@ class FarmsContractTest(TestCase):
             4: 250 * 604800,
             5: 250 * 604800
         }
-        with self.raisesMichelsonError("User did not stake any token"):
+        with self.raisesMichelsonError(no_stakes):
             self.farms.unstake(10).interpret(storage=init_storage, sender=bob)
 
     def test_unstaking_unstake_with_two_users_should_work(self):

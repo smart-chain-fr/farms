@@ -8,11 +8,13 @@
                       (pair (map %reward_at_week nat nat) (address %smak_address))))
           (pair (pair (nat %total_reward) (big_map %user_points address (map nat nat)))
                 (pair (big_map %user_stakes address nat) (nat %weeks)))) ;
-  code { PUSH string "Unknown LP contract" ;
-         PUSH string "Unknown user" ;
-         PUSH string "You must not send tez to the smart contract" ;
-         PUSH string "Try again later" ;
-         PUSH string "User did not have any point" ;
+  code { PUSH string
+              "Only the contract admin can change the contract administrator or increase reward" ;
+         PUSH string "This farm works with a different LP token" ;
+         PUSH string "You neither have any LP token to unstake nor any reward to claim" ;
+         PUSH string "You must not send Tezos to the smart contract" ;
+         PUSH string "Please try again in few seconds" ;
+         PUSH string "You do not have or no longer have any rewards" ;
          NIL operation ;
          PUSH nat 604800 ;
          DUP ;
@@ -92,7 +94,7 @@
                       PAIR ;
                       PAIR ;
                       LEFT nat } } } ;
-         DIG 10 ;
+         DIG 11 ;
          UNPAIR ;
          IF_LEFT
            { DIG 7 ;
@@ -105,7 +107,8 @@
                  IF_LEFT
                    { DIG 2 ;
                      DIG 5 ;
-                     DROP 3 ;
+                     DIG 8 ;
+                     DROP 4 ;
                      PUSH mutez 0 ;
                      AMOUNT ;
                      COMPARE ;
@@ -164,7 +167,9 @@
                              CAR ;
                              DUP 3 ;
                              GET ;
-                             IF_NONE { PUSH string "Farm has no points for this week" ; FAILWITH } {} ;
+                             IF_NONE
+                               { PUSH string "Farm has no cumulated stake for one week" ; FAILWITH }
+                               {} ;
                              PUSH nat 0 ;
                              DUP 3 ;
                              COMPARE ;
@@ -255,7 +260,7 @@
                                                  (pair %getTotalSupply (unit %request) (contract %callback nat))))
                                          (or (pair %mintOrBurn (int %quantity) (address %target))
                                              (pair %transfer (address %from) (pair (address %to) (nat %value))))) ;
-                                   IF_NONE { PUSH string "Unknown SMAK contract" ; FAILWITH } {} ;
+                                   IF_NONE { PUSH string "Cannot connect to the SMAK contract" ; FAILWITH } {} ;
                                    PUSH mutez 0 ;
                                    DIG 4 ;
                                    CAR ;
@@ -291,9 +296,7 @@
                             DUP ;
                             DUG 2 ;
                             GET ;
-                            IF_NONE
-                              { PUSH string "reward sent but missing points in map !!! " ; FAILWITH }
-                              {} ;
+                            IF_NONE { PUSH string "You do not have any reward to claim" ; FAILWITH } {} ;
                             DIG 3 ;
                             CDR ;
                             ITER { CAR ;
@@ -327,6 +330,17 @@
                      PAIR }
                    { DIG 7 ;
                      DROP ;
+                     SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     CAR ;
+                     CAR ;
+                     CAR ;
+                     CAR ;
+                     SENDER ;
+                     COMPARE ;
+                     EQ ;
+                     IF { DIG 7 ; DROP } { DIG 7 ; FAILWITH } ;
                      PUSH mutez 0 ;
                      AMOUNT ;
                      COMPARE ;
@@ -597,7 +611,7 @@
                      SENDER ;
                      COMPARE ;
                      EQ ;
-                     IF {} { DROP ; PUSH string "Only admin" ; FAILWITH } ;
+                     IF { DIG 3 ; DROP } { DROP ; DIG 2 ; FAILWITH } ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
@@ -622,7 +636,8 @@
                      SWAP ;
                      PAIR }
                    { DIG 5 ;
-                     DROP ;
+                     DIG 9 ;
+                     DROP 2 ;
                      PUSH mutez 0 ;
                      AMOUNT ;
                      COMPARE ;
@@ -925,7 +940,8 @@
                      PAIR } } }
            { DIG 2 ;
              DIG 6 ;
-             DROP 2 ;
+             DIG 12 ;
+             DROP 3 ;
              PUSH mutez 0 ;
              AMOUNT ;
              COMPARE ;
@@ -940,7 +956,7 @@
              SENDER ;
              GET ;
              IF_NONE
-               { PUSH string "User did not stake any token" ; FAILWITH }
+               { PUSH string "You did not stake any token yet" ; FAILWITH }
                { SWAP ;
                  DUP ;
                  DUG 2 ;
@@ -960,7 +976,7 @@
                       SOME ;
                       SENDER ;
                       UPDATE }
-                    { DROP ; PUSH string "Trying to unstake more than staked" ; FAILWITH } } ;
+                    { DROP ; PUSH string "You cannot unstake more than your staking" ; FAILWITH } } ;
              DUP 3 ;
              DIG 5 ;
              SWAP ;
@@ -1086,7 +1102,7 @@
                            { SWAP ;
                              DIG 4 ;
                              DROP 3 ;
-                             PUSH string "User does not have a stake for this week" ;
+                             PUSH string "You do not have any LP token to unstake" ;
                              FAILWITH }
                            { SWAP ; DIG 5 ; DIG 2 ; SUB ; ABS ; SOME ; DIG 2 ; UPDATE } ;
                          SOME ;
