@@ -648,12 +648,8 @@ class FarmsContractTest(TestCase):
 
         self.assertEqual(admin, res.storage["admin"])
         transfer_txs = res.operations
-        #print("ClaimAll : resulting operations")
-        print(transfer_txs)
-        print('**********')
-        print(transfer_txs[1]["parameters"]["value"]['args'])
-        print('************')
-        print(transfer_txs[1]["parameters"]["value"]['args'][2]['int'])
+        # print("ClaimAll : resulting operations")
+        # print(transfer_txs)
 
         self.assertEqual(2, len(transfer_txs))
 
