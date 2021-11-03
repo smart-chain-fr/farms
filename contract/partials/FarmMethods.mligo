@@ -239,7 +239,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             | None -> (failwith unknown_smak_contract:  smak_transfer contract)
         in
         // create a transfer transaction (for LP token contract)
-        let transfer_param : smak_transfer = { from = s.reserve_address; to = user_address; value = token_amount } in 
+        let transfer_param : smak_transfer = s.reserve_address,  (user_address , token_amount ) in 
         let op : operation = Tezos.transaction (transfer_param) 0mutez transfer_smak in
         op
 

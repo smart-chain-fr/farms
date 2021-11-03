@@ -21,11 +21,7 @@ let noOperations : operation list = []
 type return = operation list * storage_farm
 
 let week_in_seconds : nat  = 604800n
-type smak_transfer = {
-    from: address;
-    to: address;
-    value: nat
-}
+type smak_transfer = address * (address * nat)
 type stake_param = nat
 type reward_param = nat
 
