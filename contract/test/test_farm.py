@@ -175,6 +175,19 @@ class FarmsContractTest(TestCase):
         self.assertEqual(reward_week_2, 14671814)
         self.assertEqual(reward_week_3, 11003861)
 
+    def test_increaseReward_if_not_admin_should_fail(self):
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 10_000_000
+        init_storage["weeks"] = 3
+        init_storage["rate"] = 7500
+        init_storage["reward_at_week"] = {
+            1: 4324324,
+            2: 3243243,
+            3: 2432432,
+        }
+        with self.raisesMichelsonError(only_admin):
+            res = self.farms.increaseReward(20_000_000).interpret(storage=init_storage, sender=fox, now=int(604800 + 604800/2))
+
     ######################
     # Tests for Staking #
     ######################
@@ -361,7 +374,7 @@ class FarmsContractTest(TestCase):
         init_storage["creation_time"] = 0
         locked_amount = 0
 
-        with self.raisesMichelsonError(amount_is_nullamount_lower_than_zeroamount_lower_than_zero):
+        with self.raisesMichelsonError(amount_is_null):
             res = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=alice, now=int(604800 + 604800/2))
 
 
