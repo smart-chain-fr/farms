@@ -246,32 +246,18 @@
                                    CDR ;
                                    CDR ;
                                    CDR ;
-                                   CONTRACT
-                                     (or (or (or (pair %approve (address %spender) (nat %value))
-                                                 (pair %getAllowance
-                                                    (pair %request (address %owner) (address %spender))
-                                                    (contract %callback nat)))
-                                             (or (pair %getBalance (address %owner) (contract %callback nat))
-                                                 (pair %getTotalSupply (unit %request) (contract %callback nat))))
-                                         (or (pair %mintOrBurn (int %quantity) (address %target))
-                                             (pair %transfer (address %from) (pair (address %to) (nat %value))))) ;
+                                   CONTRACT %transfer (pair address (pair address nat)) ;
                                    IF_NONE { PUSH string "Unknown SMAK contract" ; FAILWITH } {} ;
                                    PUSH mutez 0 ;
-                                   DIG 4 ;
+                                   DIG 2 ;
+                                   DIG 3 ;
+                                   PAIR ;
+                                   DIG 3 ;
                                    CAR ;
                                    CDR ;
                                    CAR ;
                                    CDR ;
-                                   DIG 4 ;
-                                   DIG 4 ;
-                                   SWAP ;
                                    PAIR ;
-                                   SWAP ;
-                                   PAIR ;
-                                   RIGHT (pair int address) ;
-                                   RIGHT
-                                     (or (or (pair address nat) (pair (pair address address) (contract nat)))
-                                         (or (pair address (contract nat)) (pair unit (contract nat)))) ;
                                    TRANSFER_TOKENS ;
                                    CONS } } ;
                      DIG 2 ;
