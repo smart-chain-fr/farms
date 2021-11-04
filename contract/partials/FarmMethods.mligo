@@ -30,6 +30,11 @@ let stakeSome(lp_amount, s : nat * storage_farm) : return =
         if (lp_amount > 0n) 
         then true 
         else (failwith(amount_is_null) : bool)
+    in 
+    let _check_current_week : bool = 
+        if (Tezos.now < s.creation_time + int(s.weeks * week_in_seconds))
+        then true
+        else (failwith(no_week_left) : bool)
     in
     let lp_contract_opt : parameter contract option = Tezos.get_contract_opt(s.lp_token_address) in
     let lp_contract : parameter contract = match lp_contract_opt with
@@ -135,7 +140,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
     let existing_bal_opt : nat option = Big_map.find_opt Tezos.sender s.user_stakes in
     let new_user_stakes : (address, nat) big_map = match existing_bal_opt with
         | None -> (failwith(no_stakes): (address, nat) big_map)
-        | Some(v) -> if (v > lp_amount) 
+        | Some(v) -> if (v >= lp_amount) 
         then Big_map.update Tezos.sender (Some(abs(v - lp_amount))) s.user_stakes
         else (failwith(unstake_more_than_stake): (address, nat) big_map)
     in
@@ -289,16 +294,28 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
         let _check_if_admin : bool = if Tezos.sender = s.admin then true else (failwith(only_admin) : bool) in
         let _check_if_no_tez : bool = if Tezos.amount = 0tez then true else (failwith(amount_must_be_zero_tez) : bool) in
         let current_week : nat = get_current_week(s) in
+        let _check_current_week : bool = 
+        if (Tezos.now < s.creation_time + int(s.weeks * week_in_seconds))
+        then true
+        else (failwith(no_week_left) : bool)
+        in
         let delta : nat = value in
         //sum (current_week , s.weeks) reward_at_week
         let weeks_set : nat set = get_weeks_indices_as_set(current_week, s.weeks) in
+        let initialized_creation_time: timestamp =
+        if (delta = 0n)
+        then Tezos.now 
+        else s.creation_time
+        in
         let folded (acc, elt: nat * (nat * nat) ) : nat = if Set.mem elt.0 weeks_set then acc  else acc + elt.1 in
         let sum_R : nat = Map.fold folded s.reward_at_week 0n in
         let new_r_total : nat = delta + abs(s.total_reward - sum_R) in
         let new_i_max : nat = abs(s.weeks - current_week + 1n) in
-        let new_storage : storage_farm = { s with weeks = new_i_max; total_reward = new_r_total } in
+        let new_storage : storage_farm = { s with weeks = new_i_max; total_reward = new_r_total; creation_time = initialized_creation_time } in
         let new_reward_storage : storage_farm = computeReward(abs(current_week - 1n), new_storage) in
-        (noOperations, new_reward_storage)
+        let final_reward : nat = s.total_reward + value in
+        let final_weeks : nat = s.weeks in
+        (noOperations, { new_reward_storage with total_reward = final_reward; weeks = final_weeks })
 
 
 
