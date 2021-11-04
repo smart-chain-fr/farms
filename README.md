@@ -71,16 +71,15 @@ _cf._ https://pypi.org/project/pytezos/
 
 Run `ligo compile contract contract/main/main.mligo > contract/test/Farm.tz`
 OR
-docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/main.mligo -e main > contract/test/Farm.tz
+`docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/main.mligo -e main > contract/test/Farm.tz`
 
 #### II.2) Compilation du smart contract Farms
 
 Run `ligo compile contract contract/main/farms.mligo > contract/test/Farms.tz`
 OR
-docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/farms.mligo -e main > contract/test/Farms.tz
+`docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/farms.mligo -e main > contract/test/Farms.tz`
 
-
-#### II.2) Tests
+#### II.3) Tests
 
 In the contract/test/ repository, run `pytest [-k "filename"] [-s]`
 
@@ -88,6 +87,18 @@ In the contract/test/ repository, run `pytest [-k "filename"] [-s]`
 ## III. Deployment
 
 #### III.1) Initialisation
+
+* Adapt your .env variables
+PK=[private key]
+ADMIN=[admin address]
+SMAK=[SMAK token contract address]
+RPC=[network]
+FARMSDB=[Farms contract address]
+LP=[LP token address]
+INFOFARM=[name of the LP pair]
+RATE=[decreasing rate x10000]
+REWARDS=[number of SMAK tokens as rewards for the entire farm lifetime]
+WEEKS=[length of the farm lifetime]
 
 * Run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/main.mligo --michelson-format json > deploy/ressources/Farm.json`
 
@@ -97,7 +108,7 @@ In the contract/test/ repository, run `pytest [-k "filename"] [-s]`
 * Install dependencies
 Run `npm install`
 
-#### III.2) [Only once] Originate the smart-contract FARMS
+#### III.2) [Only once] Originate the smart-contract Farms
 
 From the root, run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/farms.mligo --michelson-format json > deploy/ressources/Farms.json`
 
