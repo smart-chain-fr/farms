@@ -88,7 +88,18 @@ In the contract/test/ repository, run `pytest [-k "filename"] [-s]`
 
 #### III.1) Initialisation
 
-* Adapt your .env variables
+* Run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/main.mligo --michelson-format json > deploy/ressources/Farm.json`
+
+* Go to the /deploy folder
+`cd deploy`
+
+* Install dependencies
+Run `npm install`
+
+#### III.2) Update environment variables
+
+Adapt your .env file in the /deploy folder:
+
 PK=[private key]
 ADMIN=[admin address]
 SMAK=[SMAK token contract address]
@@ -100,22 +111,14 @@ RATE=[decreasing rate x10000]
 REWARDS=[number of SMAK tokens as rewards for the entire farm lifetime]
 WEEKS=[length of the farm lifetime]
 
-* Run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/main.mligo --michelson-format json > deploy/ressources/Farm.json`
-
-* Go to the /deploy folder
-`cd deploy`
-
-* Install dependencies
-Run `npm install`
-
-#### III.2) [Only once] Originate the smart-contract Farms
+#### III.3) [Only once] Originate the smart-contract Farms
 
 From the root, run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/farms.mligo --michelson-format json > deploy/ressources/Farms.json`
 
 This contract reference all farm pools and it is generated only once at the start of the project.
 In the folder /deploy, run `tsc deployFarmDb.ts --resolveJsonModule -esModuleInterop` then `node deployFarmDb.js`.
 
-#### III.3) Originate a farm pool
+#### III.4) Originate a farm pool
 
 In the folder /deploy, run `chmod +x deploy.sh && ./deploy.sh` or `bash deploy.sh`
 
@@ -130,6 +133,6 @@ It will:
 
 The front-end will call the entry point approve on the LP token contract in order to allow the farm contract to use LP tokens owned by the user.
 
-###### Staking mechanism schema
+###### Staking mechanism schema (to be updated...)
 ![Staking schema](https://i.ibb.co/PQmf81L/Farm-staking-1-light.png)
 ![Staking schema - night mode](https://i.ibb.co/QbXzjWM/Farm-staking-1.png)
