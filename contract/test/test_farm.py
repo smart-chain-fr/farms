@@ -4,7 +4,7 @@ from copy import deepcopy
 from pytezos import ContractInterface, MichelsonRuntimeError, pytezos
 from pytezos.michelson.types.big_map import big_map_diff_to_lazy_diff
 import time
-
+import json 
 alice = 'tz1hNVs94TTjZh6BZ1PM5HL83A7aiZXkQ8ur'
 admin = 'tz1fABJ97CJMSP2DKrQx2HAFazh6GgahQ7ZK'
 bob = 'tz1c6PPijJnZYjKiSQND4pMtGMg6csGeAiiF'
@@ -12,7 +12,6 @@ oscar = 'tz1Phy92c2n817D17dUGzxNgw1qCkNSTWZY2'
 fox = 'tz1XH5UyhRCUmCdUUbqD4tZaaqRTgGaFXt7q'
 
 compiled_contract_path = "Farm.tz"
-# Allows to load the smart contract with Pytest to simulate it with a false storage
 initial_storage = ContractInterface.from_file(compiled_contract_path).storage.dummy()
 initial_storage["admin"] = admin
 initial_storage["total_reward"] = 10000000
@@ -35,6 +34,7 @@ unstake_more_than_stake  = "You cannot unstake more than your staking"
 user_no_points = "You do not have or no longer have any rewards"
 user_no_stakes_week = "You do not have any LP token to unstake"
 rewards_sent_but_missing_points = "You do not have any reward to claim"
+no_week_left = "There are no more weeks left for staking"
 
 class FarmsContractTest(TestCase):
     @classmethod
@@ -141,8 +141,8 @@ class FarmsContractTest(TestCase):
         }
         res = self.farms.increaseReward(50_000_000).interpret(storage=init_storage, sender=admin, now=int(604800 * 2 + 604800/2))
 
-        self.assertEqual(res.storage["total_reward"], 70000000 - 6555697 - 4916773)
-        self.assertEqual(res.storage["weeks"], 3)
+        self.assertEqual(res.storage["total_reward"], 70000000)
+        self.assertEqual(res.storage["weeks"], 5)
         reward_week_1 = int(res.storage["reward_at_week"][1])
         reward_week_2 = int(res.storage["reward_at_week"][2])
         reward_week_3 = int(res.storage["reward_at_week"][3])
@@ -166,8 +166,8 @@ class FarmsContractTest(TestCase):
         }
         res = self.farms.increaseReward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(604800 + 604800/2))
 
-        self.assertEqual(res.storage["total_reward"], 30000000 - 4324324)
-        self.assertEqual(res.storage["weeks"], 2)
+        self.assertEqual(res.storage["total_reward"], 30000000)
+        self.assertEqual(res.storage["weeks"], 3)
         reward_week_1 = int(res.storage["reward_at_week"][1])
         reward_week_2 = int(res.storage["reward_at_week"][2])
         reward_week_3 = int(res.storage["reward_at_week"][3])
@@ -187,6 +187,20 @@ class FarmsContractTest(TestCase):
         }
         with self.raisesMichelsonError(only_admin):
             res = self.farms.increaseReward(20_000_000).interpret(storage=init_storage, sender=fox, now=int(604800 + 604800/2))
+
+    def test_increaseReward_after_end_of_pool_should_fail(self):
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 10_000_000
+        init_storage["weeks"] = 3
+        init_storage["rate"] = 7500
+        init_storage["reward_at_week"] = {
+            1: 4324324,
+            2: 3243243,
+            3: 2432432,
+        }
+        with self.raisesMichelsonError(no_week_left):
+            res = self.farms.increaseReward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(604800 * 20 + 604800/2))
+
 
     ######################
     # Tests for Staking #
@@ -376,8 +390,57 @@ class FarmsContractTest(TestCase):
 
         with self.raisesMichelsonError(amount_is_null):
             res = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=alice, now=int(604800 + 604800/2))
+    
+    def test_staking_user_try_to_stake_after_end_of_pool(self):
+        init_storage = deepcopy(initial_storage)
+        init_storage["user_stakes"] = {}
+        init_storage["user_points"] = {}
+        init_storage["farm_points"] = {}
+        init_storage["creation_time"] = 0
+        locked_amount = 10
 
+        with self.raisesMichelsonError(no_week_left):
+            res = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=alice, now=int(5 * 604800 + 604800/2))
 
+    def test_staking_after_increasing_reward_should_work(self):
+            init_storage = deepcopy(initial_storage)
+            init_storage["total_reward"] = 10_000_000
+            init_storage["weeks"] = 3
+            init_storage["rate"] = 7500
+            init_storage["reward_at_week"] = {
+                1: 4324324,
+                2: 3243243,
+                3: 2432432,
+            }
+            locked_amount = 10000
+            res = self.farms.increaseReward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(604800 + 604800/2))
+            res2 = self.farms.stake(locked_amount).interpret(storage=res.storage, sender=alice, now=int(2 * 604800 + 604800/2))
+
+            self.assertEqual(res.storage["total_reward"], 30000000)
+            self.assertEqual(res.storage["weeks"], 3)
+            
+            self.assertEqual(admin, res.storage["admin"])
+            transfer_tx = res2.operations[0]
+            transfer_tx_params = transfer_tx["parameters"]["value"]['args'][0]['args'][0]['args']
+            self.assertEqual(alice, transfer_tx_params[0]['string'])
+
+            self.assertEqual("KT1BEqzn5Wx8uJrZNvuS9DVHmLvG9td3fDLi", transfer_tx_params[1]['string'])
+            self.assertEqual(locked_amount, int(transfer_tx_params[2]['int']))
+
+            user_stakes = res2.storage["user_stakes"]
+            self.assertEqual(locked_amount, user_stakes[alice])
+            self.assertEqual(1, len(user_stakes.keys()))
+
+            farm_points = res2.storage["farm_points"]
+            
+            self.assertEqual(604800/2 * 10000, farm_points[3])
+
+            user_points = res2.storage["user_points"]
+            user_points_keys = user_points.keys()
+            self.assertEqual(1, len(user_points_keys))
+            self.assertEqual(alice, list(user_points_keys)[0])
+            
+            self.assertEqual(604800/2 * 10000, user_points[alice][3])
 
     ######################
     # Tests for Unstaking #
@@ -426,6 +489,50 @@ class FarmsContractTest(TestCase):
         self.assertDictEqual(res.storage["user_points"], final_userpoint)
         self.assertDictEqual(res.storage["farm_points"], final_farmpoint)
         self.assertEqual(res.storage["user_stakes"][alice], 250)
+
+    def test_unstaking_total_stake_should_work(self):
+        init_storage = deepcopy(initial_storage)
+        init_storage["user_stakes"] = {
+            alice: 500
+        }
+        init_storage["user_points"] = {
+            alice: {
+                1: int(500 * 604800/2),
+                2: 500 * 604800,
+                3: 500 * 604800,
+                4: 500 * 604800,
+                5: 500 * 604800
+            }
+        }
+        init_storage["farm_points"] = {
+            1: int(500 * 604800 / 2),
+            2: 500 * 604800,
+            3: 500 * 604800,
+            4: 500 * 604800,
+            5: 500 * 604800
+        }
+
+        final_userpoint = {
+            alice: {
+                1: int(500 * 604800/2),
+                2: int(500 * 604800/2),
+                3: 0,
+                4: 0,
+                5: 0
+            }
+        }
+
+        final_farmpoint = {
+            1: int(500 * 604800 / 2),
+            2: int(500 * 604800 / 2),
+            3: 0,
+            4: 0,
+            5: 0
+        }
+        res = self.farms.unstake(500).interpret(sender=alice, storage=init_storage, now=int(604800 + 604800/2))
+        self.assertDictEqual(res.storage["user_points"], final_userpoint)
+        self.assertDictEqual(res.storage["farm_points"], final_farmpoint)
+        self.assertEqual(res.storage["user_stakes"][alice], 0)
 
     def test_unstaking_unstake_more_than_staked_should_fail(self):
 
@@ -607,15 +714,10 @@ class FarmsContractTest(TestCase):
             5: 500 * 604800
         }
 
-        ######################################################
-        # Alice claims after one week of staking (works)     #
-        ######################################################
         res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(604800 + 604800/2))
 
         self.assertEqual(admin, res.storage["admin"])
         transfer_txs = res.operations
-        #print("ClaimAll : resulting operations")
-        #print(transfer_txs)
 
         self.assertEqual(1, len(transfer_txs))
         self.assertEqual('transaction', transfer_txs[0]["kind"])
@@ -665,16 +767,11 @@ class FarmsContractTest(TestCase):
             5: 500 * 604800
         }
 
-        ######################################################
-        # Alice claims after one week of staking (works)     #
-        ######################################################
         res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(604800 * 2 + 604800/2))
 
         self.assertEqual(admin, res.storage["admin"])
         transfer_txs = res.operations
-        # print("ClaimAll : resulting operations")
-        # print(transfer_txs)
-
+        
         self.assertEqual(2, len(transfer_txs))
 
         self.assertEqual('transaction', transfer_txs[1]["kind"])
@@ -737,12 +834,6 @@ class FarmsContractTest(TestCase):
             4: (500 + 100) * 604800,
             5: (500 + 100) * 604800
         }
-
-
-        # Alice claims after one week of staking (works)
-
-        #print("Claim : result")
-        #print(init_storage)
 
         res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(604800 * 3 + 604800 / 2))
 
@@ -813,8 +904,6 @@ class FarmsContractTest(TestCase):
             5: (500 + 500) * 604800
         }
 
-        
-        # Alice claims after 3 week and a half of staking (works)
         res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(604800 * 3 + 604800 / 2))
 
 
@@ -858,6 +947,4 @@ class FarmsContractTest(TestCase):
             5: 0,
         }
 
-
-        # Alice claims after 6 weeks and a half of staking (works)
         res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(604800 * 6 + 604800 / 2))

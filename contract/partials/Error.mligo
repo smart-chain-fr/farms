@@ -11,3 +11,4 @@ let unstake_more_than_stake : string = "You cannot unstake more than your stakin
 let user_no_points : string = "You do not have or no longer have any rewards"
 let user_no_stakes_week : string = "You do not have any LP token to unstake"
 let rewards_sent_but_missing_points : string = "You do not have any reward to claim"
+let no_week_left : string = "There are no more weeks left for staking"
