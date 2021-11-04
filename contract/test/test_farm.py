@@ -772,3 +772,92 @@ class FarmsContractTest(TestCase):
         self.assertEqual(alice_points[3], 0)
         self.assertEqual(alice_points[4], 500 * 604800)
         self.assertEqual(alice_points[5], 500 * 604800)
+
+    def test_claimall_with_2_stakers_not_staking_middle_week_should_work(self):
+
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 20_000_000
+        init_storage["reward_at_week"] = {
+            1: 6555697,
+            2: 4916773,
+            3: 3687580,
+            4: 2765685,
+            5: 2074263
+        }
+        init_storage["creation_time"] = 0
+        init_storage["user_stakes"] = {
+            alice: 500,
+            bob: 500
+        }
+        init_storage["user_points"] = {
+            alice: {
+                1: 500 * 604800,
+                2: 0,
+                3: int(500 * 604800 * (1 - 2/3)),
+                4: 500 * 604800,
+                5: 500 * 604800
+            },
+            bob : {
+                1: 500 * 604800,
+                2: 0,
+                3: int(100 * 604800 * (1 - 1/2)),
+                4: 500 * 604800,
+                5: 500 * 604800
+            }
+        }
+        init_storage["farm_points"] = {
+            1: (500 + 500) * 604800,
+            2: 0,
+            3: int(500 * 604800 * (1 - 2/3) + 500 * 604800 * (1 - 1/2)),
+            4: (500 + 500) * 604800,
+            5: (500 + 500) * 604800
+        }
+
+        
+        # Alice claims after 3 week and a half of staking (works)
+        res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(604800 * 3 + 604800 / 2))
+
+
+    def test_claimall_with_2_stakers_not_staking_last_week_should_work(self):
+
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 20_000_000
+        init_storage["reward_at_week"] = {
+            1: 6555697,
+            2: 4916773,
+            3: 3687580,
+            4: 2765685,
+            5: 2074263
+        }
+        init_storage["creation_time"] = 0
+        init_storage["user_stakes"] = {
+            alice: 500,
+            bob: 500
+        }
+        init_storage["user_points"] = {
+            alice: {
+                1: 500 * 604800,
+                2: 500 * 604800,
+                3: 500 * 604800,
+                4: 500 * 604800,
+                5: 0
+            },
+            bob : {
+                1: 500 * 604800,
+                2: 500 * 604800,
+                3: 500 * 604800,
+                4: 500 * 604800,
+                5: 0
+            }
+        }
+        init_storage["farm_points"] = {
+            1: (500 + 500) * 604800,
+            2: (500 + 500) * 604800,
+            3: (500 + 500) * 604800,
+            4: (500 + 500) * 604800,
+            5: 0,
+        }
+
+
+        # Alice claims after 6 weeks and a half of staking (works)
+        res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(604800 * 6 + 604800 / 2))
