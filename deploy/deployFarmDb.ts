@@ -13,6 +13,7 @@ Tezos.setProvider({ signer: signer })
 const admin = process.env.SAND_ADMIN || "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb";
 let all_farms = new Array();
 let all_farms_data = new MichelsonMap();
+let inverse_farms = new MichelsonMap();
 
 async function orig() {
 
@@ -20,6 +21,7 @@ async function orig() {
         'admin': admin,
         'all_farms': all_farms,
         'all_farms_data': all_farms_data,
+        'inverse_farms': inverse_farms
     }
     const originated = await Tezos.contract.originate({
         code: farms,
