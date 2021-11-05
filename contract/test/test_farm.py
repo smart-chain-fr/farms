@@ -948,3 +948,101 @@ class FarmsContractTest(TestCase):
         }
 
         res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(604800 * 6 + 604800 / 2))
+
+    def test_claimall_should_work_after_pool_end(self):
+
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 20_000_000
+        init_storage["reward_at_week"] = {
+            1: 6555697,
+            2: 4916773,
+            3: 3687580,
+            4: 2765685,
+            5: 2074263
+        }
+        init_storage["creation_time"] = 0
+        init_storage["user_stakes"] = {
+            alice: 500
+        }
+        init_storage["user_points"] = {
+            alice: {
+                1: int(500 * 604800 / 2),
+                2: 500 * 604800,
+                3: 500 * 604800,
+                4: 500 * 604800,
+                5: 500 * 604800
+            }
+        }
+        init_storage["farm_points"] = {
+            1: int(500 * 604800 / 2),
+            2: 500 * 604800,
+            3: 500 * 604800,
+            4: 500 * 604800,
+            5: 500 * 604800
+        }
+
+        res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=60480000)
+
+        self.assertEqual(admin, res.storage["admin"])
+        transfer_txs = res.operations
+
+        self.assertEqual(5, len(transfer_txs))
+
+        for tx, week in zip(transfer_txs, list(init_storage["reward_at_week"].keys())[::-1]):
+            self.assertEqual('transaction', tx["kind"])
+            transfer_tx_params = tx["parameters"]["value"]['args']
+            self.assertEqual(initial_storage["reserve_address"], transfer_tx_params[0]['string'])
+            self.assertEqual(alice, transfer_tx_params[1]['string'])
+            self.assertEqual(str(init_storage["reward_at_week"][week]), transfer_tx_params[2]['int'])
+
+        alice_points = res.storage["user_points"][alice]
+        self.assertEqual(alice_points[1], 0)
+        self.assertEqual(alice_points[2], 0)
+        self.assertEqual(alice_points[3], 0)
+        self.assertEqual(alice_points[4], 0)
+        self.assertEqual(alice_points[5], 0)
+
+
+    def test_unstaking_unstake_should_work_after_pool_end(self):
+        init_storage = deepcopy(initial_storage)
+        init_storage["user_stakes"] = {
+            alice: 500
+        }
+        init_storage["user_points"] = {
+            alice: {
+                1: int(500 * 604800/2),
+                2: 500 * 604800,
+                3: 500 * 604800,
+                4: 500 * 604800,
+                5: 500 * 604800
+            }
+        }
+        init_storage["farm_points"] = {
+            1: int(500 * 604800 / 2),
+            2: 500 * 604800,
+            3: 500 * 604800,
+            4: 500 * 604800,
+            5: 500 * 604800
+        }
+
+        final_userpoint = {
+            alice: {
+                1: int(500 * 604800/2),
+                2: 500 * 604800,
+                3: 500 * 604800,
+                4: 500 * 604800,
+                5: 500 * 604800
+            }
+        }
+
+        final_farmpoint = {
+            1: int(500 * 604800 / 2),
+            2: 500 * 604800,
+            3: 500 * 604800,
+            4: 500 * 604800,
+            5: 500 * 604800
+        }
+        res = self.farms.unstake(250).interpret(sender=alice, storage=init_storage, now=604800000)
+        self.assertDictEqual(res.storage["user_points"], final_userpoint)
+        self.assertDictEqual(res.storage["farm_points"], final_farmpoint)
+        self.assertEqual(res.storage["user_stakes"][alice], 250)
