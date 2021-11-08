@@ -247,6 +247,19 @@ class FarmsContractTest(TestCase):
         self.assertEqual(sec_week * locked_amount, user_points[bob][4])
         self.assertEqual(sec_week * locked_amount, user_points[bob][5])
 
+    def test_stake_with_XTZ_should_fail(self):
+        init_storage = deepcopy(initial_storage)
+        init_storage["user_stakes"] = {}
+        init_storage["user_points"] = {}
+        init_storage["farm_points"] = {}
+        init_storage["creation_time"] = 0
+        staking_time = int(sec_week + sec_week/2)
+        locked_amount = 20
+
+        with self.raisesMichelsonError(amount_must_be_zero_tez):
+            self.farms.stake(locked_amount).interpret(storage=init_storage, sender=bob, now=staking_time, amount=1)
+
+
     def test_stake_multiple_times_should_work(self):
         init_storage = deepcopy(initial_storage)
         init_storage["user_stakes"] = {}
