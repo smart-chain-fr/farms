@@ -5,12 +5,12 @@ import * as dotenv from 'dotenv'
 
 dotenv.config(({path:__dirname+'/.env'}))
 const rpc = process.env.RPC || "http://127.0.0.1:20000/"
-const pk: string = process.env.SAND_PK || "edsk3QoqBuvdamxouPhin7swCvkQNgq4jP5KZPbwWNnwdZpSpJiEbq";
+const pk: string = process.env.PK || "";
 const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
 Tezos.setProvider({ signer: signer })
 
-const admin = process.env.SAND_ADMIN || "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb";
+const admin = process.env.ADMIN || "";
 let all_farms = new Array();
 let all_farms_data = new MichelsonMap();
 let inverse_farms = new MichelsonMap();

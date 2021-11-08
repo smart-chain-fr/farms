@@ -71,16 +71,15 @@ _cf._ https://pypi.org/project/pytezos/
 
 Run `ligo compile contract contract/main/main.mligo > contract/test/Farm.tz`
 OR
-docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/main.mligo -e main > contract/test/Farm.tz
+`docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/main.mligo -e main > contract/test/Farm.tz`
 
 #### II.2) Compilation du smart contract Farms
 
 Run `ligo compile contract contract/main/farms.mligo > contract/test/Farms.tz`
 OR
-docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/farms.mligo -e main > contract/test/Farms.tz
+`docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/farms.mligo -e main > contract/test/Farms.tz`
 
-
-#### II.2) Tests
+#### II.3) Tests
 
 In the contract/test/ repository, run `pytest [-k "filename"] [-s]`
 
@@ -97,14 +96,29 @@ In the contract/test/ repository, run `pytest [-k "filename"] [-s]`
 * Install dependencies
 Run `npm install`
 
-#### III.2) [Only once] Originate the smart-contract FARMS
+#### III.2) Update environment variables
+
+Adapt your .env file in the /deploy folder:
+
+PK=[private key]
+ADMIN=[admin address]
+SMAK=[SMAK token contract address]
+RPC=[network]
+FARMSDB=[Farms contract address]
+LP=[LP token address]
+INFOFARM=[name of the LP pair]
+RATE=[decreasing rate x10000]
+REWARDS=[number of SMAK tokens as rewards for the entire farm lifetime]
+WEEKS=[length of the farm lifetime]
+
+#### III.3) [Only once] Originate the smart-contract Farms
 
 From the root, run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract contract/main/farms.mligo --michelson-format json > deploy/ressources/Farms.json`
 
 This contract reference all farm pools and it is generated only once at the start of the project.
 In the folder /deploy, run `tsc deployFarmDb.ts --resolveJsonModule -esModuleInterop` then `node deployFarmDb.js`.
 
-#### III.3) Originate a farm pool
+#### III.4) Originate a farm pool
 
 In the folder /deploy, run `chmod +x deploy.sh && ./deploy.sh` or `bash deploy.sh`
 
@@ -119,6 +133,6 @@ It will:
 
 The front-end will call the entry point approve on the LP token contract in order to allow the farm contract to use LP tokens owned by the user.
 
-###### Staking mechanism schema
-![Staking schema](https://i.ibb.co/PQmf81L/Farm-staking-1-light.png)
-![Staking schema - night mode](https://i.ibb.co/QbXzjWM/Farm-staking-1.png)
+###### Staking mechanism schema (to be updated...)
+![Staking schema](https://i.ibb.co/zP9Rxtg/Smartlink-Farm-light.png)
+![Staking schema - night mode](https://i.ibb.co/1XdhScd/Smartlink-Farm-dark.png)
