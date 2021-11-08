@@ -61,17 +61,21 @@ class FarmsContractTest(TestCase):
     # Tests for setAdmin #
     ######################
 
-    def test_setAdmin_admin_sets_new_admin_should_work(self):
+    def test_setAdmin_should_work(self):
         init_storage = deepcopy(initial_storage)
-        res = self.farms.setAdmin(bob).interpret(storage=init_storage, sender=admin)
+        res = self.farms.setAdmin(bob).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2))
         self.assertEqual(bob, res.storage["admin"])
         self.assertEqual([], res.operations)
 
     def test_setAdmin_user_sets_new_admin_should_fail(self):
         init_storage = deepcopy(initial_storage)
         with self.raisesMichelsonError(only_admin):
-            res = self.farms.setAdmin(bob).interpret(storage=init_storage, sender=alice, now=int(sec_week + sec_week/2))
+            self.farms.setAdmin(bob).interpret(storage=init_storage, sender=alice, now=int(sec_week + sec_week/2))
 
+    def test_setAdmin_sending_XTZ_should_fail(self):
+        init_storage = deepcopy(initial_storage)
+        with self.raisesMichelsonError(amount_must_be_zero_tez):
+            self.farms.setAdmin(bob).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2), amount=1)
 
     ############################
     # Test rewards computation #
@@ -1469,6 +1473,38 @@ class FarmsContractTest(TestCase):
         self.assertEqual(alice_points[3], 0)
         self.assertEqual(alice_points[4], 0)
         self.assertEqual(alice_points[5], 0)
+
+    def test_claimall_with_XTZ_should_fail(self):
+        init_storage = deepcopy(initial_storage)
+        init_storage["reward_at_week"] = {
+            1: 6555697,
+            2: 4916773,
+            3: 3687580,
+            4: 2765685,
+            5: 2074263
+        }
+        init_storage["user_stakes"] = {
+            alice: 500
+        }
+        init_storage["user_points"] = {
+            alice: {
+                1: int(500 * sec_week/2),
+                2: 500 * sec_week,
+                3: 500 * sec_week,
+                4: 500 * sec_week,
+                5: 500 * sec_week
+            }
+        }
+        init_storage["farm_points"] = {
+            1: int(500 * sec_week / 2),
+            2: 500 * sec_week,
+            3: 500 * sec_week,
+            4: 500 * sec_week,
+            5: 500 * sec_week
+        }
+
+        with self.raisesMichelsonError(amount_must_be_zero_tez):
+            self.farms.claimAll().interpret(storage=init_storage, sender=bob, now=sec_week * 12, amount=1)
 
 
     def test_claimall_two_times_after_unstake_and_staking_two_times_should_work(self):
