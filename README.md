@@ -134,5 +134,5 @@ It will:
 The front-end will call the entry point approve on the LP token contract in order to allow the farm contract to use LP tokens owned by the user.
 
 ###### Staking mechanism schema (to be updated...)
-![Staking schema](https://i.ibb.co/PQmf81L/Farm-staking-1-light.png)
-![Staking schema - night mode](https://i.ibb.co/QbXzjWM/Farm-staking-1.png)
+![Staking schema](https://i.ibb.co/zP9Rxtg/Smartlink-Farm-light.png)
+![Staking schema - night mode](https://i.ibb.co/1XdhScd/Smartlink-Farm-dark.png)
