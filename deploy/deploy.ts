@@ -13,6 +13,7 @@ Tezos.setProvider({ signer: signer })
 
 const farms = process.env.FARMSDB || ""
 const admin = process.env.ADMIN || "";
+const reserve = process.env.RESERVE || "";
 const creation_time = new Date();
 let farm_points = new MichelsonMap();
 const lp = process.env.LP || '';
@@ -37,7 +38,7 @@ async function orig() {
         'farm_points': farm_points,
         'lp_token_address': lp,
         'rate': rate,
-        'reserve_address': admin,
+        'reserve_address': reserve,
         'reward_at_week': reward_at_week,
         'smak_address': smak,
         'total_reward': rewards,
