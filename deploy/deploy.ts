@@ -16,14 +16,14 @@ const admin = process.env.SAND_ADMIN || "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb";
 const creation_time = new Date();
 let farm_points = new MichelsonMap();
 const lp = 'KT1J4keEr6okoYToyN47MpgE6pgiwfoDmf23';
-const infoFarm = 'test SMAK-XTZ';
-const rate = 7500;
+const infoFarm = 'Weth';
+const rate = 8900;
 let reward_at_week = new MichelsonMap();
 const smak = process.env.SMAK || lp;
-const rewards = 2500002;
+const rewards = 5000000;
 let user_points = new MichelsonMap();
 let user_stakes = new MichelsonMap();
-const weeks = 5;
+const weeks = 3;
 
 async function orig() {
 
