@@ -144,86 +144,6 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
         then Big_map.update Tezos.sender (Some(abs(v - lp_amount))) s.user_stakes
         else (failwith(unstake_more_than_stake): (address, nat) big_map)
     in
-    let current_week : nat = get_current_week(s) in
-    let endofweek_in_seconds : timestamp = s.creation_time + int(current_week * week_in_seconds) in
-    
-
-    //assert_some (Tezos.now - endofweek_in_seconds < 0)
-    let _check_negative : bool = 
-        if (Tezos.now - endofweek_in_seconds < 0) 
-        then true 
-        else (failwith(time_too_early) : bool)
-    in
-    let before_end_week : nat = abs(Tezos.now - endofweek_in_seconds) in 
-    let points_current_week : nat = before_end_week * lp_amount in
-    let points_next_weeks : nat = week_in_seconds * lp_amount in
-    
-    //user_points[user_address][current_week] += before_end_week * lp_amount
-    let user_weeks_opt : (nat, nat) map option = Big_map.find_opt Tezos.sender s.user_points in
-    let new_user_points : (address, (nat, nat) map ) big_map = match user_weeks_opt with
-    | None -> (failwith(user_no_points): (address, (nat, nat) map ) big_map)
-    | Some(m) -> 
-        let modified_current_week : (nat, nat) map = match (Map.find_opt current_week m) with
-        | None -> (failwith(user_no_points): (nat, nat) map)
-        | Some(wpts) -> (Map.update current_week (Some(abs(wpts - points_current_week))) m)
-        in
-        Big_map.update Tezos.sender (Some(modified_current_week)) s.user_points
-    in 
-    //farm_points[current_week] += before_end_week * lp_amount
-    let new_farm_points = match Map.find_opt current_week s.farm_points with
-    | None -> (failwith(user_no_points):  (nat, nat) map)
-    | Some(val_) -> Map.update current_week (Some(abs(val_ - points_current_week))) s.farm_points
-    in
-    //for (i = current_week + 1; i <= s.weeks; i++) 
-    //    user_points[user_address][i] += week_in_seconds * lp_amount
-    let future_weeks : nat list = get_weeks_indices(current_week + 1n, s.weeks) in
-    let update_user_points_func = fun (a, v, i, m : address * nat * nat * (address, (nat, nat) map ) big_map) -> 
-        match Big_map.find_opt a m with
-        | None -> (failwith(unknown_user):  (address, (nat , nat) map)big_map)
-        | Some(weeks_map) ->
-            let new_weeks_map : (nat, nat) map = match Map.find_opt i weeks_map with
-            | None -> (failwith(user_no_stakes_week): (nat , nat) map)
-            | Some(value) -> Map.update i (Some(abs(value - v))) weeks_map
-            in
-            Big_map.update a (Some(new_weeks_map)) m
-    in
-    let rec modify_user_points_func(resulting_acc, modificateur, weeks_indices : (address, (nat, nat) map ) big_map * nat * nat list) : (address, (nat, nat) map ) big_map =
-        let week_indice_opt : nat option = List.head_opt weeks_indices in
-        match week_indice_opt with
-        | None -> resulting_acc
-        | Some(week_indice) -> 
-            let modified : (address, (nat, nat) map ) big_map = update_user_points_func(Tezos.sender, modificateur, week_indice, resulting_acc) in
-            let remaining_weeks_opt : nat list option = List.tail_opt weeks_indices in
-            let remaining_weeks : nat list = match remaining_weeks_opt with
-            | None -> ([] : nat list)        
-            | Some(l) -> l
-            in
-            modify_user_points_func(modified, modificateur, remaining_weeks)
-    in
-    let final_user_points : (address, (nat, nat) map ) big_map  = modify_user_points_func(new_user_points, points_next_weeks, future_weeks)
-    in
-
-    //for (i = current_week + 1; i <= s.weeks; i++) 
-    //    farm_points[i] += week_in_seconds * lp_amount 
-    let update_farm_points_func = fun (v, i, m : nat * nat * (nat, nat) map) ->
-        match (Map.find_opt i m) with
-        | None -> (failwith(user_no_points):  (nat, nat) map)
-        | Some(entry) -> Map.update i (Some(abs(entry-v))) m
-    in
-    let rec modify_farm_points_func(farm_result, delta, weeks_indices : (nat, nat) map * nat * nat list) : (nat, nat) map =
-        let week_indice_opt : nat option = List.head_opt weeks_indices in
-        match week_indice_opt with
-        | None -> farm_result
-        | Some(week_indice) -> 
-            let modified : (nat, nat) map = update_farm_points_func(delta, week_indice, farm_result) in
-            let remaining_weeks_opt : nat list option = List.tail_opt weeks_indices in
-            let remaining_weeks : nat list = match remaining_weeks_opt with
-            | None -> ([] : nat list)
-            | Some(l) -> l
-            in
-            modify_farm_points_func(modified, delta, remaining_weeks)
-    in
-    let final_farm_points : (nat, nat) map = modify_farm_points_func(new_farm_points, points_next_weeks, future_weeks) in
     let lp_contract_opt : parameter contract option = Tezos.get_contract_opt(s.lp_token_address) in
     let lp_contract : parameter contract = match lp_contract_opt with
         | None -> (failwith(unknown_lp_contract) : parameter contract)
@@ -233,8 +153,90 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
     let transfer_param : transfer = { address_from = Tezos.self_address; address_to = Tezos.sender; value = lp_amount } in 
     let op : operation = Tezos.transaction (Transfer(transfer_param)) 0mutez lp_contract in
     let ops : operation list = [ op; ] in
+    if ((Tezos.now - s.creation_time - (s.weeks *  week_in_seconds)) < 0 ) then  
+        let current_week : nat = get_current_week(s) in
+        let endofweek_in_seconds : timestamp = s.creation_time + int(current_week * week_in_seconds) in
+        
 
-    (ops, { s with user_stakes = new_user_stakes; user_points = final_user_points; farm_points = final_farm_points } )
+        //assert_some (Tezos.now - endofweek_in_seconds < 0)
+        let _check_negative : bool = 
+            if (Tezos.now - endofweek_in_seconds < 0) 
+            then true 
+            else (failwith(time_too_early) : bool)
+        in
+        let before_end_week : nat = abs(Tezos.now - endofweek_in_seconds) in 
+        let points_current_week : nat = before_end_week * lp_amount in
+        let points_next_weeks : nat = week_in_seconds * lp_amount in
+        
+        //user_points[user_address][current_week] += before_end_week * lp_amount
+        let user_weeks_opt : (nat, nat) map option = Big_map.find_opt Tezos.sender s.user_points in
+        let new_user_points : (address, (nat, nat) map ) big_map = match user_weeks_opt with
+        | None -> (failwith(user_no_points): (address, (nat, nat) map ) big_map)
+        | Some(m) -> 
+            let modified_current_week : (nat, nat) map = match (Map.find_opt current_week m) with
+            | None -> (failwith(user_no_points):  (nat, nat) map)
+            | Some(wpts) -> (Map.update current_week (Some(abs(wpts - points_current_week))) m)
+            in
+            Big_map.update Tezos.sender (Some(modified_current_week)) s.user_points
+        in 
+        //farm_points[current_week] += before_end_week * lp_amount
+        let new_farm_points = match Map.find_opt current_week s.farm_points with
+        | None -> (failwith(user_no_points):  (nat, nat) map)
+        | Some(val_) -> Map.update current_week (Some(abs(val_ - points_current_week))) s.farm_points
+        in
+        //for (i = current_week + 1; i <= s.weeks; i++) 
+        //    user_points[user_address][i] += week_in_seconds * lp_amount
+        let future_weeks : nat list = get_weeks_indices(current_week + 1n, s.weeks) in
+        let update_user_points_func = fun (a, v, i, m : address * nat * nat * (address, (nat, nat) map ) big_map) -> 
+            match Big_map.find_opt a m with
+            | None -> (failwith(unknown_user_unstake):  (address, (nat , nat) map)big_map)
+            | Some(weeks_map) ->
+                let new_weeks_map : (nat, nat) map = match Map.find_opt i weeks_map with
+                | None -> (failwith(unknown_user_unstake): (nat , nat) map)
+                | Some(value) -> Map.update i (Some(abs(value - v))) weeks_map
+                in
+                Big_map.update a (Some(new_weeks_map)) m
+        in
+        let rec modify_user_points_func(resulting_acc, modificateur, weeks_indices : (address, (nat, nat) map ) big_map * nat * nat list) : (address, (nat, nat) map ) big_map =
+            let week_indice_opt : nat option = List.head_opt weeks_indices in
+            match week_indice_opt with
+            | None -> resulting_acc
+            | Some(week_indice) -> 
+                let modified : (address, (nat, nat) map ) big_map = update_user_points_func(Tezos.sender, modificateur, week_indice, resulting_acc) in
+                let remaining_weeks_opt : nat list option = List.tail_opt weeks_indices in
+                let remaining_weeks : nat list = match remaining_weeks_opt with
+                | None -> ([] : nat list)        
+                | Some(l) -> l
+                in
+                modify_user_points_func(modified, modificateur, remaining_weeks)
+        in
+        let final_user_points : (address, (nat, nat) map ) big_map  = modify_user_points_func(new_user_points, points_next_weeks, future_weeks)
+        in
+
+        //for (i = current_week + 1; i <= s.weeks; i++) 
+        //    farm_points[i] += week_in_seconds * lp_amount 
+        let update_farm_points_func = fun (v, i, m : nat * nat * (nat, nat) map) ->
+            match (Map.find_opt i m) with
+            | None -> (failwith(user_no_points):  (nat, nat) map)
+            | Some(entry) -> Map.update i (Some(abs(entry-v))) m
+        in
+        let rec modify_farm_points_func(farm_result, delta, weeks_indices : (nat, nat) map * nat * nat list) : (nat, nat) map =
+            let week_indice_opt : nat option = List.head_opt weeks_indices in
+            match week_indice_opt with
+            | None -> farm_result
+            | Some(week_indice) -> 
+                let modified : (nat, nat) map = update_farm_points_func(delta, week_indice, farm_result) in
+                let remaining_weeks_opt : nat list option = List.tail_opt weeks_indices in
+                let remaining_weeks : nat list = match remaining_weeks_opt with
+                | None -> ([] : nat list)
+                | Some(l) -> l
+                in
+                modify_farm_points_func(modified, delta, remaining_weeks)
+        in
+        let final_farm_points : (nat, nat) map = modify_farm_points_func(new_farm_points, points_next_weeks, future_weeks) in 
+        (ops, { s with user_stakes = new_user_stakes; user_points = final_user_points; farm_points = final_farm_points } )
+    else
+        (ops, { s with user_stakes = new_user_stakes} )
 
 
     let sendReward(token_amount, user_address, s : nat * address * storage_farm) : operation = 
@@ -254,7 +256,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
 
     let computeReward(offset, s : nat * storage_farm) : storage_farm =
         let weeks : nat list = get_weeks_indices(1n, s.weeks) in
-        let update_reward_per_week_func(week_indice, rate, weeks_max, reward_total, themap : nat * nat * nat * nat * (nat, nat) map): (nat, nat) map =
+        let update_reward_per_week_func(week_indice, rate, weeks_max, reward_total, map_accumulator : nat * nat * nat * nat * (nat, nat) map): (nat, nat) map =
             let t_before : nat = power(rate, abs(week_indice - 1n)) in  
             let t_before_divisor : nat = power(10_000n, abs(week_indice - 1n)) in
             let un_moins_rate : nat = abs(10_000n - rate) in 
@@ -266,10 +268,10 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             let final_denominator : nat = t_before_divisor * denominator in 
             let final_numerator : nat = numerator * reward_total * t_before in 
             let result : nat =  final_numerator / final_denominator in 
-            let value_opt : nat option = Map.find_opt (week_indice+offset) themap in
+            let value_opt : nat option = Map.find_opt (week_indice+offset) map_accumulator in
             let new_map : (nat, nat) map = match value_opt with
-            | None -> Map.add (week_indice+offset) result themap
-            | Some(_v) -> Map.update (week_indice+offset) (Some(result)) themap
+            | None -> Map.add (week_indice+offset) result map_accumulator
+            | Some(_v) -> Map.update (week_indice+offset) (Some(result)) map_accumulator
             in
             new_map
         in
@@ -328,9 +330,9 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             then get_weeks_indices(1n, s.weeks) 
             else get_weeks_indices(1n, abs(current_week - 1n))
         in
-        let compute_percentage_func(week_indice, themap : nat * (address, (nat, nat) map) map) : (address, (nat, nat) map) map =
+        let compute_percentage_func(week_indice, map_accumulator : nat * (address, (nat, nat) map) map) : (address, (nat, nat) map) map =
             let points : nat = match (Big_map.find_opt Tezos.sender s.user_points) with
-                | None -> (failwith(unknown_user) : nat)
+                | None -> (failwith(unknown_user_claim) : nat)
                 | Some(week_points_map) -> 
                     let val_opt : nat option = Map.find_opt week_indice week_points_map in
                     let computed_value : nat = match val_opt with
@@ -340,21 +342,22 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
                     computed_value
             in
             let farm_points : nat = match Big_map.find_opt week_indice s.farm_points with
-            | None -> (failwith(farm_empty_week) : nat)
+            | None -> 0n
             | Some(val_) -> val_
             in
+            if farm_points = 0n then map_accumulator else
             let perc : nat = if points = 0n then 0n else points * precision / farm_points in
-            if perc = 0n then themap else
-            match Map.find_opt Tezos.sender themap with
+            if perc = 0n then map_accumulator else
+            match Map.find_opt Tezos.sender map_accumulator with
             | None ->
                 let modified_wks : (nat, nat) map = Map.add week_indice perc (Map.empty : (nat, nat) map) in
-                Map.add Tezos.sender modified_wks themap
+                Map.add Tezos.sender modified_wks map_accumulator
             | Some(wks) ->  
                 let modified_wks : (nat, nat) map = Map.add week_indice perc wks in
-                Map.update Tezos.sender (Some(modified_wks)) themap
+                Map.update Tezos.sender (Some(modified_wks)) map_accumulator
         in 
         let rec compute_func(acc, indices : (address, (nat, nat) map) map * nat list) : (address, (nat, nat) map) map = 
-             let indice_opt : nat option = List.head_opt indices in
+            let indice_opt : nat option = List.head_opt indices in
             match indice_opt with
             | None -> acc
             | Some(week_indice) -> 

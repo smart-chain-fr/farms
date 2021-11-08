@@ -25,6 +25,7 @@ let user_points = new MichelsonMap();
 let user_stakes = new MichelsonMap();
 const weeks = process.env.WEEKS || 0;
 
+
 async function orig() {
 
     // for (let i = 0; i < weeks + 1; i++) {
