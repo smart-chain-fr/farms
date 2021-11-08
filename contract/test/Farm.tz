@@ -11,7 +11,7 @@
   code { PUSH string
               "Only the contract admin can change the contract administrator or increase reward" ;
          PUSH string "This farm works with a different LP token" ;
-         PUSH string "You neither have any LP token to unstake nor any reward to claim" ;
+         PUSH string "You do not have any LP token to unstake" ;
          PUSH string "You must not send Tezos to the smart contract" ;
          PUSH string "Please try again in few seconds" ;
          PUSH string "You do not have or no longer have any rewards" ;
@@ -99,17 +99,18 @@
          UNPAIR ;
          IF_LEFT
            { DIG 8 ;
-             DROP ;
+             DIG 11 ;
+             DROP 2 ;
              IF_LEFT
                { DIG 8 ;
-                 DIG 11 ;
+                 DIG 10 ;
                  DROP 2 ;
                  IF_LEFT
                    { DIG 2 ;
                      DIG 5 ;
                      DIG 6 ;
                      DIG 7 ;
-                     DIG 10 ;
+                     DIG 9 ;
                      DROP 6 ;
                      PUSH mutez 0 ;
                      AMOUNT ;
@@ -160,7 +161,7 @@
                              SENDER ;
                              GET ;
                              IF_NONE
-                               { DUP 6 ; FAILWITH }
+                               { PUSH string "You do not have any reward to claim" ; FAILWITH }
                                { SWAP ; DUP ; DUG 2 ; GET ; IF_NONE { PUSH nat 0 } {} } ;
                              DUP 6 ;
                              CAR ;
@@ -227,8 +228,6 @@
                              SWAP ;
                              PAIR ;
                              LEFT (map address (map nat nat)) } } ;
-                     DIG 3 ;
-                     DROP ;
                      NIL operation ;
                      SWAP ;
                      DUP ;
@@ -321,9 +320,7 @@
                      PAIR ;
                      SWAP ;
                      PAIR }
-                   { DIG 9 ;
-                     DROP ;
-                     SWAP ;
+                   { SWAP ;
                      DUP ;
                      DUG 2 ;
                      CAR ;
@@ -664,8 +661,7 @@
                      SWAP ;
                      PAIR } }
                { DIG 2 ;
-                 DIG 10 ;
-                 DROP 2 ;
+                 DROP ;
                  IF_LEFT
                    { DIG 2 ;
                      DIG 3 ;
@@ -1245,11 +1241,7 @@
                               DUP 3 ;
                               GET ;
                               IF_NONE
-                                { SWAP ;
-                                  DIG 4 ;
-                                  DROP 3 ;
-                                  PUSH string "You do not have any LP token to unstake" ;
-                                  FAILWITH }
+                                { SWAP ; DIG 4 ; DROP 3 ; DUP 12 ; FAILWITH }
                                 { SWAP ; DIG 5 ; DIG 2 ; SUB ; ABS ; SOME ; DIG 2 ; UPDATE } ;
                               SOME ;
                               DIG 2 ;

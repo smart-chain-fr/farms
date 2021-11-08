@@ -28,7 +28,8 @@ initial_storage["reserve_address"] = "tz1fABJ97CJMSP2DKrQx2HAFazh6GgahQ7ZK"
 only_admin = "Only the contract admin can change the contract administrator or increase reward"
 unknown_lp_contract = "This farm works with a different LP token"
 unknown_smak_contract  = "Cannot connect to the SMAK contract"
-unknown_user = "You neither have any LP token to unstake nor any reward to claim"
+unknown_user_unstake = "You do not have any LP token to unstake"
+unknown_user_claim = "You do not have any reward to claim"
 farm_empty_week = "Farm has no cumulated stake for one week"
 amount_is_null = "The staking amount must be greater than zero"
 amount_must_be_zero_tez = "You must not send Tezos to the smart contract"
@@ -36,7 +37,6 @@ time_too_early ="Please try again in few seconds"
 no_stakes  = "You did not stake any token yet"
 unstake_more_than_stake  = "You cannot unstake more than your staking"
 user_no_points = "You do not have or no longer have any rewards"
-user_no_stakes_week = "You do not have any LP token to unstake"
 rewards_sent_but_missing_points = "You do not have any reward to claim"
 no_week_left = "There are no more weeks left for staking"
 
@@ -392,7 +392,7 @@ class FarmsContractTest(TestCase):
         with self.raisesMichelsonError(amount_is_null):
             res = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=alice, now=int(sec_week + sec_week/2))
     
-    def test_stake_user_try_to_stake_after_end_of_pool(self):
+    def test_stake_after_end_of_pool_should_fail(self):
         init_storage = deepcopy(initial_storage)
         init_storage["user_stakes"] = {}
         init_storage["user_points"] = {}
@@ -1078,7 +1078,7 @@ class FarmsContractTest(TestCase):
     # Tests for ClaimAll #
     ######################
 
-    def test_claimall_should_work(self):
+    def test_claimall_basic_should_work(self):
 
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 20_000_000
@@ -1130,6 +1130,40 @@ class FarmsContractTest(TestCase):
         self.assertEqual(alice_points[5], 500 * sec_week)
 
 
+    def test_claimall_with_0_points_should_fail(self):
+
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 20_000_000
+        init_storage["reward_at_week"] = {
+            1: 6555697,
+            2: 4916773,
+            3: 3687580,
+            4: 2765685,
+            5: 2074263
+        }
+        init_storage["creation_time"] = 0
+        init_storage["user_stakes"] = {
+            alice: 500
+        }
+        init_storage["user_points"] = {
+            alice: {
+                1: int(500 * sec_week/2),
+                2: 500 * sec_week,
+                3: 500 * sec_week,
+                4: 500 * sec_week,
+                5: 500 * sec_week
+            }
+        }
+        init_storage["farm_points"] = {
+            1: int(500 * sec_week / 2),
+            2: 500 * sec_week,
+            3: 500 * sec_week,
+            4: 500 * sec_week,
+            5: 500 * sec_week
+        }
+
+        with self.raisesMichelsonError(unknown_user_claim):
+            self.farms.claimAll().interpret(storage=init_storage, sender=bob, now=int(sec_week * 7 + sec_week/2))
 
     def test_claimall_3rd_week_should_work(self):
 
@@ -1370,7 +1404,7 @@ class FarmsContractTest(TestCase):
             self.assertEqual(alice, transfer_tx_params[1]['string'])
             self.assertEqual(str(int(reward_sent[week]/2)), transfer_tx_params[2]['int'])
 
-    def test_claimall_should_work_after_pool_end(self):
+    def test_claimall_after_pool_end_should_work(self):
 
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 20_000_000
