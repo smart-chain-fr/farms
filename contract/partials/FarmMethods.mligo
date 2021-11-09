@@ -1,6 +1,5 @@
 #include "Error.mligo"
 #include "FarmTypes.mligo"
-#include "../main/fa12.mligo"
 
 // Should update the admin
 // Params : admin (address) 
@@ -36,15 +35,17 @@ let stakeSome(lp_amount, s : nat * storage_farm) : return =
         then true
         else (failwith(no_week_left) : bool)
     in
-    let lp_contract_opt : parameter contract option = Tezos.get_contract_opt(s.lp_token_address) in
-    let lp_contract : parameter contract = match lp_contract_opt with
-        | None -> (failwith(unknown_lp_contract) : parameter contract)
-        | Some(x) -> x
+    let lp_contract_opt : fa12_transfer   contract option = Tezos.get_entrypoint_opt "%transfer" s.lp_token_address in
+    let lp_contract : fa12_transfer contract = match lp_contract_opt with
+        | Some c -> c
+        | None -> (failwith unknown_lp_contract :  fa12_transfer contract)
     in
+
     // create a transfer transaction (for LP token contract)
-    let transfer_param : transfer = { address_from = Tezos.sender; address_to = Tezos.self_address; value = lp_amount } in 
-    let op : operation = Tezos.transaction (Transfer(transfer_param)) 0mutez lp_contract in
+    let transfer_param : fa12_transfer = s.reserve_address,  (Tezos.sender , lp_amount ) in 
+    let op : operation = Tezos.transaction (transfer_param) 0mutez lp_contract in
     let ops : operation list = [ op; ] in
+
     // update current storage with updated user_stakes map
     let existing_bal_opt : nat option = Big_map.find_opt Tezos.sender s.user_stakes in
     let new_user_stakes : (address, nat) big_map = match existing_bal_opt with
@@ -144,15 +145,19 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
         then Big_map.update Tezos.sender (Some(abs(v - lp_amount))) s.user_stakes
         else (failwith(unstake_more_than_stake): (address, nat) big_map)
     in
-    let lp_contract_opt : parameter contract option = Tezos.get_contract_opt(s.lp_token_address) in
-    let lp_contract : parameter contract = match lp_contract_opt with
-        | None -> (failwith(unknown_lp_contract) : parameter contract)
-        | Some(x) -> x
+
+
+    let lp_contract_opt : fa12_transfer   contract option = Tezos.get_entrypoint_opt "%transfer" s.lp_token_address in
+    let lp_contract : fa12_transfer contract = match lp_contract_opt with
+        | Some c -> c
+        | None -> (failwith unknown_lp_contract :  fa12_transfer contract)
     in
+
     // create a transfer transaction (for LP token contract)
-    let transfer_param : transfer = { address_from = Tezos.self_address; address_to = Tezos.sender; value = lp_amount } in 
-    let op : operation = Tezos.transaction (Transfer(transfer_param)) 0mutez lp_contract in
+    let transfer_param : fa12_transfer = s.reserve_address,  (Tezos.sender , lp_amount ) in 
+    let op : operation = Tezos.transaction (transfer_param) 0mutez lp_contract in
     let ops : operation list = [ op; ] in
+
     if ((Tezos.now - s.creation_time - (s.weeks *  week_in_seconds)) < 0 ) then  
         let current_week : nat = get_current_week(s) in
         let endofweek_in_seconds : timestamp = s.creation_time + int(current_week * week_in_seconds) in
@@ -192,7 +197,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             | None -> (failwith(unknown_user_unstake):  (address, (nat , nat) map)big_map)
             | Some(weeks_map) ->
                 let new_weeks_map : (nat, nat) map = match Map.find_opt i weeks_map with
-                | None -> (failwith(unknown_user_unstake): (nat , nat) map)
+                | None -> (failwith(user_no_stakes_week): (nat , nat) map)
                 | Some(value) -> Map.update i (Some(abs(value - v))) weeks_map
                 in
                 Big_map.update a (Some(new_weeks_map)) m
@@ -240,13 +245,13 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
 
 
     let sendReward(token_amount, user_address, s : nat * address * storage_farm) : operation = 
-        let smak_contract_otp : smak_transfer contract option = Tezos.get_entrypoint_opt "%transfer" s.smak_address in
-        let transfer_smak : smak_transfer contract = match smak_contract_otp with
+        let smak_contract_otp : fa12_transfer contract option = Tezos.get_entrypoint_opt "%transfer" s.smak_address in
+        let transfer_smak : fa12_transfer contract = match smak_contract_otp with
             | Some c -> c
-            | None -> (failwith unknown_smak_contract:  smak_transfer contract)
+            | None -> (failwith unknown_smak_contract:  fa12_transfer contract)
         in
-        // create a transfer transaction (for LP token contract)
-        let transfer_param : smak_transfer = s.reserve_address,  (user_address , token_amount ) in 
+        // create a transfer transaction (for SMK token contract)
+        let transfer_param : fa12_transfer = s.reserve_address,  (user_address , token_amount ) in 
         let op : operation = Tezos.transaction (transfer_param) 0mutez transfer_smak in
         op
 
@@ -256,7 +261,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
 
     let computeReward(offset, s : nat * storage_farm) : storage_farm =
         let weeks : nat list = get_weeks_indices(1n, s.weeks) in
-        let update_reward_per_week_func(week_indice, rate, weeks_max, reward_total, map_accumulator : nat * nat * nat * nat * (nat, nat) map): (nat, nat) map =
+        let update_reward_per_week_func(week_indice, rate, weeks_max, reward_total, themap : nat * nat * nat * nat * (nat, nat) map): (nat, nat) map =
             let t_before : nat = power(rate, abs(week_indice - 1n)) in  
             let t_before_divisor : nat = power(10_000n, abs(week_indice - 1n)) in
             let un_moins_rate : nat = abs(10_000n - rate) in 
@@ -268,10 +273,10 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             let final_denominator : nat = t_before_divisor * denominator in 
             let final_numerator : nat = numerator * reward_total * t_before in 
             let result : nat =  final_numerator / final_denominator in 
-            let value_opt : nat option = Map.find_opt (week_indice+offset) map_accumulator in
+            let value_opt : nat option = Map.find_opt (week_indice+offset) themap in
             let new_map : (nat, nat) map = match value_opt with
-            | None -> Map.add (week_indice+offset) result map_accumulator
-            | Some(_v) -> Map.update (week_indice+offset) (Some(result)) map_accumulator
+            | None -> Map.add (week_indice+offset) result themap
+            | Some(_v) -> Map.update (week_indice+offset) (Some(result)) themap
             in
             new_map
         in
@@ -330,7 +335,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             then get_weeks_indices(1n, s.weeks) 
             else get_weeks_indices(1n, abs(current_week - 1n))
         in
-        let compute_percentage_func(week_indice, map_accumulator : nat * (address, (nat, nat) map) map) : (address, (nat, nat) map) map =
+        let compute_percentage_func(week_indice, themap : nat * (address, (nat, nat) map) map) : (address, (nat, nat) map) map =
             let points : nat = match (Big_map.find_opt Tezos.sender s.user_points) with
                 | None -> (failwith(unknown_user_claim) : nat)
                 | Some(week_points_map) -> 
@@ -345,16 +350,16 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             | None -> 0n
             | Some(val_) -> val_
             in
-            if farm_points = 0n then map_accumulator else
+            if farm_points = 0n then themap else
             let perc : nat = if points = 0n then 0n else points * precision / farm_points in
-            if perc = 0n then map_accumulator else
-            match Map.find_opt Tezos.sender map_accumulator with
+            if perc = 0n then themap else
+            match Map.find_opt Tezos.sender themap with
             | None ->
                 let modified_wks : (nat, nat) map = Map.add week_indice perc (Map.empty : (nat, nat) map) in
-                Map.add Tezos.sender modified_wks map_accumulator
+                Map.add Tezos.sender modified_wks themap
             | Some(wks) ->  
                 let modified_wks : (nat, nat) map = Map.add week_indice perc wks in
-                Map.update Tezos.sender (Some(modified_wks)) map_accumulator
+                Map.update Tezos.sender (Some(modified_wks)) themap
         in 
         let rec compute_func(acc, indices : (address, (nat, nat) map) map * nat list) : (address, (nat, nat) map) map = 
             let indice_opt : nat option = List.head_opt indices in
@@ -394,12 +399,12 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
             in
             // acc[user]
             let week_points_for_user : (nat, nat) map = match Big_map.find_opt user acc with
-            | None -> (failwith(rewards_sent_but_missing_points) : (nat, nat) map)
+            | None -> (failwith(user_no_stakes_week) : (nat, nat) map)
             | Some(wk_pts) -> wk_pts
             in
             let new_week_points : (nat, nat) map = Map.fold rem percs week_points_for_user in 
             let modified_map : (address, (nat, nat) map) big_map = Map.update user (Some(new_week_points)) acc in 
             modified_map
         in
-        let remove_points_map : (address, (nat, nat) map) big_map = Map.fold remove_points percentages s.user_points in 
+        let remove_points_map : (address, (nat, nat) map) big_map = Map.fold remove_points percentages s.user_points in
         (operations, { s with user_points = remove_points_map })
