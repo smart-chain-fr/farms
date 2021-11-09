@@ -11,10 +11,10 @@
   code { PUSH string
               "Only the contract admin can change the contract administrator or increase reward" ;
          PUSH string "This farm works with a different LP token" ;
-         PUSH string "You do not have any LP token to unstake" ;
          PUSH string "You must not send Tezos to the smart contract" ;
          PUSH string "Please try again in few seconds" ;
          PUSH string "You do not have or no longer have any rewards" ;
+         PUSH string "You do not have any reward to claim" ;
          PUSH string "There are no more weeks left for staking" ;
          NIL operation ;
          PUSH nat 604800 ;
@@ -98,25 +98,24 @@
          DIG 12 ;
          UNPAIR ;
          IF_LEFT
-           { DIG 8 ;
-             DIG 11 ;
-             DROP 2 ;
+           { DIG 9 ;
+             DROP ;
              IF_LEFT
-               { DIG 8 ;
-                 DIG 10 ;
+               { DIG 9 ;
+                 DIG 11 ;
                  DROP 2 ;
                  IF_LEFT
                    { DIG 2 ;
                      DIG 5 ;
                      DIG 6 ;
                      DIG 7 ;
-                     DIG 9 ;
+                     DIG 10 ;
                      DROP 6 ;
                      PUSH mutez 0 ;
                      AMOUNT ;
                      COMPARE ;
                      EQ ;
-                     IF { DIG 3 ; DROP } { DIG 3 ; FAILWITH } ;
+                     IF { DIG 4 ; DROP } { DIG 4 ; FAILWITH } ;
                      DUP ;
                      DIG 3 ;
                      SWAP ;
@@ -288,7 +287,7 @@
                             DUP ;
                             DUG 2 ;
                             GET ;
-                            IF_NONE { PUSH string "You do not have any reward to claim" ; FAILWITH } {} ;
+                            IF_NONE { DUP 6 ; FAILWITH } {} ;
                             DIG 3 ;
                             CDR ;
                             ITER { CAR ;
@@ -305,6 +304,8 @@
                             SOME ;
                             DIG 2 ;
                             UPDATE } ;
+                     DIG 3 ;
+                     DROP ;
                      DUP 3 ;
                      CDR ;
                      CDR ;
@@ -320,7 +321,9 @@
                      PAIR ;
                      SWAP ;
                      PAIR }
-                   { SWAP ;
+                   { DIG 8 ;
+                     DROP ;
+                     SWAP ;
                      DUP ;
                      DUG 2 ;
                      CAR ;
@@ -661,7 +664,8 @@
                      SWAP ;
                      PAIR } }
                { DIG 2 ;
-                 DROP ;
+                 DIG 8 ;
+                 DROP 2 ;
                  IF_LEFT
                    { DIG 2 ;
                      DIG 3 ;
@@ -749,30 +753,22 @@
                      CAR ;
                      CDR ;
                      CDR ;
-                     CONTRACT
-                       (or (or (or (pair %approve (address %spender) (nat %value))
-                                   (pair %getAllowance
-                                      (pair %request (address %owner) (address %spender))
-                                      (contract %callback nat)))
-                               (or (pair %getBalance (address %owner) (contract %callback nat))
-                                   (pair %getTotalSupply (unit %request) (contract %callback nat))))
-                           (or (pair %mintOrBurn (int %quantity) (address %target))
-                               (pair %transfer (address %from) (pair (address %to) (nat %value))))) ;
+                     CONTRACT %transfer (pair address (pair address nat)) ;
                      IF_NONE { DIG 6 ; FAILWITH } { DIG 7 ; DROP } ;
+                     SWAP ;
+                     DUP ;
+                     DUG 2 ;
                      SENDER ;
-                     SELF_ADDRESS ;
-                     DUP 4 ;
-                     SWAP ;
                      PAIR ;
-                     SWAP ;
+                     DUP 4 ;
+                     CAR ;
+                     CDR ;
+                     CAR ;
+                     CDR ;
                      PAIR ;
                      SWAP ;
                      PUSH mutez 0 ;
                      DIG 2 ;
-                     RIGHT (pair int address) ;
-                     RIGHT
-                       (or (or (pair address nat) (pair (pair address address) (contract nat)))
-                           (or (pair address (contract nat)) (pair unit (contract nat)))) ;
                      TRANSFER_TOKENS ;
                      DUP 3 ;
                      CDR ;
@@ -1038,7 +1034,7 @@
              AMOUNT ;
              COMPARE ;
              EQ ;
-             IF { DIG 7 ; DROP } { DIG 7 ; FAILWITH } ;
+             IF { DIG 8 ; DROP } { DIG 8 ; FAILWITH } ;
              SWAP ;
              DUP ;
              DUG 2 ;
@@ -1074,30 +1070,20 @@
              CAR ;
              CDR ;
              CDR ;
-             CONTRACT
-               (or (or (or (pair %approve (address %spender) (nat %value))
-                           (pair %getAllowance
-                              (pair %request (address %owner) (address %spender))
-                              (contract %callback nat)))
-                       (or (pair %getBalance (address %owner) (contract %callback nat))
-                           (pair %getTotalSupply (unit %request) (contract %callback nat))))
-                   (or (pair %mintOrBurn (int %quantity) (address %target))
-                       (pair %transfer (address %from) (pair (address %to) (nat %value))))) ;
+             CONTRACT %transfer (pair address (pair address nat)) ;
              IF_NONE { DIG 9 ; FAILWITH } { DIG 10 ; DROP } ;
-             SELF_ADDRESS ;
+             DUP 3 ;
              SENDER ;
-             DUP 5 ;
-             SWAP ;
              PAIR ;
-             SWAP ;
+             DUP 5 ;
+             CAR ;
+             CDR ;
+             CAR ;
+             CDR ;
              PAIR ;
              SWAP ;
              PUSH mutez 0 ;
              DIG 2 ;
-             RIGHT (pair int address) ;
-             RIGHT
-               (or (or (pair address nat) (pair (pair address address) (contract nat)))
-                   (or (pair address (contract nat)) (pair unit (contract nat)))) ;
              TRANSFER_TOKENS ;
              NIL operation ;
              SWAP ;
@@ -1143,7 +1129,7 @@
                   SUB ;
                   COMPARE ;
                   LT ;
-                  IF { DIG 9 ; DROP } { DIG 9 ; FAILWITH } ;
+                  IF { DIG 10 ; DROP } { DIG 10 ; FAILWITH } ;
                   NOW ;
                   SUB ;
                   ABS ;
@@ -1160,12 +1146,12 @@
                   SENDER ;
                   GET ;
                   IF_NONE
-                    { DUP 8 ; FAILWITH }
+                    { DUP 9 ; FAILWITH }
                     { DUP ;
                       DUP 5 ;
                       GET ;
                       IF_NONE
-                        { DROP ; DUP 8 ; FAILWITH }
+                        { DROP ; DUP 9 ; FAILWITH }
                         { SWAP ; DUP 4 ; DIG 2 ; SUB ; ABS ; SOME ; DUP 5 ; UPDATE } ;
                       DUP 7 ;
                       CDR ;
@@ -1183,7 +1169,7 @@
                   DUP 5 ;
                   GET ;
                   IF_NONE
-                    { DIG 2 ; DROP ; DUP 8 ; FAILWITH }
+                    { DIG 2 ; DROP ; DUP 9 ; FAILWITH }
                     { DUP 8 ;
                       CAR ;
                       CAR ;
@@ -1236,12 +1222,12 @@
                           DUP 4 ;
                           GET ;
                           IF_NONE
-                            { DROP 4 ; DUP 10 ; FAILWITH }
+                            { DROP 4 ; PUSH string "You do not have any LP token to unstake" ; FAILWITH }
                             { DUP ;
                               DUP 3 ;
                               GET ;
                               IF_NONE
-                                { SWAP ; DIG 4 ; DROP 3 ; DUP 12 ; FAILWITH }
+                                { SWAP ; DIG 4 ; DROP 3 ; DUP 11 ; FAILWITH }
                                 { SWAP ; DIG 5 ; DIG 2 ; SUB ; ABS ; SOME ; DIG 2 ; UPDATE } ;
                               SOME ;
                               DIG 2 ;
@@ -1253,7 +1239,7 @@
                           PAIR ;
                           PAIR ;
                           LEFT (big_map address (map nat nat)) } } ;
-                  DIG 8 ;
+                  DIG 7 ;
                   DROP ;
                   SWAP ;
                   DIG 3 ;

@@ -227,9 +227,9 @@ class FarmsContractTest(TestCase):
 
         self.assertEqual(admin, res.storage["admin"])
         transfer_tx = res.operations[0]
-        transfer_tx_params = transfer_tx["parameters"]["value"]['args'][0]['args'][0]['args']
-        self.assertEqual(bob, transfer_tx_params[0]['string'])
-        self.assertEqual(farm_address, transfer_tx_params[1]['string'])
+        transfer_tx_params = transfer_tx["parameters"]["value"]['args']
+        self.assertEqual(bob, transfer_tx_params[1]['string'])
+        self.assertEqual(farm_address, transfer_tx['source'])
         self.assertEqual(locked_amount, int(transfer_tx_params[2]['int']))
 
         user_stakes = res.storage["user_stakes"]
@@ -277,9 +277,9 @@ class FarmsContractTest(TestCase):
 
         self.assertEqual(admin, res1.storage["admin"])
         transfer_tx = res1.operations[0]
-        transfer_tx_params = transfer_tx["parameters"]["value"]['args'][0]['args'][0]['args']
-        self.assertEqual(bob, transfer_tx_params[0]['string'])
-        self.assertEqual(farm_address, transfer_tx_params[1]['string'])
+        transfer_tx_params = transfer_tx["parameters"]["value"]['args']
+        self.assertEqual(bob, transfer_tx_params[1]['string'])
+        self.assertEqual(farm_address, transfer_tx['source'])
         self.assertEqual(locked_amount_1, int(transfer_tx_params[2]['int']))
 
         user_stakes = res1.storage["user_stakes"]
@@ -325,10 +325,9 @@ class FarmsContractTest(TestCase):
 
         self.assertEqual(admin, res2.storage["admin"])
         transfer_tx = res2.operations[0]
-        transfer_tx_params = transfer_tx["parameters"]["value"]['args'][0]['args'][0]['args']
-        self.assertEqual(bob, transfer_tx_params[0]['string'])
-
-        self.assertEqual(farm_address, transfer_tx_params[1]['string'])
+        transfer_tx_params = transfer_tx["parameters"]["value"]['args']
+        self.assertEqual(bob, transfer_tx_params[1]['string'])
+        self.assertEqual(farm_address, transfer_tx['source'])
         self.assertEqual(locked_amount_2, int(transfer_tx_params[2]['int']))
 
         user_stakes = res2.storage["user_stakes"]
@@ -376,9 +375,9 @@ class FarmsContractTest(TestCase):
 
         self.assertEqual(admin, res2.storage["admin"])
         transfer_tx = res2.operations[0]
-        transfer_tx_params = transfer_tx["parameters"]["value"]['args'][0]['args'][0]['args']
-        self.assertEqual(alice, transfer_tx_params[0]['string'])
-        self.assertEqual(farm_address, transfer_tx_params[1]['string'])
+        transfer_tx_params = transfer_tx["parameters"]["value"]['args']
+        self.assertEqual(alice, transfer_tx_params[1]['string'])
+        self.assertEqual(farm_address, transfer_tx['source'])
         self.assertEqual(locked_amount_2, int(transfer_tx_params[2]['int']))
 
         user_stakes = res2.storage["user_stakes"]
@@ -439,10 +438,9 @@ class FarmsContractTest(TestCase):
             
             self.assertEqual(admin, res.storage["admin"])
             transfer_tx = res2.operations[0]
-            transfer_tx_params = transfer_tx["parameters"]["value"]['args'][0]['args'][0]['args']
-            self.assertEqual(alice, transfer_tx_params[0]['string'])
-
-            self.assertEqual(farm_address, transfer_tx_params[1]['string'])
+            transfer_tx_params = transfer_tx["parameters"]["value"]['args']
+            self.assertEqual(alice, transfer_tx_params[1]['string'])
+            self.assertEqual(farm_address, transfer_tx['source'])
             self.assertEqual(locked_amount, int(transfer_tx_params[2]['int']))
 
             user_stakes = res2.storage["user_stakes"]
@@ -985,10 +983,9 @@ class FarmsContractTest(TestCase):
             
             self.assertEqual(admin, res.storage["admin"])
             transfer_tx = res2.operations[0]
-            transfer_tx_params = transfer_tx["parameters"]["value"]['args'][0]['args'][0]['args']
-            self.assertEqual(alice, transfer_tx_params[0]['string'])
-
-            self.assertEqual(farm_address, transfer_tx_params[1]['string'])
+            transfer_tx_params = transfer_tx["parameters"]["value"]['args']
+            self.assertEqual(alice, transfer_tx_params[1]['string'])
+            self.assertEqual(farm_address, transfer_tx['source'])
             self.assertEqual(locked_amount, int(transfer_tx_params[2]['int']))
 
             user_stakes = res2.storage["user_stakes"]
@@ -1014,10 +1011,10 @@ class FarmsContractTest(TestCase):
  
 
 
-            transfer_tx_params = transfer_tx["parameters"]["value"]['args'][0]['args'][0]['args']
-            self.assertEqual(alice, transfer_tx_params[0]['string'])
+            transfer_tx_params = transfer_tx["parameters"]["value"]['args']
+            self.assertEqual(alice, transfer_tx_params[1]['string'])
 
-            self.assertEqual('KT1BEqzn5Wx8uJrZNvuS9DVHmLvG9td3fDLi', transfer_tx_params[1]['string'])
+            self.assertEqual(farm_address, transfer_tx['source'])
             self.assertEqual(locked_amount, int(transfer_tx_params[2]['int']))
 
 
