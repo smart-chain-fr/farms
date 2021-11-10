@@ -42,7 +42,7 @@ let stakeSome(lp_amount, s : nat * storage_farm) : return =
     in
 
     // create a transfer transaction (for LP token contract)
-    let transfer_param : fa12_transfer = s.reserve_address,  (Tezos.sender , lp_amount ) in 
+    let transfer_param : fa12_transfer = Tezos.self_address,  (Tezos.sender , lp_amount ) in 
     let op : operation = Tezos.transaction (transfer_param) 0mutez lp_contract in
     let ops : operation list = [ op; ] in
 
