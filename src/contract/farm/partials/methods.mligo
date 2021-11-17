@@ -1,7 +1,3 @@
-#include "Error.mligo"
-#include "FarmTypes.mligo"
-#include "../main/fa12.mligo"
-
 // Should update the admin
 // Params : admin (address) 
 let setAdmin(admin, s : address * storage_farm) : return =

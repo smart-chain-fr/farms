@@ -1,4 +1,8 @@
-#include "../partials/FarmMethods.mligo"
+#include "../../../lib/contract/fa12.mligo"
+#include "/partials/types.mligo"
+#include "/partials/error.mligo"
+#include "/partials/methods.mligo"
+
 
 let main (action, s : entrypoint * storage_farm) : return =
     match action with

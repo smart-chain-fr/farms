@@ -14,7 +14,7 @@ fox = 'tz1XH5UyhRCUmCdUUbqD4tZaaqRTgGaFXt7q'
 
 sec_week = 604800
 farm_address = "KT1BEqzn5Wx8uJrZNvuS9DVHmLvG9td3fDLi" # Hardcoded farm address for tests
-compiled_contract_path = "Farm.tz"
+compiled_contract_path = "compiled/farm.tz"
 
 initial_storage = ContractInterface.from_file(compiled_contract_path).storage.dummy()
 initial_storage["admin"] = admin
