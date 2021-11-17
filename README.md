@@ -7,13 +7,13 @@
 
 ## Summary
 
-###### I. Install the tools
+##### I. Install the tools
 
-###### II. Tests and compilation
+##### II. Tests and compilation
 
-###### III. Deployment
+##### III. Deployment
 
-
+---
 
 ## I. Install the tools
 
@@ -22,11 +22,11 @@
 OpenTezos offers great documentation so we will use it as a reference:
 https://opentezos.com/ligo/installation
 
-_You may simply execute LIGO through Docker to run the ligo CLI:_
+- You may simply execute LIGO through Docker to run the ligo CLI : 
 `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 [command without "ligo"]`
 
 _Example:_
-_To compile a smart-contract, you may use:_
+- To compile a smart-contract, you may use: 
 `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract [args]`
 
 The list of ligo CLI is available on LIGOland:
@@ -36,19 +36,20 @@ https://ligolang.org/docs/api/cli-commands/
 Node 14 or higher is required to run the originate function.
 
 ###### Install node on MAC
-Go to https://nodejs.org/en/download/ and choose "macOS Installer".
+- Go to https://nodejs.org/en/download/ and choose "macOS Installer".
 Follow the instructions on the wizard.
-Once it is complete, to check that the installation was successful, run:
-`node -v`
-`npm -v`
+Once it is complete, to check that the installation was successful :
+- run `node -v`
+- run `npm -v`
+
 
 ###### Install node on Linux
-Open your terminal, and run:
+- Open your terminal, and run:
 sudo apt update
 sudo apt install nodejs npm
 Once it is complete, to check that the installation was successful, run:
-`node -v`
-`npm -v`
+- run `node -v`
+- run `npm -v`
 
 #### I.3) Install Taquito
 
@@ -56,14 +57,15 @@ _cf._ https://opentezos.com/dapp/taquito
 
 #### I.4) Install Python
 
-You may download from Python (https://wiki.python.org/moin/BeginnersGuide/Download) or install it from the CLI.
-You may use python3.
+- You may download from Python (https://wiki.python.org/moin/BeginnersGuide/Download) or install it from the CLI.
+- You may use python3.
 
 #### I.5) Install Pytezos
 
 _cf._ https://pypi.org/project/pytezos/
 
 
+---
 
 ## II. Compilation and tests
 
@@ -84,6 +86,7 @@ _cf._ https://pypi.org/project/pytezos/
 - In the contract/test/ repository, run `pytest [-k "filename"] [-s]`
 - OR If you want to have more verbose run `python3 -m unittest test_farm.py -v` for Farm tests or `python3 -m unittest test_database.py -v` for Database tests
 
+---
 
 ## III. Deployment
 
@@ -100,30 +103,51 @@ _cf._ https://pypi.org/project/pytezos/
 Adapt your .env file in the /deploy folder:
 
 PK=[private key]
+
 ADMIN=[admin address]
+
 SMAK=[SMAK token contract address]
+
 RPC=[network]
+
 FARMSDB=[Farms contract address]
+
 LP=[LP token address]
+
 INFOFARM=[name of the LP pair]
+
 RATE=[decreasing rate x10000]
+
 REWARDS=[number of SMAK tokens as rewards for the entire farm lifetime]
+
 WEEKS=[length of the farm lifetime]
 
 * Here is an example :
 
 PK=edskS8x3MqxnSVLix29fvBh7QBoTt6WLERyatEfTpRzE1XF26Aqy2ii7cBLMwpcE6u6fnj72gNRitAbXQjCS9eGncR7P4C3hy8
+
 ADMIN=tz1hA7UiKADZQbH8doJDiFY2bacWk8yAaU9i
+
 SAND_PK=edskS8x3MqxnSVLix29fvBh7QBoTt6WLERyatEfTpRzE1XF26Aqy2ii7cBLMwpcE6u6fnj72gNRitAbXQjCS9eGncR7P4C3hy8
+
 SAND_ADMIN=tz1hA7UiKADZQbH8doJDiFY2bacWk8yAaU9i
+
 RESERVE=tz1hA7UiKADZQbH8doJDiFY2bacWk8yAaU9i
+
 SMAK=KT1TwzD6zV3WeJ39ukuqxcfK2fJCnhvrdN1X
+
 RPC=https://mainnet.api.tez.ie
+
 FARMSDB=KT1RxhvoH27fxNVaM4UgMW1bTzhmpgiyqCTS
+
 LP=KT1F7zytGMtjWvrZubpFTq7Px4ubaQybZMoH
+
 INFOFARM=SMAK
+
 RATE=6000
+
 REWARDS=20000
+
 WEEKS=30
 
 #### III.3) Deploy the smart-contracts and the database
@@ -148,6 +172,6 @@ It will:
 
 The front-end will call the entry point approve on the LP token contract in order to allow the farm contract to use LP tokens owned by the user.
 
-###### Staking mechanism schema (to be updated...)
-![Staking schema](https://i.ibb.co/zP9Rxtg/Smartlink-Farm-light.png)
-![Staking schema - night mode](https://i.ibb.co/1XdhScd/Smartlink-Farm-dark.png)
+[//]: # "https://i.ibb.co/1XdhScd/Smartlink-Farm-dark.png"
+![Staking schema - night mode](https://i.ibb.co/zP9Rxtg/Smartlink-Farm-light.png)
+###### Staking mechanism schema
