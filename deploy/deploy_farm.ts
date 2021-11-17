@@ -1,6 +1,6 @@
 import { InMemorySigner } from '@taquito/signer';
 import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
-import farm from './ressources/Farm.json';
+import farm from './artefact/Farm.json';
 import * as dotenv from 'dotenv'
 
 dotenv.config(({path:__dirname+'/.env'}))

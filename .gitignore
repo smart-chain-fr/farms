@@ -1,19 +1,16 @@
-# Environment file
-.env
-
 # Deploy files
 
-/deploy/deployFarmDb.js
-/deploy/deploy.js
+/deploy/deploy_database.js
+/deploy/deploy_farm.js
 /deploy/package-lock.json
 /deploy/node_modules
-/deploy/ressources/Farm.json
-/deploy/ressources/Farms.json
+/deploy/artefact/farm.json
+/deploy/artefact/database.json
 # Test files
-/contract/test/Farm.tz
-/contract/test/Farms.tz
-/contract/test/__pycache__
-/contract/test/.pytest_cache
+src/contract/test/compiled/farm.tz
+src/contract/test/compiled/database.tz
+src/contract/test/__pycache__
+src/contract/test/.pytest_cache
 .pytest_cache
 .idea
 # Created by https://www.toptal.com/developers/gitignore/api/node
