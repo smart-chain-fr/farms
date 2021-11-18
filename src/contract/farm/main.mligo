@@ -1,10 +1,9 @@
-#import "partials/methods.mligo" "FARM"
+#include "partials/methods.mligo"
 
-
-let main (action, s : entrypoint * FARM.storage_farm) : return =
+let main (action, s : entrypoint * storage_farm) : return =
     match action with
-    | SetAdmin(admin) -> FARM.setAdmin(admin, s)
-    | Stake(value) -> FARM.stakeSome(value, s)
-    | Unstake(value) -> FARM.unstakeSome(value, s)
-    | ClaimAll() -> FARM.claimAll(s)
-    | IncreaseReward(value) -> FARM.increaseReward(value, s)
+    | SetAdmin(admin) -> setAdmin(admin, s)
+    | Stake(value) -> stakeSome(value, s)
+    | Unstake(value) -> unstakeSome(value, s)
+    | ClaimAll() -> claimAll(s)
+    | IncreaseReward(value) -> increaseReward(value, s)
