@@ -122,34 +122,6 @@ REWARDS=[number of SMAK tokens as rewards for the entire farm lifetime]
 
 WEEKS=[length of the farm lifetime]
 
-* Here is an example :
-
-PK=edskS8x3MqxnSVLix29fvBh7QBoTt6WLERyatEfTpRzE1XF26Aqy2ii7cBLMwpcE6u6fnj72gNRitAbXQjCS9eGncR7P4C3hy8
-
-ADMIN=tz1hA7UiKADZQbH8doJDiFY2bacWk8yAaU9i
-
-SAND_PK=edskS8x3MqxnSVLix29fvBh7QBoTt6WLERyatEfTpRzE1XF26Aqy2ii7cBLMwpcE6u6fnj72gNRitAbXQjCS9eGncR7P4C3hy8
-
-SAND_ADMIN=tz1hA7UiKADZQbH8doJDiFY2bacWk8yAaU9i
-
-RESERVE=tz1hA7UiKADZQbH8doJDiFY2bacWk8yAaU9i
-
-SMAK=KT1TwzD6zV3WeJ39ukuqxcfK2fJCnhvrdN1X
-
-RPC=https://mainnet.api.tez.ie
-
-FARMSDB=KT1RxhvoH27fxNVaM4UgMW1bTzhmpgiyqCTS
-
-LP=KT1F7zytGMtjWvrZubpFTq7Px4ubaQybZMoH
-
-INFOFARM=SMAK
-
-RATE=6000
-
-REWARDS=20000
-
-WEEKS=30
-
 #### III.3) Deploy the smart-contracts and the database
 
 - In the folder /deploy, run `tsc deploy.ts --resolveJsonModule -esModuleInterop`

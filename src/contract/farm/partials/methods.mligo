@@ -1,12 +1,18 @@
+#include "../../../../lib/contract/fa12.mligo"
+#import "types.mligo" "TYPE"
+#include "error.mligo"
+
+
+
 // Should update the admin
 // Params : admin (address) 
-let setAdmin(admin, s : address * storage_farm) : return =
+let setAdmin(admin, s : address * TYPE.storage_farm) : return =
     let _check_if_no_tez : bool = if Tezos.amount = 0tez then true else (failwith(amount_must_be_zero_tez) : bool) in
     let new_admin = if Tezos.sender = s.admin then admin
     else (failwith(only_admin) : address) in 
     (noOperations, { s with admin = new_admin })
 
-let get_current_week(s : storage_farm) : nat = 
+let get_current_week(s : TYPE.storage_farm) : nat = 
     let delay : nat = abs(Tezos.now - s.creation_time) in
     delay / week_in_seconds + 1n
 
@@ -20,7 +26,7 @@ let get_weeks_indices_as_set(first, last : nat * nat) : nat set =
     append((Set.empty : nat set), first, last)
 
 
-let stakeSome(lp_amount, s : nat * storage_farm) : return =
+let stakeSome(lp_amount, s : nat * TYPE.storage_farm) : return =
     let _check_if_no_tez : bool = if Tezos.amount = 0tez then true else (failwith(amount_must_be_zero_tez) : bool) in
     let _check_amount_positive : bool = 
         if (lp_amount > 0n) 
@@ -130,7 +136,7 @@ let stakeSome(lp_amount, s : nat * storage_farm) : return =
     (ops, { s with user_stakes = new_user_stakes; user_points = final_user_points; farm_points = final_farm_points } )
 
 
-let unstakeSome(lp_amount, s : nat * storage_farm) : return =
+let unstakeSome(lp_amount, s : nat * TYPE.storage_farm) : return =
     let _check_if_no_tez : bool = if Tezos.amount = 0tez then true else (failwith(amount_must_be_zero_tez) : bool) in
     // update current storage with updated user_stakes map
     let existing_bal_opt : nat option = Big_map.find_opt Tezos.sender s.user_stakes in
@@ -235,7 +241,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
         (ops, { s with user_stakes = new_user_stakes} )
 
 
-    let sendReward(token_amount, user_address, s : nat * address * storage_farm) : operation = 
+    let sendReward(token_amount, user_address, s : nat * address * TYPE.storage_farm) : operation = 
         let smak_contract_otp : smak_transfer contract option = Tezos.get_entrypoint_opt "%transfer" s.smak_address in
         let transfer_smak : smak_transfer contract = match smak_contract_otp with
             | Some c -> c
@@ -250,7 +256,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
         let rec multiply(acc, elt, last: nat * nat * nat ) : nat = if last = 0n then acc else multiply(acc * elt, elt, abs(last - 1n)) in
         multiply(1n, x, y)
 
-    let computeReward(offset, s : nat * storage_farm) : storage_farm =
+    let computeReward(offset, s : nat * TYPE.storage_farm) : TYPE.storage_farm =
         let weeks : nat list = get_weeks_indices(1n, s.weeks) in
         let update_reward_per_week_func(week_indice, rate, weeks_max, reward_total, map_accumulator : nat * nat * nat * nat * (nat, nat) map): (nat, nat) map =
             let t_before : nat = power(rate, abs(week_indice - 1n)) in  
@@ -288,7 +294,7 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
         { s with reward_at_week = final_rewards }
 
 
-    let increaseReward(value, s : nat * storage_farm) : return = 
+    let increaseReward(value, s : nat * TYPE.storage_farm) : return = 
         let _check_if_admin : bool = if Tezos.sender = s.admin then true else (failwith(only_admin) : bool) in
         let _check_if_no_tez : bool = if Tezos.amount = 0tez then true else (failwith(amount_must_be_zero_tez) : bool) in
         let current_week : nat = get_current_week(s) in
@@ -309,15 +315,15 @@ let unstakeSome(lp_amount, s : nat * storage_farm) : return =
         let sum_R : nat = Map.fold folded s.reward_at_week 0n in
         let new_r_total : nat = delta + abs(s.total_reward - sum_R) in
         let new_i_max : nat = abs(s.weeks - current_week + 1n) in
-        let new_storage : storage_farm = { s with weeks = new_i_max; total_reward = new_r_total; creation_time = initialized_creation_time } in
-        let new_reward_storage : storage_farm = computeReward(abs(current_week - 1n), new_storage) in
+        let new_storage : TYPE.storage_farm = { s with weeks = new_i_max; total_reward = new_r_total; creation_time = initialized_creation_time } in
+        let new_reward_storage : TYPE.storage_farm = computeReward(abs(current_week - 1n), new_storage) in
         let final_reward : nat = s.total_reward + value in
         let final_weeks : nat = s.weeks in
         (noOperations, { new_reward_storage with total_reward = final_reward; weeks = final_weeks })
 
 
 
-   let claimAll(s : storage_farm) : return = 
+let claimAll(s : TYPE.storage_farm) : return = 
         let _check_if_no_tez : bool = if Tezos.amount = 0tez then true else (failwith(amount_must_be_zero_tez) : bool) in
         let current_week : nat = get_current_week(s) in
         let precision : nat = 100_000_000n in

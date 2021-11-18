@@ -4,9 +4,9 @@ COPY . .
 
 WORKDIR /contract
 
-RUN ligo compile contract main/main.mligo > test/Farm.tz
+RUN ligo compile contract src/contract/farm/main.mligo > src/contract/test/compiled/farm.tz
 
-RUN ligo compile contract main/farms.mligo > test/Farms.tz
+RUN ligo compile contract src/contract/database/main.mligo > src/contract/test/compiled/database.tz
 
 WORKDIR /contract/test
 
