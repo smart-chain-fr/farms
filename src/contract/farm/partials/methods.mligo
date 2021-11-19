@@ -2,8 +2,10 @@
 #include "types.mligo"
 #include "error.mligo"
 
+let week_in_seconds : nat  = 604800n
+let noOperations : operation list = []
+
 // Should update the admin
-// Params : admin (address) 
 let setAdmin(admin, s : address * storage_farm) : return =
     let _check_if_no_tez : bool = if Tezos.amount = 0tez then true else (failwith(amount_must_be_zero_tez) : bool) in
     let new_admin = if Tezos.sender = s.admin then admin

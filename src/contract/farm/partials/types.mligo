@@ -16,11 +16,14 @@ type storage_farm = {
     weeks: nat
 }
 
-let noOperations : operation list = []
+type noOperations = operation list
+type week_in_seconds = nat
+
 
 type return = operation list * storage_farm
 
-let week_in_seconds : nat  = 604800n
+
+
 type smak_transfer = address * (address * nat)
 type stake_param = nat
 type reward_param = nat
