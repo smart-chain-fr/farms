@@ -23,11 +23,11 @@ OpenTezos offers great documentation so we will use it as a reference:
 https://opentezos.com/ligo/installation
 
 - You may simply execute LIGO through Docker to run the ligo CLI : 
-`docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 [command without "ligo"]`
+`docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.29.0 [command without "ligo"]`
 
 _Example:_
 - To compile a smart-contract, you may use: 
-`docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract [args]`
+`docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.29.0 compile contract [args]`
 
 The list of ligo CLI is available on LIGOland:
 https://ligolang.org/docs/api/cli-commands/
@@ -71,15 +71,15 @@ _cf._ https://pypi.org/project/pytezos/
 
 #### II.1) Compilation of the Farm smart contract 
 
-- At root, run `ligo compile-contract src/contract/farm/main.mligo main > src/contract/test/compiled/farm.tz`
+- At root, run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.29.0 compile contract src/contract/farm/main.mligo > src/contract/test/compiled/farm.tz`
 - OR with the last LIGO version run `ligo compile contract src/contract/farm/main.mligo > src/contract/test/compiled/farm.tz`
-- OR with docker run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract src/contract/farm/main.mligo -e main > src/contract/test/compiled/farm.tz`
+- OR with docker run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.29.0 compile contract src/contract/farm/main.mligo -e main > src/contract/test/compiled/farm.tz`
 
 #### II.2) Compilation of the Database smart contract
 
 - At root, run `ligo compile-contract src/contract/database/main.mligo main > src/contract/test/compiled/database.tz`
 - OR with the latest LIGO version run `ligo compile contract src/contract/database/main.mligo > src/contract/test/compiled/database.tz`
-- OR with docker run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract src/contract/database/main.mligo -e main > src/contract/test/compiled/database.tz`
+- OR with docker run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.29.0 compile contract src/contract/database/main.mligo -e main > src/contract/test/compiled/database.tz`
 
 #### II.3) Tests
 
@@ -92,9 +92,9 @@ _cf._ https://pypi.org/project/pytezos/
 
 #### III.1) Initialisation
 
-* Create the database initial storage artefact : at root, run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract src/contract/database/main.mligo --michelson-format json > deploy/artefact/database.json`
+* Create the database initial storage artefact : at root, run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.29.0 compile contract src/contract/database/main.mligo --michelson-format json > deploy/artefact/database.json`
 
-* Create the farm initial storage artefact : at root, run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.27.0 compile contract src/contract/farm/main.mligo --michelson-format json > deploy/artefact/farm.json`
+* Create the farm initial storage artefact : at root, run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.29.0 compile contract src/contract/farm/main.mligo --michelson-format json > deploy/artefact/farm.json`
 
 * Install dependencies, go to the /deploy folder and run `npm install`
 
