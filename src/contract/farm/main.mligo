@@ -2,8 +2,8 @@
 
 let main (action, s : entrypoint * storage_farm) : return =
     match action with
-    | SetAdmin(admin) -> setAdmin(admin, s)
-    | Stake(value) -> stakeSome(value, s)
-    | Unstake(value) -> unstakeSome(value, s)
-    | ClaimAll() -> claimAll(s)
-    | IncreaseReward(value) -> increaseReward(value, s)
+    | Set_admin(admin) -> set_admin(admin, s)
+    | Stake(value) -> stake_some(value, s)
+    | Unstake(value) -> unstake_some(value, s)
+    | Claim_all() -> claim_all(s)
+    | Increase_reward(value) -> increase_reward(value, s)

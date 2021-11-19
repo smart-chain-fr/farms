@@ -1,4 +1,3 @@
-
 type week = nat
 type week_in_seconds = nat
 type stake_param = nat
@@ -20,14 +19,12 @@ type storage_farm = {
     total_weeks: nat
 }
 
-type noOperations = operation list
+type no_operation = operation list
 type return = operation list * storage_farm
 
 type entrypoint = 
-| SetAdmin of (address)
+| Set_admin of (address)
 | Stake of (stake_param)
 | Unstake of (stake_param)
-| ClaimAll of (unit)
-| IncreaseReward of (reward_param)
-
-
+| Claim_all of (unit)
+| Increase_reward of (reward_param)
