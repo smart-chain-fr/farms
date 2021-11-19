@@ -1,5 +1,9 @@
 
 type week = nat
+type week_in_seconds = nat
+type stake_param = nat
+type reward_param = nat
+type smak_transfer = address * (address * nat)
 
 type storage_farm = {
     admin: address;
@@ -13,25 +17,17 @@ type storage_farm = {
     total_reward: nat;
     user_points : (address, (nat, nat) map ) big_map;
     user_stakes : (address, nat) big_map;
-    weeks: nat
+    total_weeks: nat
 }
 
 type noOperations = operation list
-type week_in_seconds = nat
-
-
 type return = operation list * storage_farm
 
-
-
-type smak_transfer = address * (address * nat)
-type stake_param = nat
-type reward_param = nat
-
-// Entrypoints
 type entrypoint = 
 | SetAdmin of (address)
 | Stake of (stake_param)
 | Unstake of (stake_param)
 | ClaimAll of (unit)
 | IncreaseReward of (reward_param)
+
+
