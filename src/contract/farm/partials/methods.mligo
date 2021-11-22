@@ -40,7 +40,14 @@ let power(x, y : nat * nat) : nat =
     multiply(1n, x, y)
 
 let compute_new_storage_rewards(offset, s : nat * storage_farm) : storage_farm =
-    let update_reward_per_week_func(week_indice, rate, weeks_max, reward_total, map_accumulator : nat * nat * nat * nat * (nat, nat) map): (nat, nat) map =
+    let current_week = get_current_week(s) in
+    let week_indices : nat list = get_weeks_indices(1n, s.total_weeks) in 
+    let rate : nat = s.rate in 
+    let weeks_max : nat = s.total_weeks in
+    let total_reward : nat = s.total_reward in
+    let reward_at_week : nat list = s.reward_at_week in
+
+    let update_reward_per_week (week_indice : nat) : nat =
         let t_before : nat = power(rate, abs(week_indice - 1n)) in  
         let t_before_divisor : nat = power(10_000n, abs(week_indice - 1n)) in
         let un_moins_rate : nat = abs(10_000n - rate) in 
@@ -50,20 +57,34 @@ let compute_new_storage_rewards(offset, s : nat * storage_farm) : storage_farm =
         let m_10000_5 : nat = power(10_000n, weeks_max) in
         let denominator : nat = abs(m_10000_5 - t_I_max) in
         let final_denominator : nat = t_before_divisor * denominator in 
-        let final_numerator : nat = numerator * reward_total * t_before in 
-        let result : nat =  final_numerator / final_denominator in 
-        Map.update (week_indice + offset) (Some(result)) map_accumulator
+        let final_numerator : nat = numerator * total_reward * t_before in 
+        final_numerator / final_denominator
     in
-    let current_week = get_current_week(s) in
-    let rec modify_rewards_func(resulting_acc, weeks_indice : (nat, nat) map * nat) : (nat, nat) map =
-    if weeks_indice > s.total_weeks
-        then resulting_acc
-        else
-        let modified : (nat, nat) map =
-           update_reward_per_week_func(weeks_indice, s.rate, s.total_weeks, s.total_reward, resulting_acc) in
-        modify_rewards_func(modified, weeks_indice + 1n)
+
+    let rec update_rewards(lst1, lst2, res : nat list * nat list * nat list) : nat list =
+        match lst1, lst2 with
+            [], [] -> res
+            | [], _lst -> failwith "size don't match"
+            | _lst, [] -> failwith "size don't match"
+            | hd1::tl1, hd2::tl2 ->
+                let new_res : nat list =
+                    if hd1 < current_week
+                    then hd2 :: res
+                    else update_reward_per_week(hd1) :: res
+                in
+                update_rewards(tl1, tl2, new_res)
     in
-    let final_rewards : (nat, nat) map = modify_rewards_func(s.reward_at_week, current_week) in
+
+    let empty_list : nat list = [] in
+    let final_rewards_reversed : nat list = update_rewards(week_indices, reward_at_week, empty_list) in
+
+    let rec reverse_list (lst, res : nat list * nat list) : nat list =
+        match lst, res with
+            [], _lst -> _lst
+            |  hd1::tl1, _lst -> reverse_list(tl1, hd1 :: _lst)
+    in
+    let final_rewards : nat list = reverse_list(final_rewards_reversed, empty_list) in
+
     { s with reward_at_week = final_rewards }
 
 // ------------------

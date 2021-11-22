@@ -7,11 +7,13 @@ type smak_transfer = address * (address * nat)
 type storage_farm = {
     admin: address;
     creation_time: timestamp;
-    farm_points : (nat, nat) map;
     lp_token_address: address;
     rate: nat;
     reserve_address: address;
-    reward_at_week : (week, nat) map;
+    // reward_at_week : (week, nat) map; // change to list
+    // farm_points : (nat, nat) map; // change to list
+    reward_at_week : nat list; // change to list
+    farm_points : nat list; // change to list
     smak_address: address;
     total_reward: nat;
     user_points : (address, (nat, nat) map ) big_map;
