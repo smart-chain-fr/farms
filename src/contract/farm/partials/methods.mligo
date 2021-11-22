@@ -20,7 +20,6 @@ let get_weeks_indices(first, last : nat * nat) : nat list =
     let rec append ( acc, elt, last: nat list * nat * nat) : nat list = if elt <= last then append (elt :: acc, elt + 1n, last) else acc in
     append(([]:nat list), first, last)
 
-    
 let get_weeks_indices_as_set(first, last : nat * nat) : nat set =
     let rec append ( acc, elt, last: nat set * nat * nat) : nat set = if elt <= last then append (Set.add elt acc, elt + 1n, last) else acc in
     append((Set.empty : nat set), first, last)
@@ -36,7 +35,7 @@ let sendReward(token_amount, user_address, s : nat * address * storage_farm) : o
     let op : operation = Tezos.transaction (transfer_param) 0mutez transfer_smak in
     op
 
-let power(x, y: nat * nat) : nat = 
+let power(x, y : nat * nat) : nat = 
     let rec multiply(acc, elt, last: nat * nat * nat ) : nat = if last = 0n then acc else multiply(acc * elt, elt, abs(last - 1n)) in
     multiply(1n, x, y)
 
@@ -79,7 +78,6 @@ let set_admin(new_admin, storage : address * storage_farm) : return =
 
 let increase_reward(value, storage : nat * storage_farm) : return =
     let creation_time : timestamp = storage.creation_time in
-    let admin_address : address = storage.admin in
     let total_weeks : nat = storage.total_weeks in
     let total_reward : nat = storage.total_reward in
     let reward_at_week : (week, nat) map = storage.reward_at_week in
@@ -119,7 +117,7 @@ let stake_some(lp_amount, s : nat * storage_farm) : return =
     // create a transfer transaction (for LP token contract)
     let transfer_param : transfer = { address_from = sender_address; address_to = Tezos.self_address; value = lp_amount } in 
     let op : operation = Tezos.transaction (Transfer(transfer_param)) 0mutez lp_contract in
-    let ops : operation list = [ op; ] in
+    let operations : operation list = [ op; ] in
     // update current storage with updated user_stakes map
     let existing_bal_opt : nat option = Big_map.find_opt sender_address s.user_stakes in
     let new_user_stakes : (address, nat) big_map = match existing_bal_opt with
@@ -202,7 +200,8 @@ let stake_some(lp_amount, s : nat * storage_farm) : return =
             modify_farm_points_func(modified, delta, remaining_weeks)
     in
     let final_farm_points : (nat, nat) map = modify_farm_points_func(new_farm_points, points_next_weeks, future_weeks) in
-    (ops, { s with user_stakes = new_user_stakes; user_points = final_user_points; farm_points = final_farm_points } )
+    let final_storage = { s with user_stakes = new_user_stakes; user_points = final_user_points; farm_points = final_farm_points } in
+    (operations, final_storage)
 
 let unstake_some(lp_amount, s : nat * storage_farm) : return =
     let current_time : timestamp = Tezos.now in
@@ -224,7 +223,7 @@ let unstake_some(lp_amount, s : nat * storage_farm) : return =
     // create a transfer transaction (for LP token contract)
     let transfer_param : transfer = { address_from = Tezos.self_address; address_to = sender_address; value = lp_amount } in 
     let op : operation = Tezos.transaction (Transfer(transfer_param)) 0mutez lp_contract in
-    let ops : operation list = [ op; ] in
+    let operations : operation list = [ op; ] in
     if ((current_time - s.creation_time - (s.total_weeks *  week_in_seconds)) < 0 ) then  
         let current_week : nat = get_current_week(s) in
         let endofweek_in_seconds : timestamp = s.creation_time + int(current_week * week_in_seconds) in
@@ -300,9 +299,11 @@ let unstake_some(lp_amount, s : nat * storage_farm) : return =
                 modify_farm_points_func(modified, delta, remaining_weeks)
         in
         let final_farm_points : (nat, nat) map = modify_farm_points_func(new_farm_points, points_next_weeks, future_weeks) in 
-        (ops, { s with user_stakes = new_user_stakes; user_points = final_user_points; farm_points = final_farm_points } )
+        let final_storage = { s with user_stakes = new_user_stakes; user_points = final_user_points; farm_points = final_farm_points } in 
+        (operations, final_storage)
     else
-        (ops, { s with user_stakes = new_user_stakes} )
+        let final_storage = { s with user_stakes = new_user_stakes} in
+        (operations, final_storage)
 
 let claim_all(s : storage_farm) : return = 
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
@@ -354,7 +355,7 @@ let claim_all(s : storage_farm) : return =
             compute_func(modified_acc, remaining_indices)
     in
     let percentages : (address, (nat, nat) map) map = compute_func((Map.empty : (address, (nat, nat) map) map), weeks) in
-    let compute_and_send_func(ops, i : operation list * (address * (nat, nat) map) ): operation list =
+    let compute_and_send_func(operations, i : operation list * (address * (nat, nat) map) ): operation list =
         let send_reward_func(acc, elt : operation list * (nat * nat)) : operation list =
             let (week_indice, percent) : nat * nat = elt in 
             let reward_for_week : nat = match Map.find_opt week_indice s.reward_at_week with
@@ -364,7 +365,7 @@ let claim_all(s : storage_farm) : return =
             let amount_to_send : nat = reward_for_week * percent / precision in
             sendReward(amount_to_send, sender_address, s) :: acc
         in
-        Map.fold send_reward_func i.1 ops
+        Map.fold send_reward_func i.1 operations
     in
     let operations : operation list = Map.fold compute_and_send_func percentages ([] : operation list) in
     let remove_points (acc, percentages_i : (address, (nat, nat) map) big_map * (address * (nat, nat) map) ) : (address, (nat, nat) map) big_map = 
@@ -386,4 +387,5 @@ let claim_all(s : storage_farm) : return =
         modified_map
     in
     let remove_points_map : (address, (nat, nat) map) big_map = Map.fold remove_points percentages s.user_points in 
-    (operations, { s with user_points = remove_points_map })
+    let final_storage = { s with user_points = remove_points_map } in
+    (operations, final_storage)
