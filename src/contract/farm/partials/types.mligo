@@ -16,7 +16,8 @@ type storage_farm = {
     farm_points : nat list; // change to list
     smak_address: address;
     total_reward: nat;
-    user_points : (address, (nat, nat) map ) big_map;
+    // user_points : (address, (nat, nat) map ) big_map; 
+    user_points : (address, nat list) big_map;
     user_stakes : (address, nat) big_map;
     total_weeks: nat
 }

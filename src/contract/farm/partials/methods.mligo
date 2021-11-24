@@ -2,7 +2,6 @@
 #include "types.mligo"
 #include "error.mligo"
 
-
 // -----------------
 // --  CONSTANTS  --
 // -----------------
@@ -39,14 +38,7 @@ let power(x, y : nat * nat) : nat =
     let rec multiply(acc, elt, last: nat * nat * nat ) : nat = if last = 0n then acc else multiply(acc * elt, elt, abs(last - 1n)) in
     multiply(1n, x, y)
 
-let compute_new_storage_rewards(offset, s : nat * storage_farm) : storage_farm =
-    let current_week = get_current_week(s) in
-    let week_indices : nat list = get_weeks_indices(1n, s.total_weeks) in 
-    let rate : nat = s.rate in 
-    let weeks_max : nat = s.total_weeks in
-    let total_reward : nat = s.total_reward in
-    let reward_at_week : nat list = s.reward_at_week in
-
+let compute_new_rewards(current_week, week_indices, rate, weeks_max, total_reward, reward_at_week : nat * nat list * nat * nat * nat * nat list) : nat list =
     let update_reward_per_week (week_indice : nat) : nat =
         let t_before : nat = power(rate, abs(week_indice - 1n)) in  
         let t_before_divisor : nat = power(10_000n, abs(week_indice - 1n)) in
@@ -60,32 +52,20 @@ let compute_new_storage_rewards(offset, s : nat * storage_farm) : storage_farm =
         let final_numerator : nat = numerator * total_reward * t_before in 
         final_numerator / final_denominator
     in
-
-    let rec update_rewards(lst1, lst2, res : nat list * nat list * nat list) : nat list =
+    let rec update_rewards(lst1, lst2 : nat list * nat list) : nat list =
         match lst1, lst2 with
-            [], [] -> res
+            [], [] -> []
             | [], _lst -> failwith "size don't match"
             | _lst, [] -> failwith "size don't match"
             | hd1::tl1, hd2::tl2 ->
-                let new_res : nat list =
+                let new_hd : nat =
                     if hd1 < current_week
-                    then hd2 :: res
-                    else update_reward_per_week(hd1) :: res
+                    then hd2
+                    else update_reward_per_week(hd1)
                 in
-                update_rewards(tl1, tl2, new_res)
+                new_hd :: update_rewards(tl1, tl2)
     in
-
-    let empty_list : nat list = [] in
-    let final_rewards_reversed : nat list = update_rewards(week_indices, reward_at_week, empty_list) in
-
-    let rec reverse_list (lst, res : nat list * nat list) : nat list =
-        match lst, res with
-            [], _lst -> _lst
-            |  hd1::tl1, _lst -> reverse_list(tl1, hd1 :: _lst)
-    in
-    let final_rewards : nat list = reverse_list(final_rewards_reversed, empty_list) in
-
-    { s with reward_at_week = final_rewards }
+    update_rewards(week_indices, reward_at_week)
 
 // ------------------
 // -- ENTRY POINTS --
@@ -97,44 +77,54 @@ let set_admin(new_admin, storage : address * storage_farm) : return =
     let final_storage = { storage with admin = new_admin } in
     (no_operation, final_storage)
 
+//TODO : Initialize
 let increase_reward(value, storage : nat * storage_farm) : return =
-    let creation_time : timestamp = storage.creation_time in
     let total_weeks : nat = storage.total_weeks in
     let total_reward : nat = storage.total_reward in
-    let reward_at_week : (week, nat) map = storage.reward_at_week in
     let current_time : timestamp = Tezos.now in
+    let creation_time : timestamp = storage.creation_time in
+    let delta : nat = value in
+    let initialized_creation_time: timestamp = if (delta = 0n) then current_time else creation_time in
+    let current_week : nat = get_current_week(storage) in
+    let rate : nat = storage.rate in 
+    let week_indices : nat list = get_weeks_indices(1n, total_weeks) in 
+    let reward_at_week : nat list = storage.reward_at_week in
 
     let _check_if_admin : unit = assert_with_error (Tezos.sender = storage.admin) only_admin in
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
-    let current_week : nat = get_current_week(storage) in
     let _check_current_week : unit = assert_with_error (current_time < creation_time + int(total_weeks * week_in_seconds)) no_week_left in
-    let delta : nat = value in
-    //sum (current_week , total_weeks) reward_at_week
-    let weeks_set : nat set = get_weeks_indices_as_set(current_week, total_weeks) in
-    let initialized_creation_time: timestamp = if (delta = 0n) then current_time else creation_time in
-    let folded (acc, elt: nat * (nat * nat) ) : nat = if Set.mem elt.0 weeks_set then acc  else acc + elt.1 in
-    let sum_R : nat = Map.fold folded reward_at_week 0n in
-    let new_r_total : nat = delta + abs(storage.total_reward - sum_R) in
-    let new_i_max : nat = abs(storage.total_weeks - current_week + 1n) in
-    let new_storage : storage_farm = { storage with total_weeks = new_i_max; total_reward = new_r_total; creation_time = initialized_creation_time } in
-    let new_reward_storage : storage_farm = compute_new_storage_rewards(abs(current_week - 1n), new_storage) in
-    let final_reward : nat = total_reward + value in
-    let final_weeks : nat = total_weeks in
 
-    let final_storage = { new_reward_storage with total_reward = final_reward; total_weeks = final_weeks } in
+    let folded (acc, elt: nat * nat) : nat = acc + elt in
+    let sum_R : nat = List.fold folded reward_at_week 0n in
+    let new_total_reward : nat = delta + abs(storage.total_reward - sum_R) in
+
+    let new_reward_at_week : nat list = compute_new_rewards(current_week, week_indices, rate, total_weeks, total_reward, reward_at_week) in
+
+    let final_storage = { storage with total_reward = new_total_reward ;
+                                       reward_at_week = new_reward_at_week ;
+                                       creation_time = initialized_creation_time } in
     (no_operation, final_storage)
 
 let stake_some(lp_amount, s : nat * storage_farm) : return =
     let current_time : timestamp = Tezos.now in
-    let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
-    let _check_amount_positive : unit = assert_with_error (lp_amount > 0n) amount_is_null in
-    let _check_current_week : unit = assert_with_error (current_time < s.creation_time + int(s.total_weeks * week_in_seconds)) no_week_left in
     let sender_address : address = Tezos.sender in // Avoids recalculating Tezos.sender each time for gas
+    let farm_points : nat list = s.farm_points in
+    let user_stakes : (address, nat) big_map = s.user_stakes in
+    let user_points : (address, nat list) big_map = s.user_points in
+    let total_weeks : nat = s.total_weeks in
     let lp_contract_opt : parameter contract option = Tezos.get_contract_opt(s.lp_token_address) in
     let lp_contract : parameter contract = match lp_contract_opt with
         | None -> (failwith(unknown_lp_contract) : parameter contract)
         | Some(x) -> x
     in
+    let current_week : nat = get_current_week(s) in
+    let endofweek_in_seconds : timestamp = s.creation_time + int(current_week * week_in_seconds) in
+
+    let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
+    let _check_amount_positive : unit = assert_with_error (lp_amount > 0n) amount_is_null in
+    let _check_current_week : unit = assert_with_error (current_time < s.creation_time + int(s.total_weeks * week_in_seconds)) no_week_left in
+    let _check_in_week : unit = assert_with_error (current_time - endofweek_in_seconds < 0) time_too_early in
+
     // create a transfer transaction (for LP token contract)
     let transfer_param : transfer = { address_from = sender_address; address_to = Tezos.self_address; value = lp_amount } in 
     let op : operation = Tezos.transaction (Transfer(transfer_param)) 0mutez lp_contract in
@@ -144,84 +134,48 @@ let stake_some(lp_amount, s : nat * storage_farm) : return =
     let new_user_stakes : (address, nat) big_map = match existing_bal_opt with
         | None -> Big_map.add sender_address lp_amount s.user_stakes
         | Some(v) -> Big_map.update sender_address (Some(lp_amount + v)) s.user_stakes
-    in
-    let current_week : nat = get_current_week(s) in
-    let endofweek_in_seconds : timestamp = s.creation_time + int(current_week * week_in_seconds) in
-    
-    //assert_some (Tezos.now - endofweek_in_seconds < 0)
-    let _check_in_week : unit = assert_with_error (current_time - endofweek_in_seconds < 0) time_too_early in
+    in    
 
     let before_end_week : nat = abs(current_time - endofweek_in_seconds) in 
     let points_current_week : nat = before_end_week * lp_amount in
     let points_next_weeks : nat = week_in_seconds * lp_amount in
     
-    //user_points[user_address][current_week] += before_end_week * lp_amount
-    let user_weeks_opt : (nat, nat) map option = Big_map.find_opt sender_address s.user_points in
-    let new_user_points : (address, (nat, nat) map ) big_map = match user_weeks_opt with
-    | None -> Big_map.add sender_address (Map.literal [(current_week, points_current_week)] : (nat, nat) map) s.user_points
-    | Some(m) -> 
-        let modified_current_week : (nat, nat) map = match (Map.find_opt current_week m) with
-        | None -> (Map.literal [(current_week, points_current_week)] : (nat, nat) map)
-        | Some(wpts) -> (Map.update current_week (Some(points_current_week + wpts)) m)
-        in
-        Big_map.update sender_address (Some(modified_current_week)) s.user_points
-    in 
-    //farm_points[current_week] += before_end_week * lp_amount
-    let new_farm_points = match Map.find_opt current_week s.farm_points with
-    | None -> Map.add current_week points_current_week s.farm_points
-    | Some(val_) -> Map.update current_week (Some(val_ + points_current_week)) s.farm_points
+    //create the point week list to add
+    let rec calculate_new_points_by_week(naturel : nat) : nat list =
+        if naturel > total_weeks then []
+        else begin
+                let value = 
+                    if naturel < current_week then 0n
+                    else if naturel = current_week then points_current_week
+                    else points_next_weeks
+                in
+                value :: calculate_new_points_by_week(naturel + 1n)
+             end
     in
-    //for (i = current_week + 1; i <= s.total_weeks; i++) 
-    //    user_points[user_address][i] += week_in_seconds * lp_amount
-    let future_weeks : nat list = get_weeks_indices(current_week + 1n, s.total_weeks) in
-    let update_user_points_func = fun (a, v, i, m : address * nat * nat * (address, (nat, nat) map ) big_map) -> 
-        match Big_map.find_opt a m with
-        | None -> Big_map.add sender_address (Map.literal [(i, v)] : (nat, nat) map) m
-        | Some(weeks_map) ->
-            let new_weeks_map : (nat, nat) map = match Map.find_opt i weeks_map with
-            | None -> Map.add i v weeks_map
-            | Some(value) -> Map.update i (Some(value +v)) weeks_map
-            in
-            Big_map.update a (Some(new_weeks_map)) m
-    in
-    let rec modify_user_points_func(resulting_acc, modificateur, weeks_indices : (address, (nat, nat) map ) big_map * nat * nat list) : (address, (nat, nat) map ) big_map =
-        let week_indice_opt : nat option = List.head_opt weeks_indices in
-        match week_indice_opt with
-        | None -> resulting_acc
-        | Some(week_indice) -> 
-            let modified : (address, (nat, nat) map ) big_map = update_user_points_func(sender_address, modificateur, week_indice, resulting_acc) in
-            let remaining_weeks_opt : nat list option = List.tail_opt weeks_indices in
-            let remaining_weeks : nat list = match remaining_weeks_opt with
-            | None -> ([] : nat list)
-            | Some(l) -> l
-            in
-            modify_user_points_func(modified, modificateur, remaining_weeks)
-    in
-    let final_user_points : (address, (nat, nat) map ) big_map  = modify_user_points_func(new_user_points, points_next_weeks, future_weeks)
+    let new_points_by_weeks : nat list = calculate_new_points_by_week(1n) in
+
+    let rec add_list(lst1, lst2 : nat list * nat list) : nat list =
+        match lst1, lst2 with
+            [], [] -> []
+            | [], _lst -> failwith "size don't match"
+            | _lst, [] -> failwith "size don't match"
+            | hd1::tl1, hd2::tl2 ->
+                let new_hd : nat = hd1 + hd2 in
+                new_hd :: add_list(tl1, tl2)
     in
 
-    //for (i = current_week + 1; i <= s.total_weeks; i++) 
-    //    farm_points[i] += week_in_seconds * lp_amount 
-    let update_farm_points_func = fun (v, i, m : nat * nat * (nat, nat) map) ->
-        match (Map.find_opt i m) with
-        | None -> Map.add i v m
-        | Some(entry) -> Map.update i (Some(entry+v)) m
+    let personal_user_points (user_points, sender_address : (address, nat list) big_map * address ) : nat list =
+        match Big_map.find_opt sender_address user_points with
+            | None -> new_points_by_weeks
+            | Some(user_week_points) -> add_list(user_week_points, new_points_by_weeks)
     in
-    let rec modify_farm_points_func(farm_result, delta, weeks_indices : (nat, nat) map * nat * nat list) : (nat, nat) map =
-        let week_indice_opt : nat option = List.head_opt weeks_indices in
-        match week_indice_opt with
-        | None -> farm_result
-        | Some(week_indice) -> 
-            let modified : (nat, nat) map = update_farm_points_func(delta, week_indice, farm_result) in
-            let remaining_weeks_opt : nat list option = List.tail_opt weeks_indices in
-            let remaining_weeks : nat list = match remaining_weeks_opt with
-            | None -> ([] : nat list)
-            | Some(l) -> l
-            in
-            modify_farm_points_func(modified, delta, remaining_weeks)
-    in
-    let final_farm_points : (nat, nat) map = modify_farm_points_func(new_farm_points, points_next_weeks, future_weeks) in
-    let final_storage = { s with user_stakes = new_user_stakes; user_points = final_user_points; farm_points = final_farm_points } in
+
+    let new_user_points : nat list = personal_user_points(user_points, sender_address) in
+    let new_final_map : (address, nat list) big_map = Big_map.update sender_address (Some(new_user_points)) user_points in
+
+    let new_farm_points : nat list = add_list(new_points_by_weeks, farm_points) in
+
+    let final_storage = { s with user_stakes = new_user_stakes; user_points = new_final_map; farm_points = new_farm_points } in
     (operations, final_storage)
 
 let unstake_some(lp_amount, s : nat * storage_farm) : return =
