@@ -7,6 +7,7 @@
 // -----------------
 let week_in_seconds : nat  = 604800n
 let no_operation : operation list = []
+let empty_nat_list : nat list = []
 
 // -----------------
 // --  INTERNALS  --
@@ -52,20 +53,31 @@ let compute_new_rewards(current_week, week_indices, rate, weeks_max, total_rewar
         let final_numerator : nat = numerator * total_reward * t_before in 
         final_numerator / final_denominator
     in
-    let rec update_rewards(lst1, lst2 : nat list * nat list) : nat list =
+
+
+    let rec update_rewards(lst1, lst2, res : nat list * nat list * nat list) : nat list =
         match lst1, lst2 with
-            [], [] -> []
+            [], [] -> res
             | [], _lst -> failwith "size don't match"
             | _lst, [] -> failwith "size don't match"
             | hd1::tl1, hd2::tl2 ->
-                let new_hd : nat =
+                let new_res : nat list =
                     if hd1 < current_week
-                    then hd2
-                    else update_reward_per_week(hd1)
+                    then hd2 :: res
+                    else update_reward_per_week(hd1) :: res
                 in
-                new_hd :: update_rewards(tl1, tl2)
+                update_rewards(tl1, tl2, new_res)
     in
-    update_rewards(week_indices, reward_at_week)
+
+    let rec reverse_list (lst, res : nat list * nat list) : nat list =
+        match lst, res with
+            [], _lst -> _lst
+            |  hd1::tl1, _lst -> reverse_list(tl1, hd1 :: _lst)
+    in
+
+
+    let final_reward_list : nat list = update_rewards(week_indices, reward_at_week, empty_nat_list) in
+    reverse_list(final_reward_list, empty_nat_list)
 
 // ------------------
 // -- ENTRY POINTS --
@@ -109,7 +121,6 @@ let stake_some(lp_amount, s : nat * storage_farm) : return =
     let current_time : timestamp = Tezos.now in
     let sender_address : address = Tezos.sender in // Avoids recalculating Tezos.sender each time for gas
     let farm_points : nat list = s.farm_points in
-    let user_stakes : (address, nat) big_map = s.user_stakes in
     let user_points : (address, nat list) big_map = s.user_points in
     let total_weeks : nat = s.total_weeks in
     let lp_contract_opt : parameter contract option = Tezos.get_contract_opt(s.lp_token_address) in
@@ -121,7 +132,7 @@ let stake_some(lp_amount, s : nat * storage_farm) : return =
     let endofweek_in_seconds : timestamp = s.creation_time + int(current_week * week_in_seconds) in
 
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
-    let _check_amount_positive : unit = assert_with_error (lp_amount > 0n) amount_is_null in
+    let _check_amount_positive : unit = assert_with_error (lp_amount > 0n) amount_is_null in // TODO : why ?
     let _check_current_week : unit = assert_with_error (current_time < s.creation_time + int(s.total_weeks * week_in_seconds)) no_week_left in
     let _check_in_week : unit = assert_with_error (current_time - endofweek_in_seconds < 0) time_too_early in
 
@@ -141,47 +152,62 @@ let stake_some(lp_amount, s : nat * storage_farm) : return =
     let points_next_weeks : nat = week_in_seconds * lp_amount in
     
     //create the point week list to add
-    let rec calculate_new_points_by_week(naturel : nat) : nat list =
-        if naturel > total_weeks then []
+    let rec calculate_new_points_by_week(total_weeks, acc : nat * nat list) : nat list =
+        if total_weeks = 0n then acc
         else begin
                 let value = 
-                    if naturel < current_week then 0n
-                    else if naturel = current_week then points_current_week
+                    if total_weeks < current_week then 0n
+                    else if total_weeks = current_week then points_current_week
                     else points_next_weeks
                 in
-                value :: calculate_new_points_by_week(naturel + 1n)
+                calculate_new_points_by_week(abs(total_weeks - 1n), value :: acc)
              end
     in
-    let new_points_by_weeks : nat list = calculate_new_points_by_week(1n) in
 
-    let rec add_list(lst1, lst2 : nat list * nat list) : nat list =
+    let new_points_by_weeks : nat list = calculate_new_points_by_week(total_weeks, empty_nat_list) in
+
+
+
+    let rec add_list(lst1, lst2, res : nat list * nat list * nat list) : nat list =
         match lst1, lst2 with
-            [], [] -> []
+            [], [] -> res
             | [], _lst -> failwith "size don't match"
             | _lst, [] -> failwith "size don't match"
             | hd1::tl1, hd2::tl2 ->
                 let new_hd : nat = hd1 + hd2 in
-                new_hd :: add_list(tl1, tl2)
+                add_list(tl1, tl2, new_hd :: res)
+    in
+
+    let rec reverse_list (lst, res : nat list * nat list) : nat list =
+        match lst, res with
+            [], _lst -> _lst
+            |  hd1::tl1, _lst -> reverse_list(tl1, hd1 :: _lst)
     in
 
     let personal_user_points (user_points, sender_address : (address, nat list) big_map * address ) : nat list =
         match Big_map.find_opt sender_address user_points with
             | None -> new_points_by_weeks
-            | Some(user_week_points) -> add_list(user_week_points, new_points_by_weeks)
+            | Some(user_week_points) -> reverse_list(add_list(user_week_points, new_points_by_weeks, empty_nat_list), empty_nat_list)
     in
 
     let new_user_points : nat list = personal_user_points(user_points, sender_address) in
     let new_final_map : (address, nat list) big_map = Big_map.update sender_address (Some(new_user_points)) user_points in
 
-    let new_farm_points : nat list = add_list(new_points_by_weeks, farm_points) in
+    let new_farm_points : nat list = reverse_list(add_list(farm_points, new_points_by_weeks, empty_nat_list), empty_nat_list) in
 
     let final_storage = { s with user_stakes = new_user_stakes; user_points = new_final_map; farm_points = new_farm_points } in
     (operations, final_storage)
 
 let unstake_some(lp_amount, s : nat * storage_farm) : return =
     let current_time : timestamp = Tezos.now in
+    let current_week : nat = get_current_week(s) in
+    let farm_points : nat list = s.farm_points in
+    let user_points : (address, nat list) big_map = s.user_points in
+    let total_weeks : nat = s.total_weeks in
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
     let sender_address : address = Tezos.sender in // Avoids recalculating Tezos.sender each time for gas
+    let endofweek_in_seconds : timestamp = s.creation_time + int(current_week * week_in_seconds) in 
+
     // update current storage with updated user_stakes map
     let existing_bal_opt : nat option = Big_map.find_opt sender_address s.user_stakes in
     let user_stakes : nat = match existing_bal_opt with
@@ -199,168 +225,91 @@ let unstake_some(lp_amount, s : nat * storage_farm) : return =
     let transfer_param : transfer = { address_from = Tezos.self_address; address_to = sender_address; value = lp_amount } in 
     let op : operation = Tezos.transaction (Transfer(transfer_param)) 0mutez lp_contract in
     let operations : operation list = [ op; ] in
-    if ((current_time - s.creation_time - (s.total_weeks *  week_in_seconds)) < 0 ) then  
-        let current_week : nat = get_current_week(s) in
-        let endofweek_in_seconds : timestamp = s.creation_time + int(current_week * week_in_seconds) in
-        
-        let _check_in_week : unit = assert_with_error (current_time - endofweek_in_seconds < 0) time_too_early in
+
+    if (current_time < endofweek_in_seconds ) then // TODO : simplify before end of life
+
         let before_end_week : nat = abs(current_time - endofweek_in_seconds) in 
         let points_current_week : nat = before_end_week * lp_amount in
         let points_next_weeks : nat = week_in_seconds * lp_amount in
         
-        //user_points[user_address][current_week] += before_end_week * lp_amount
-        let user_weeks_opt : (nat, nat) map option = Big_map.find_opt sender_address s.user_points in
-        let new_user_points : (address, (nat, nat) map ) big_map = match user_weeks_opt with
-        | None -> (failwith(user_no_points): (address, (nat, nat) map ) big_map)
-        | Some(m) -> 
-            let modified_current_week : (nat, nat) map = match (Map.find_opt current_week m) with
-            | None -> (failwith(user_no_points):  (nat, nat) map)
-            | Some(wpts) -> (Map.update current_week (Some(abs(wpts - points_current_week))) m)
-            in
-            Big_map.update sender_address (Some(modified_current_week)) s.user_points
-        in 
-        //farm_points[current_week] += before_end_week * lp_amount
-        let new_farm_points = match Map.find_opt current_week s.farm_points with
-        | None -> (failwith(user_no_points):  (nat, nat) map)
-        | Some(val_) -> Map.update current_week (Some(abs(val_ - points_current_week))) s.farm_points
-        in
-        //for (i = current_week + 1; i <= s.total_weeks; i++) 
-        //    user_points[user_address][i] += week_in_seconds * lp_amount
-        let future_weeks : nat list = get_weeks_indices(current_week + 1n, s.total_weeks) in
-        let update_user_points_func = fun (a, v, i, m : address * nat * nat * (address, (nat, nat) map ) big_map) -> 
-            match Big_map.find_opt a m with
-            | None -> (failwith(unknown_user_unstake):  (address, (nat , nat) map)big_map)
-            | Some(weeks_map) ->
-                let new_weeks_map : (nat, nat) map = match Map.find_opt i weeks_map with
-                | None -> (failwith(unknown_user_unstake): (nat , nat) map)
-                | Some(value) -> Map.update i (Some(abs(value - v))) weeks_map
-                in
-                Big_map.update a (Some(new_weeks_map)) m
-        in
-        let rec modify_user_points_func(resulting_acc, modificateur, weeks_indices : (address, (nat, nat) map ) big_map * nat * nat list) : (address, (nat, nat) map ) big_map =
-            let week_indice_opt : nat option = List.head_opt weeks_indices in
-            match week_indice_opt with
-            | None -> resulting_acc
-            | Some(week_indice) -> 
-                let modified : (address, (nat, nat) map ) big_map = update_user_points_func(sender_address, modificateur, week_indice, resulting_acc) in
-                let remaining_weeks_opt : nat list option = List.tail_opt weeks_indices in
-                let remaining_weeks : nat list = match remaining_weeks_opt with
-                | None -> ([] : nat list)        
-                | Some(l) -> l
-                in
-                modify_user_points_func(modified, modificateur, remaining_weeks)
-        in
-        let final_user_points : (address, (nat, nat) map ) big_map  = modify_user_points_func(new_user_points, points_next_weeks, future_weeks)
+        //create the point week list to substract
+        let rec calculate_new_points_by_week(total_weeks, acc : nat * nat list) : nat list =
+            if total_weeks = 0n then acc
+            else begin
+                    let value = 
+                        if total_weeks < current_week then 0n
+                        else if total_weeks = current_week then points_current_week
+                        else points_next_weeks
+                    in
+                    calculate_new_points_by_week(abs(total_weeks - 1n), value :: acc)
+                end
         in
 
-        //for (i = current_week + 1; i <= s.total_weeks; i++) 
-        //    farm_points[i] += week_in_seconds * lp_amount 
-        let update_farm_points_func = fun (v, i, m : nat * nat * (nat, nat) map) ->
-            match (Map.find_opt i m) with
-            | None -> (failwith(user_no_points):  (nat, nat) map)
-            | Some(entry) -> Map.update i (Some(abs(entry-v))) m
+        let rec reverse_list (lst, res : nat list * nat list) : nat list =
+            match lst, res with
+                [], _lst -> _lst
+                |  hd1::tl1, _lst -> reverse_list(tl1, hd1 :: _lst)
         in
-        let rec modify_farm_points_func(farm_result, delta, weeks_indices : (nat, nat) map * nat * nat list) : (nat, nat) map =
-            let week_indice_opt : nat option = List.head_opt weeks_indices in
-            match week_indice_opt with
-            | None -> farm_result
-            | Some(week_indice) -> 
-                let modified : (nat, nat) map = update_farm_points_func(delta, week_indice, farm_result) in
-                let remaining_weeks_opt : nat list option = List.tail_opt weeks_indices in
-                let remaining_weeks : nat list = match remaining_weeks_opt with
-                | None -> ([] : nat list)
-                | Some(l) -> l
-                in
-                modify_farm_points_func(modified, delta, remaining_weeks)
+
+        let new_points_by_weeks : nat list = calculate_new_points_by_week(total_weeks, empty_nat_list) in
+
+        let rec substract_list(lst1, lst2, res : nat list * nat list * nat list) : nat list =
+            match lst1, lst2 with
+                [], [] -> res
+                | [], _lst -> failwith "size don't match"
+                | _lst, [] -> failwith "size don't match"
+                | hd1::tl1, hd2::tl2 ->
+                    let new_hd : nat = abs(hd1 - hd2) in
+                    substract_list(tl1, tl2, new_hd :: res)
         in
-        let final_farm_points : (nat, nat) map = modify_farm_points_func(new_farm_points, points_next_weeks, future_weeks) in 
-        let final_storage = { s with user_stakes = new_user_stakes; user_points = final_user_points; farm_points = final_farm_points } in 
+
+        let personal_user_points (user_points, sender_address : (address, nat list) big_map * address ) : nat list =
+            match Big_map.find_opt sender_address user_points with
+                | None -> failwith "Some points should exist"    // TODO : refacto error & verify legitimity
+                | Some(user_week_points) -> reverse_list(substract_list(user_week_points, new_points_by_weeks, empty_nat_list), empty_nat_list) 
+        in
+
+        let new_user_points : nat list = personal_user_points(user_points, sender_address) in
+        let new_final_map : (address, nat list) big_map = Big_map.update sender_address (Some(new_user_points)) user_points in
+
+        let new_farm_points : nat list = reverse_list(substract_list(farm_points, new_points_by_weeks, empty_nat_list), empty_nat_list)  in
+
+        let final_storage = { s with user_stakes = new_user_stakes; user_points = new_final_map; farm_points = new_farm_points } in
         (operations, final_storage)
-    else
+
+    else    
+
         let final_storage = { s with user_stakes = new_user_stakes} in
         (operations, final_storage)
 
 let claim_all(s : storage_farm) : return = 
-    let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
+    let farm_points : nat list = s.farm_points in
+    let user_points : (address, nat list) big_map = s.user_points in
     let sender_address : address = Tezos.sender in // Avoids recalculating Tezos.sender each time for gas
-    let current_week : nat = get_current_week(s) in
-    let precision : nat = 100_000_000n in
-    let weeks : nat list =
-        if (current_week > s.total_weeks) 
-        then get_weeks_indices(1n, s.total_weeks) 
-        else get_weeks_indices(1n, abs(current_week - 1n))
-    in
-    let compute_percentage_func(week_indice, map_accumulator : nat * (address, (nat, nat) map) map) : (address, (nat, nat) map) map =
-        let points : nat = match (Big_map.find_opt sender_address s.user_points) with
-            | None -> (failwith(unknown_user_claim) : nat)
-            | Some(week_points_map) -> 
-                let val_opt : nat option = Map.find_opt week_indice week_points_map in
-                let computed_value : nat = match val_opt with
-                | None -> 0n
-                | Some(v) -> v
+
+    let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
+
+    match Big_map.find_opt sender_address user_points with
+            | None -> (no_operation, s)
+            | Some(user_points) ->
+                let rec aux (acc, user_points, farm_points, reward_at_weeks : nat * nat list * nat list * nat list) : nat =
+                    match user_points, farm_points, reward_at_weeks with 
+                        [], [], [] -> acc
+                        | [], lst2, lst3 -> failwith "size don't match"
+                        | lst1, [], lst3 -> failwith "size don't match"
+                        | lst1, lst2, [] -> failwith "size don't match"
+                        | hd1::_tl1, hd2::_tl2, hd3::_tl3 ->
+                            let acc = acc + hd1 * hd3 / hd2 in
+                            aux (acc, user_points, farm_points, reward_at_weeks)
                 in
-                computed_value
-        in
-        let farm_points : nat = match Big_map.find_opt week_indice s.farm_points with
-        | None -> 0n
-        | Some(val_) -> val_
-        in
-        if farm_points = 0n then map_accumulator else
-        let perc : nat = if points = 0n then 0n else points * precision / farm_points in
-        if perc = 0n then map_accumulator else
-        match Map.find_opt sender_address map_accumulator with
-        | None ->
-            let modified_wks : (nat, nat) map = Map.add week_indice perc (Map.empty : (nat, nat) map) in
-            Map.add sender_address modified_wks map_accumulator
-        | Some(wks) ->  
-            let modified_wks : (nat, nat) map = Map.add week_indice perc wks in
-            Map.update sender_address (Some(modified_wks)) map_accumulator
-    in 
-    let rec compute_func(acc, indices : (address, (nat, nat) map) map * nat list) : (address, (nat, nat) map) map = 
-        let indice_opt : nat option = List.head_opt indices in
-        match indice_opt with
-        | None -> acc
-        | Some(week_indice) -> 
-            let modified_acc : (address, (nat, nat) map) map = compute_percentage_func(week_indice, acc) in
-            let remaining_indices_opt : nat list option = List.tail_opt indices in
-            let remaining_indices : nat list = match remaining_indices_opt with
-            | None -> ([] : nat list)
-            | Some(l) -> l
-            in
-            compute_func(modified_acc, remaining_indices)
-    in
-    let percentages : (address, (nat, nat) map) map = compute_func((Map.empty : (address, (nat, nat) map) map), weeks) in
-    let compute_and_send_func(operations, i : operation list * (address * (nat, nat) map) ): operation list =
-        let send_reward_func(acc, elt : operation list * (nat * nat)) : operation list =
-            let (week_indice, percent) : nat * nat = elt in 
-            let reward_for_week : nat = match Map.find_opt week_indice s.reward_at_week with
-            | None -> 0n
-            | Some(rwwk) -> rwwk
-            in
-            let amount_to_send : nat = reward_for_week * percent / precision in
-            sendReward(amount_to_send, sender_address, s) :: acc
-        in
-        Map.fold send_reward_func i.1 operations
-    in
-    let operations : operation list = Map.fold compute_and_send_func percentages ([] : operation list) in
-    let remove_points (acc, percentages_i : (address, (nat, nat) map) big_map * (address * (nat, nat) map) ) : (address, (nat, nat) map) big_map = 
-        let user : address = percentages_i.0 in
-        let percs : (nat, nat) map = percentages_i.1 in 
-        let rem(week_points, j : (nat, nat) map * (nat * nat)) : (nat, nat) map = 
-            let week_indice : nat = j.0 in
-            match Map.find_opt week_indice week_points with
-            | None -> week_points
-            | Some(_pts) -> Map.update week_indice (Some(0n)) week_points
-        in
-        // acc[user]
-        let week_points_for_user : (nat, nat) map = match Big_map.find_opt user acc with
-        | None -> (failwith(rewards_sent_but_missing_points) : (nat, nat) map)
-        | Some(wk_pts) -> wk_pts
-        in
-        let new_week_points : (nat, nat) map = Map.fold rem percs week_points_for_user in 
-        let modified_map : (address, (nat, nat) map) big_map = Map.update user (Some(new_week_points)) acc in 
-        modified_map
-    in
-    let remove_points_map : (address, (nat, nat) map) big_map = Map.fold remove_points percentages s.user_points in 
-    let final_storage = { s with user_points = remove_points_map } in
-    (operations, final_storage)
+
+                let total_reward_for_user : nat = aux( 0n, user_points, farm_points, s.reward_at_week) in
+
+                let send_reward : operation = sendReward(total_reward_for_user, sender_address, s) in// TODO storage a enlever
+
+                let new_user_points = List.map (fun (_i : nat) -> 0n) user_points in
+
+                let user_points_map = Big_map.update sender_address (Some(new_user_points)) s.user_points in
+
+                let final_storage = { s with user_points = user_points_map } in
+                ([send_reward], final_storage)
