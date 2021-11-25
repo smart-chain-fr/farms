@@ -10,13 +10,10 @@ type storage_farm = {
     lp_token_address: address;
     rate: nat;
     reserve_address: address;
-    // reward_at_week : (week, nat) map; // change to list
-    // farm_points : (nat, nat) map; // change to list
     reward_at_week : nat list; // change to list
     farm_points : nat list; // change to list
     smak_address: address;
     total_reward: nat;
-    // user_points : (address, (nat, nat) map ) big_map; 
     user_points : (address, nat list) big_map;
     user_stakes : (address, nat) big_map;
     total_weeks: nat
@@ -26,8 +23,9 @@ type no_operation = operation list
 type return = operation list * storage_farm
 
 type entrypoint = 
-| Set_admin of (address)
+| Initialize of (unit)
 | Stake of (stake_param)
 | Unstake of (stake_param)
 | Claim_all of (unit)
+| Set_admin of (address)
 | Increase_reward of (reward_param)

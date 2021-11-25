@@ -71,14 +71,12 @@ _cf._ https://pypi.org/project/pytezos/
 
 #### II.1) Compilation of the Farm smart contract 
 
-- At root, run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.29.0 compile contract src/contract/farm/main.mligo > src/contract/test/compiled/farm.tz`
-- OR with the last LIGO version run `ligo compile contract src/contract/farm/main.mligo > src/contract/test/compiled/farm.tz`
+- At root, with the last LIGO version run `ligo compile contract src/contract/farm/main.mligo > src/contract/test/compiled/farm.tz`
 - OR with docker run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.29.0 compile contract src/contract/farm/main.mligo -e main > src/contract/test/compiled/farm.tz`
 
 #### II.2) Compilation of the Database smart contract
 
-- At root, run `ligo compile-contract src/contract/database/main.mligo main > src/contract/test/compiled/database.tz`
-- OR with the latest LIGO version run `ligo compile contract src/contract/database/main.mligo > src/contract/test/compiled/database.tz`
+- At root, with the latest LIGO version run `ligo compile contract src/contract/database/main.mligo > src/contract/test/compiled/database.tz`
 - OR with docker run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.29.0 compile contract src/contract/database/main.mligo -e main > src/contract/test/compiled/database.tz`
 
 #### II.3) Tests

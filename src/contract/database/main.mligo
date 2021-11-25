@@ -18,7 +18,7 @@ type addFarmParameter = {
 
 type farms_entrypoints = 
 | AddFarm of addFarmParameter
-| Nothing of unit
+
 
 let noOperations : operation list = []
 
@@ -38,5 +38,5 @@ let addFarm(p, s : addFarmParameter * farms_storage) : return_farms =
 let main(action, store : farms_entrypoints * farms_storage) : return_farms =
     match action with
     | AddFarm(fp) -> addFarm(fp, store)
-    | Nothing -> (noOperations, store)
+
 
