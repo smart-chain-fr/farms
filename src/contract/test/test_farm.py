@@ -18,11 +18,11 @@ compiled_contract_path = "compiled/farm.tz"
 
 initial_storage = ContractInterface.from_file(compiled_contract_path).storage.dummy()
 initial_storage["admin"] = admin
+initial_storage["lp_token_address"] ="KT1XtQeSap9wvJGY1Lmek84NU6PK6cjzC9Qd"
 initial_storage["total_reward"] = 10000000
-initial_storage["weeks"] = 5
+initial_storage["total_weeks"] = 5
 initial_storage["rate"] = 7500
 initial_storage["smak_address"] = "KT1TwzD6zV3WeJ39ukuqxcfK2fJCnhvrdN1X"
-initial_storage["lp_token_address"] ="KT1XtQeSap9wvJGY1Lmek84NU6PK6cjzC9Qd"
 initial_storage["reserve_address"] = "tz1fABJ97CJMSP2DKrQx2HAFazh6GgahQ7ZK"
 
 only_admin = "Only the contract admin can change the contract administrator or increase reward"
@@ -58,24 +58,24 @@ class FarmsContractTest(TestCase):
             self.assertEqual(f"'{error_message}': ", r.exception.format_stdout())
 
     ######################
-    # Tests for setAdmin #
+    # Tests for set_admin #
     ######################
 
-    def test_setAdmin_should_work(self):
+    def test_set_admin_should_work(self):
         init_storage = deepcopy(initial_storage)
-        res = self.farms.setAdmin(bob).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2))
+        res = self.farms.set_admin(bob).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2))
         self.assertEqual(bob, res.storage["admin"])
         self.assertEqual([], res.operations)
 
-    def test_setAdmin_user_sets_new_admin_should_fail(self):
+    def test_set_admin_user_sets_new_admin_should_fail(self):
         init_storage = deepcopy(initial_storage)
         with self.raisesMichelsonError(only_admin):
-            self.farms.setAdmin(bob).interpret(storage=init_storage, sender=alice, now=int(sec_week + sec_week/2))
+            self.farms.set_admin(bob).interpret(storage=init_storage, sender=alice, now=int(sec_week + sec_week/2))
 
-    def test_setAdmin_sending_XTZ_should_fail(self):
+    def test_set_admin_sending_XTZ_should_fail(self):
         init_storage = deepcopy(initial_storage)
         with self.raisesMichelsonError(amount_must_be_zero_tez):
-            self.farms.setAdmin(bob).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2), amount=1)
+            self.farms.set_admin(bob).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2), amount=1)
 
     ############################
     # Test rewards computation #
@@ -84,27 +84,19 @@ class FarmsContractTest(TestCase):
     def test_initializeReward_5week_20Kreward_75rate_initialization_should_work(self):
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 20_000_000
-        init_storage["weeks"] = 5
+        init_storage["total_weeks"] = 5
         init_storage["rate"] = 7500
-        res = self.farms.increaseReward(0).interpret(storage=init_storage, sender=admin)
+        res = self.farms.initialize().interpret(storage=init_storage, sender=admin)
 
-        reward_week_1 = int(res.storage["reward_at_week"][1])
-        reward_week_2 = int(res.storage["reward_at_week"][2])
-        reward_week_3 = int(res.storage["reward_at_week"][3])
-        reward_week_4 = int(res.storage["reward_at_week"][4])
-        reward_week_5 = int(res.storage["reward_at_week"][5])
-        self.assertEqual(reward_week_1, 6555697)
-        self.assertEqual(reward_week_2, 4916773)
-        self.assertEqual(reward_week_3, 3687580)
-        self.assertEqual(reward_week_4, 2765685)
-        self.assertEqual(reward_week_5, 2074263)
+        expected_rewards = [6555697, 4916773, 3687580, 2765685, 2074263]
+        self.assertEqual(res.storage["reward_at_week"], expected_rewards)
 
     def test_initializeReward_5week_30Kreward_80rate_initialization_should_work(self):
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 30_000_000
-        init_storage["weeks"] = 5
+        init_storage["total_weeks"] = 5
         init_storage["rate"] = 8000
-        res = self.farms.increaseReward(0).interpret(storage=init_storage, sender=admin)
+        res = self.farms.increase_reward(0).interpret(storage=init_storage, sender=admin)
 
         reward_week_1 = int(res.storage["reward_at_week"][1])
         reward_week_2 = int(res.storage["reward_at_week"][2])
@@ -120,9 +112,9 @@ class FarmsContractTest(TestCase):
     def test_initializeReward_3week_40Kreward_60rate_initialization_should_work(self):
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 40_000_000
-        init_storage["weeks"] = 3
+        init_storage["total_weeks"] = 3
         init_storage["rate"] = 6000
-        res = self.farms.increaseReward(0).interpret(storage=init_storage, sender=admin)
+        res = self.farms.increase_reward(0).interpret(storage=init_storage, sender=admin)
 
         reward_week_1 = int(res.storage["reward_at_week"][1])
         reward_week_2 = int(res.storage["reward_at_week"][2])
@@ -135,10 +127,10 @@ class FarmsContractTest(TestCase):
     # Test rewards increase #
     #########################
 
-    def test_increaseReward_reward_50k_on_week_3_should_work(self):
+    def test_increase_reward_reward_50k_on_week_3_should_work(self):
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 20_000_000
-        init_storage["weeks"] = 5
+        init_storage["total_weeks"] = 5
         init_storage["rate"] = 7500
         init_storage["reward_at_week"] = {
             1: 6555697,
@@ -147,7 +139,7 @@ class FarmsContractTest(TestCase):
             4: 2765685,
             5: 2074263
         }
-        res = self.farms.increaseReward(50_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week * 2 + sec_week/2))
+        res = self.farms.increase_reward(50_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week * 2 + sec_week/2))
 
         self.assertEqual(res.storage["total_reward"], 70000000)
         self.assertEqual(res.storage["weeks"], 5)
@@ -162,17 +154,17 @@ class FarmsContractTest(TestCase):
         self.assertEqual(reward_week_4, 18981901)
         self.assertEqual(reward_week_5, 14236426)
 
-    def test_increaseReward_reward_20k_on_week_2_should_work(self):
+    def test_increase_reward_reward_20k_on_week_2_should_work(self):
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 10_000_000
-        init_storage["weeks"] = 3
+        init_storage["total_weeks"] = 3
         init_storage["rate"] = 7500
         init_storage["reward_at_week"] = {
             1: 4324324,
             2: 3243243,
             3: 2432432,
         }
-        res = self.farms.increaseReward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2))
+        res = self.farms.increase_reward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2))
 
         self.assertEqual(res.storage["total_reward"], 30000000)
         self.assertEqual(res.storage["weeks"], 3)
@@ -183,10 +175,10 @@ class FarmsContractTest(TestCase):
         self.assertEqual(reward_week_2, 14671814)
         self.assertEqual(reward_week_3, 11003861)
 
-    def test_increaseReward_if_not_admin_should_fail(self):
+    def test_increase_reward_if_not_admin_should_fail(self):
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 10_000_000
-        init_storage["weeks"] = 3
+        init_storage["total_weeks"] = 3
         init_storage["rate"] = 7500
         init_storage["reward_at_week"] = {
             1: 4324324,
@@ -194,12 +186,12 @@ class FarmsContractTest(TestCase):
             3: 2432432,
         }
         with self.raisesMichelsonError(only_admin):
-            res = self.farms.increaseReward(20_000_000).interpret(storage=init_storage, sender=fox, now=int(sec_week + sec_week/2))
+            res = self.farms.increase_reward(20_000_000).interpret(storage=init_storage, sender=fox, now=int(sec_week + sec_week/2))
 
-    def test_increaseReward_after_end_of_pool_should_fail(self):
+    def test_increase_reward_after_end_of_pool_should_fail(self):
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 10_000_000
-        init_storage["weeks"] = 3
+        init_storage["total_weeks"] = 3
         init_storage["rate"] = 7500
         init_storage["reward_at_week"] = {
             1: 4324324,
@@ -207,7 +199,7 @@ class FarmsContractTest(TestCase):
             3: 2432432,
         }
         with self.raisesMichelsonError(no_week_left):
-            res = self.farms.increaseReward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week * 20 + sec_week/2))
+            res = self.farms.increase_reward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week * 20 + sec_week/2))
 
 
     ######################
@@ -423,7 +415,7 @@ class FarmsContractTest(TestCase):
     def test_stake_after_increasing_reward_should_work(self):
             init_storage = deepcopy(initial_storage)
             init_storage["total_reward"] = 10_000_000
-            init_storage["weeks"] = 3
+            init_storage["total_weeks"] = 3
             init_storage["rate"] = 7500
             init_storage["reward_at_week"] = {
                 1: 4324324,
@@ -431,7 +423,7 @@ class FarmsContractTest(TestCase):
                 3: 2432432,
             }
             locked_amount = 10000
-            res = self.farms.increaseReward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2))
+            res = self.farms.increase_reward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2))
             res2 = self.farms.stake(locked_amount).interpret(storage=res.storage, sender=alice, now=int(2 * sec_week + sec_week/2))
 
             self.assertEqual(res.storage["total_reward"], 30000000)
@@ -969,7 +961,7 @@ class FarmsContractTest(TestCase):
     def test_unstake_after_increasing_reward_should_work(self):
             init_storage = deepcopy(initial_storage)
             init_storage["total_reward"] = 10_000_000
-            init_storage["weeks"] = 3
+            init_storage["total_weeks"] = 3
             init_storage["rate"] = 7500
             init_storage["reward_at_week"] = {
                 1: 4324324,
@@ -977,7 +969,7 @@ class FarmsContractTest(TestCase):
                 3: 2432432,
             }
             locked_amount = 10000
-            res = self.farms.increaseReward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2))
+            res = self.farms.increase_reward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2))
             res2 = self.farms.stake(locked_amount).interpret(storage=res.storage, sender=alice, now=int(2 * sec_week + sec_week/2))
 
             self.assertEqual(res.storage["total_reward"], 30000000)
@@ -1127,7 +1119,7 @@ class FarmsContractTest(TestCase):
             5: 500 * sec_week
         }
 
-        res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(sec_week + sec_week/2))
+        res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=int(sec_week + sec_week/2))
 
         self.assertEqual(admin, res.storage["admin"])
         transfer_txs = res.operations
@@ -1180,7 +1172,7 @@ class FarmsContractTest(TestCase):
         }
 
         with self.raisesMichelsonError(unknown_user_claim):
-            self.farms.claimAll().interpret(storage=init_storage, sender=bob, now=int(sec_week * 7 + sec_week/2))
+            self.farms.claim_all().interpret(storage=init_storage, sender=bob, now=int(sec_week * 7 + sec_week/2))
 
     def test_claimall_3rd_week_should_work(self):
 
@@ -1214,7 +1206,7 @@ class FarmsContractTest(TestCase):
             5: 500 * sec_week
         }
 
-        res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(sec_week * 2 + sec_week/2))
+        res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=int(sec_week * 2 + sec_week/2))
 
         self.assertEqual(admin, res.storage["admin"])
         transfer_txs = res.operations
@@ -1282,7 +1274,7 @@ class FarmsContractTest(TestCase):
             5: (500 + 100) * sec_week
         }
 
-        res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(sec_week * 3 + sec_week / 2))
+        res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=int(sec_week * 3 + sec_week / 2))
 
         self.assertEqual(admin, res.storage["admin"])
         transfer_txs = res.operations
@@ -1354,7 +1346,7 @@ class FarmsContractTest(TestCase):
             3: int((int(500 * sec_week * (1 - 2/3)) / int(500 * sec_week * (1 - 2/3) + 100 * sec_week * (1 - 1/2)) )* 3687580) - 1
         }
 
-        res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(sec_week * 3 + sec_week / 2))
+        res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=int(sec_week * 3 + sec_week / 2))
         transfer_txs = res.operations
         self.assertEqual(2, len(transfer_txs))
         for tx, week in zip(transfer_txs, list(reward_sent.keys())[::-2]):
@@ -1411,7 +1403,7 @@ class FarmsContractTest(TestCase):
             4: 2765685
         }
 
-        res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=int(sec_week * 6 + sec_week / 2))
+        res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=int(sec_week * 6 + sec_week / 2))
         transfer_txs = res.operations
         self.assertEqual(4, len(transfer_txs))
         for tx, week in zip(transfer_txs, list(reward_sent.keys())[::-1]):
@@ -1453,7 +1445,7 @@ class FarmsContractTest(TestCase):
             5: 500 * sec_week
         }
 
-        res = self.farms.claimAll().interpret(storage=init_storage, sender=alice, now=sec_week * 100)
+        res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=sec_week * 100)
 
         self.assertEqual(admin, res.storage["admin"])
         transfer_txs = res.operations
@@ -1504,7 +1496,7 @@ class FarmsContractTest(TestCase):
         }
 
         with self.raisesMichelsonError(amount_must_be_zero_tez):
-            self.farms.claimAll().interpret(storage=init_storage, sender=bob, now=sec_week * 12, amount=1)
+            self.farms.claim_all().interpret(storage=init_storage, sender=bob, now=sec_week * 12, amount=1)
 
 
     def test_claimall_two_times_after_unstake_and_staking_two_times_should_work(self):
@@ -1576,7 +1568,7 @@ class FarmsContractTest(TestCase):
 
         self.farms.stake(500).interpret(sender=alice, storage=init_storage, now=int(sec_week + sec_week/2))
         self.farms.unstake(1000).interpret(sender=alice, storage=second_storage, now=int(sec_week + sec_week*2/3))
-        res4 = self.farms.claimAll().interpret(sender=alice, storage=third_storage, now=int(sec_week + sec_week*3/4))
+        res4 = self.farms.claim_all().interpret(sender=alice, storage=third_storage, now=int(sec_week + sec_week*3/4))
 
         self.assertEqual(admin, res4.storage["admin"])
         transfer_txs = res4.operations
@@ -1594,7 +1586,7 @@ class FarmsContractTest(TestCase):
         self.assertEqual(res4.storage["user_points"][alice][4], 0)
         self.assertEqual(res4.storage["user_points"][alice][5], 0)
 
-        res5 = self.farms.claimAll().interpret(sender=alice, storage=res4.storage, now=int(sec_week * 2 + sec_week*3/4))
+        res5 = self.farms.claim_all().interpret(sender=alice, storage=res4.storage, now=int(sec_week * 2 + sec_week*3/4))
         transfer_txs2 = res5.operations
         self.assertEqual(1, len(transfer_txs2))
 
