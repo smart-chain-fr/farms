@@ -25,20 +25,38 @@ initial_storage["rate"] = 7500
 initial_storage["smak_address"] = "KT1TwzD6zV3WeJ39ukuqxcfK2fJCnhvrdN1X"
 initial_storage["reserve_address"] = "tz1fABJ97CJMSP2DKrQx2HAFazh6GgahQ7ZK"
 
+# only_admin = "Only the contract admin can change the contract administrator or increase reward"
+# unknown_lp_contract = "This farm works with a different LP token"
+# unknown_smak_contract  = "Cannot connect to the SMAK contract"
+# unknown_user_unstake = "You do not have any LP token to unstake"
+# unknown_user_claim = "You do not have any reward to claim"
+# farm_empty_week = "Farm has no cumulated stake for one week"
+# amount_is_null = "The staking amount must be greater than zero"
+# amount_must_be_zero_tez = "You must not send Tezos to the smart contract"
+# time_too_early ="Please try again in few seconds"
+# no_stakes  = "You did not stake any token yet"
+# unstake_more_than_stake  = "You cannot unstake more than your staking"
+# user_no_points = "You do not have or no longer have any rewards"
+# rewards_sent_but_missing_points = "You do not have any reward to claim"
+# no_week_left = "There are no more weeks left for staking"
+
+
 only_admin = "Only the contract admin can change the contract administrator or increase reward"
 unknown_lp_contract = "This farm works with a different LP token"
-unknown_smak_contract  = "Cannot connect to the SMAK contract"
-unknown_user_unstake = "You do not have any LP token to unstake"
+unknown_smak_contract = "Cannot connect to the SMAK contract"
 unknown_user_claim = "You do not have any reward to claim"
-farm_empty_week = "Farm has no cumulated stake for one week"
+unknown_user_unstake = "You do not have any LP token to unstake"
+farm_empty_week = "Farm has no cumulated stake for one week" 
 amount_is_null = "The staking amount must be greater than zero"
+increase_amount_is_null = "The increase amount must be greater than zero"
 amount_must_be_zero_tez = "You must not send Tezos to the smart contract"
-time_too_early ="Please try again in few seconds"
-no_stakes  = "You did not stake any token yet"
-unstake_more_than_stake  = "You cannot unstake more than your staking"
+time_too_early = "Please try again in few seconds" 
+no_stakes = "You did not stake any token yet"
+unstake_more_than_stake = "You cannot unstake more than your staking"
 user_no_points = "You do not have or no longer have any rewards"
 rewards_sent_but_missing_points = "You do not have any reward to claim"
 no_week_left = "There are no more weeks left for staking"
+contract_already_initialized = "The contract is already initialized"
 
 class FarmsContractTest(TestCase):
     @classmethod
@@ -87,7 +105,6 @@ class FarmsContractTest(TestCase):
         init_storage["total_weeks"] = 5
         init_storage["rate"] = 7500
         res = self.farms.initialize().interpret(storage=init_storage, sender=admin)
-
         expected_rewards = [6555697, 4916773, 3687580, 2765685, 2074263]
         self.assertEqual(res.storage["reward_at_week"], expected_rewards)
 
@@ -96,32 +113,18 @@ class FarmsContractTest(TestCase):
         init_storage["total_reward"] = 30_000_000
         init_storage["total_weeks"] = 5
         init_storage["rate"] = 8000
-        res = self.farms.increase_reward(0).interpret(storage=init_storage, sender=admin)
-
-        reward_week_1 = int(res.storage["reward_at_week"][1])
-        reward_week_2 = int(res.storage["reward_at_week"][2])
-        reward_week_3 = int(res.storage["reward_at_week"][3])
-        reward_week_4 = int(res.storage["reward_at_week"][4])
-        reward_week_5 = int(res.storage["reward_at_week"][5])
-        self.assertEqual(reward_week_1, 8924321)
-        self.assertEqual(reward_week_2, 7139457)
-        self.assertEqual(reward_week_3, 5711565)
-        self.assertEqual(reward_week_4, 4569252)
-        self.assertEqual(reward_week_5, 3655402)
+        res = self.farms.initialize().interpret(storage=init_storage, sender=admin)
+        expected_rewards = [8924321, 7139457, 5711565, 4569252, 3655402]
+        self.assertEqual(res.storage["reward_at_week"], expected_rewards)
 
     def test_initializeReward_3week_40Kreward_60rate_initialization_should_work(self):
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 40_000_000
         init_storage["total_weeks"] = 3
         init_storage["rate"] = 6000
-        res = self.farms.increase_reward(0).interpret(storage=init_storage, sender=admin)
-
-        reward_week_1 = int(res.storage["reward_at_week"][1])
-        reward_week_2 = int(res.storage["reward_at_week"][2])
-        reward_week_3 = int(res.storage["reward_at_week"][3])
-        self.assertEqual(reward_week_1, 20408163)
-        self.assertEqual(reward_week_2, 12244897)
-        self.assertEqual(reward_week_3, 7346938)
+        res = self.farms.initialize().interpret(storage=init_storage, sender=admin)
+        expected_rewards = [20408163, 12244897, 7346938]
+        self.assertEqual(res.storage["reward_at_week"], expected_rewards)
 
     #########################
     # Test rewards increase #
@@ -132,27 +135,12 @@ class FarmsContractTest(TestCase):
         init_storage["total_reward"] = 20_000_000
         init_storage["total_weeks"] = 5
         init_storage["rate"] = 7500
-        init_storage["reward_at_week"] = {
-            1: 6555697,
-            2: 4916773,
-            3: 3687580,
-            4: 2765685,
-            5: 2074263
-        }
+        init_storage["reward_at_week"] = [6555697, 4916773, 3687580, 2765685, 2074263]
         res = self.farms.increase_reward(50_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week * 2 + sec_week/2))
-
+        expected_rewards = [6555697, 4916773, 25309201, 18981901, 14236425]
         self.assertEqual(res.storage["total_reward"], 70000000)
-        self.assertEqual(res.storage["weeks"], 5)
-        reward_week_1 = int(res.storage["reward_at_week"][1])
-        reward_week_2 = int(res.storage["reward_at_week"][2])
-        reward_week_3 = int(res.storage["reward_at_week"][3])
-        reward_week_4 = int(res.storage["reward_at_week"][4])
-        reward_week_5 = int(res.storage["reward_at_week"][5])
-        self.assertEqual(reward_week_1, 6555697)
-        self.assertEqual(reward_week_2, 4916773)
-        self.assertEqual(reward_week_3, 25309202)
-        self.assertEqual(reward_week_4, 18981901)
-        self.assertEqual(reward_week_5, 14236426)
+        self.assertEqual(res.storage["total_weeks"], 5)
+        self.assertEqual(res.storage["reward_at_week"], expected_rewards)
 
     def test_increase_reward_reward_20k_on_week_2_should_work(self):
         init_storage = deepcopy(initial_storage)

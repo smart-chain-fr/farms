@@ -9,269 +9,13 @@
                       (pair (list %reward_at_week nat) (address %smak_address))))
           (pair (pair (nat %total_reward) (nat %total_weeks))
                 (pair (big_map %user_points address (list nat)) (big_map %user_stakes address nat)))) ;
-  code { PUSH string
-              "Only the contract admin can change the contract administrator or increase reward" ;
-         PUSH string "This farm works with a different LP token" ;
-         PUSH string "You must not send Tezos to the smart contract" ;
-         PUSH string "There are no more weeks left for staking" ;
-         PUSH nat 604800 ;
-         NIL operation ;
-         NIL nat ;
-         PUSH bool True ;
-         PUSH bool False ;
-         DUP 5 ;
-         LAMBDA
-           (pair nat
-                 (pair (pair (pair (pair address timestamp) (pair (list nat) address))
-                             (pair (pair nat address) (pair (list nat) address)))
-                       (pair (pair nat nat) (pair (big_map address (list nat)) (big_map address nat)))))
-           nat
-           { UNPAIR ;
-             SWAP ;
-             CAR ;
-             CAR ;
-             CAR ;
-             CDR ;
-             NOW ;
-             SUB ;
-             ABS ;
-             PUSH nat 1 ;
-             DUG 2 ;
-             EDIV ;
-             IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
-             CAR ;
-             ADD } ;
-         SWAP ;
-         APPLY ;
-         LAMBDA
-           (pair nat nat)
-           nat
-           { UNPAIR ;
-             PUSH nat 1 ;
-             PAIR ;
-             PAIR ;
-             LEFT nat ;
-             LOOP_LEFT
-               { UNPAIR ;
-                 UNPAIR ;
-                 PUSH nat 0 ;
-                 DUP 4 ;
-                 COMPARE ;
-                 EQ ;
-                 IF { SWAP ; DIG 2 ; DROP 2 ; RIGHT (pair (pair nat nat) nat) }
-                    { PUSH nat 1 ;
-                      DIG 3 ;
-                      SUB ;
-                      ABS ;
-                      DIG 2 ;
-                      DUP ;
-                      DIG 3 ;
-                      MUL ;
-                      PAIR ;
-                      PAIR ;
-                      LEFT nat } } } ;
-         DUP 5 ;
-         LAMBDA
-           (pair (list nat) (pair (pair (list nat) (list nat)) bool))
-           (list nat)
-           { UNPAIR ;
-             SWAP ;
-             UNPAIR ;
-             UNPAIR ;
-             DIG 3 ;
-             DUP ;
-             DIG 3 ;
-             DIG 3 ;
-             PAIR ;
-             PAIR ;
-             LEFT (list nat) ;
-             LOOP_LEFT
-               { UNPAIR ;
-                 UNPAIR ;
-                 IF_CONS
-                   { DIG 2 ;
-                     IF_CONS
-                       { PUSH bool True ;
-                         DUP 8 ;
-                         COMPARE ;
-                         EQ ;
-                         IF { DIG 2 ; ADD } { DIG 2 ; SUB ; ABS } ;
-                         DIG 3 ;
-                         SWAP ;
-                         CONS ;
-                         SWAP ;
-                         DIG 2 ;
-                         PAIR ;
-                         PAIR ;
-                         LEFT (list nat) }
-                       { DROP 3 ; PUSH string "size don't match" ; FAILWITH } }
-                   { IF_CONS
-                       { DROP 3 ; PUSH string "size don't match" ; FAILWITH }
-                       { RIGHT (pair (pair (list nat) (list nat)) (list nat)) } } } ;
-             DIG 2 ;
-             DROP ;
-             PAIR ;
-             LEFT (list nat) ;
-             LOOP_LEFT
-               { UNPAIR ;
-                 IF_CONS
-                   { DIG 2 ; SWAP ; CONS ; SWAP ; PAIR ; LEFT (list nat) }
-                   { RIGHT (pair (list nat) (list nat)) } } } ;
-         SWAP ;
-         APPLY ;
-         DUP 6 ;
-         DIG 2 ;
-         PAIR ;
-         LAMBDA
-           (pair (pair (lambda (pair nat nat) nat) (list nat))
-                 (pair (pair (pair nat nat) (pair nat nat)) (list nat)))
-           (list nat)
-           { UNPAIR ;
-             UNPAIR ;
-             DIG 2 ;
-             UNPAIR ;
-             UNPAIR ;
-             UNPAIR ;
-             DIG 2 ;
-             UNPAIR ;
-             DUP ;
-             PUSH nat 1 ;
-             NIL nat ;
-             PAIR ;
-             PAIR ;
-             LEFT (list nat) ;
-             LOOP_LEFT
-               { UNPAIR ;
-                 UNPAIR ;
-                 DUP 3 ;
-                 DUP 3 ;
-                 COMPARE ;
-                 LE ;
-                 IF { DIG 2 ;
-                      PUSH nat 1 ;
-                      DUP 4 ;
-                      ADD ;
-                      DIG 2 ;
-                      DIG 3 ;
-                      CONS ;
-                      PAIR ;
-                      PAIR ;
-                      LEFT (list nat) }
-                    { SWAP ; DIG 2 ; DROP 2 ; RIGHT (pair (pair (list nat) nat) nat) } } ;
-             DIG 7 ;
-             DIG 6 ;
-             DIG 2 ;
-             PAIR ;
-             PAIR ;
-             LEFT (list nat) ;
-             LOOP_LEFT
-               { UNPAIR ;
-                 UNPAIR ;
-                 IF_CONS
-                   { DIG 2 ;
-                     IF_CONS
-                       { DUP 8 ;
-                         DUP 4 ;
-                         COMPARE ;
-                         LT ;
-                         IF { DIG 2 ; DROP ; DIG 3 ; SWAP ; CONS }
-                            { DROP ;
-                              DIG 3 ;
-                              PUSH nat 1 ;
-                              DUP 4 ;
-                              SUB ;
-                              ABS ;
-                              DUP 9 ;
-                              PAIR ;
-                              DUP 10 ;
-                              SWAP ;
-                              EXEC ;
-                              PUSH nat 1 ;
-                              DIG 4 ;
-                              SUB ;
-                              ABS ;
-                              PUSH nat 10000 ;
-                              PAIR ;
-                              DUP 10 ;
-                              SWAP ;
-                              EXEC ;
-                              DUP 9 ;
-                              PUSH nat 10000 ;
-                              SUB ;
-                              ABS ;
-                              PUSH nat 1 ;
-                              DUP 8 ;
-                              SUB ;
-                              ABS ;
-                              PUSH nat 10000 ;
-                              PAIR ;
-                              DUP 12 ;
-                              SWAP ;
-                              EXEC ;
-                              SWAP ;
-                              MUL ;
-                              DUP 7 ;
-                              DUP 11 ;
-                              PAIR ;
-                              DUP 12 ;
-                              SWAP ;
-                              EXEC ;
-                              DUP 8 ;
-                              PUSH nat 10000 ;
-                              PAIR ;
-                              DUP 13 ;
-                              SWAP ;
-                              EXEC ;
-                              SUB ;
-                              ABS ;
-                              DIG 2 ;
-                              MUL ;
-                              DIG 2 ;
-                              DUP 8 ;
-                              DIG 3 ;
-                              MUL ;
-                              MUL ;
-                              EDIV ;
-                              IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
-                              CAR ;
-                              CONS } ;
-                         SWAP ;
-                         DIG 2 ;
-                         PAIR ;
-                         PAIR ;
-                         LEFT (list nat) }
-                       { DROP 3 ; PUSH string "size don't match" ; FAILWITH } }
-                   { IF_CONS
-                       { DROP 3 ; PUSH string "size don't match" ; FAILWITH }
-                       { RIGHT (pair (pair (list nat) (list nat)) (list nat)) } } } ;
-             SWAP ;
-             DIG 2 ;
-             DIG 3 ;
-             DIG 4 ;
-             DIG 5 ;
-             DROP 5 } ;
-         SWAP ;
-         APPLY ;
-         DIG 12 ;
-         UNPAIR ;
+  code { UNPAIR ;
          IF_LEFT
-           { DIG 3 ;
-             DIG 5 ;
-             DIG 6 ;
-             DIG 12 ;
-             DROP 4 ;
-             IF_LEFT
-               { DIG 4 ;
-                 DROP ;
-                 IF_LEFT
-                   { DIG 2 ;
-                     DIG 3 ;
-                     DIG 5 ;
-                     DIG 6 ;
-                     DIG 8 ;
-                     DROP 6 ;
+           { IF_LEFT
+               { IF_LEFT
+                   { DROP ;
                      SENDER ;
-                     DIG 3 ;
+                     PUSH string "You must not send Tezos to the smart contract" ;
                      PUSH mutez 0 ;
                      AMOUNT ;
                      COMPARE ;
@@ -288,10 +32,8 @@
                      DUG 2 ;
                      GET ;
                      IF_NONE
-                       { DROP ; SWAP ; PAIR }
-                       { DIG 3 ;
-                         DROP ;
-                         DUP 3 ;
+                       { DROP ; NIL operation ; PAIR }
+                       { DUP 3 ;
                          CAR ;
                          CDR ;
                          CDR ;
@@ -424,15 +166,27 @@
                      CAR ;
                      CDR ;
                      DUP 5 ;
-                     DIG 7 ;
-                     SWAP ;
-                     EXEC ;
+                     CAR ;
+                     CAR ;
+                     CAR ;
+                     CDR ;
+                     NOW ;
+                     SUB ;
+                     ABS ;
+                     PUSH nat 1 ;
+                     PUSH nat 604800 ;
+                     DIG 2 ;
+                     EDIV ;
+                     IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+                     CAR ;
+                     ADD ;
                      DUP 6 ;
                      CAR ;
                      CDR ;
                      CDR ;
                      CAR ;
-                     DIG 12 ;
+                     PUSH string
+                          "Only the contract admin can change the contract administrator or increase reward" ;
                      DUP 8 ;
                      CAR ;
                      CAR ;
@@ -442,14 +196,14 @@
                      COMPARE ;
                      EQ ;
                      IF { DROP } { FAILWITH } ;
-                     DIG 11 ;
+                     PUSH string "You must not send Tezos to the smart contract" ;
                      PUSH mutez 0 ;
                      AMOUNT ;
                      COMPARE ;
                      EQ ;
                      IF { DROP } { FAILWITH } ;
-                     DIG 10 ;
-                     DIG 10 ;
+                     PUSH string "There are no more weeks left for staking" ;
+                     PUSH nat 604800 ;
                      DUP 7 ;
                      MUL ;
                      INT ;
@@ -463,7 +217,7 @@
                      PUSH nat 0 ;
                      DUP 8 ;
                      COMPARE ;
-                     EQ ;
+                     GT ;
                      IF { DROP } { FAILWITH } ;
                      PUSH nat 0 ;
                      SWAP ;
@@ -478,33 +232,276 @@
                      ABS ;
                      DUP 7 ;
                      ADD ;
-                     SWAP ;
-                     DUP 8 ;
-                     CDR ;
-                     CAR ;
-                     CAR ;
-                     DIG 6 ;
-                     PAIR ;
+                     DROP ;
+                     DUP 6 ;
                      DUP 8 ;
                      CAR ;
                      CDR ;
                      CAR ;
                      CAR ;
-                     DIG 4 ;
-                     PAIR ;
-                     PAIR ;
-                     PAIR ;
-                     DIG 6 ;
+                     PUSH nat 1 ;
+                     DUP 5 ;
+                     DIG 8 ;
+                     SUB ;
+                     ADD ;
+                     ABS ;
+                     NIL nat ;
                      SWAP ;
-                     EXEC ;
+                     DUP ;
+                     DUG 2 ;
+                     PAIR ;
+                     LEFT (list nat) ;
+                     LOOP_LEFT
+                       { UNPAIR ;
+                         PUSH nat 0 ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
+                         COMPARE ;
+                         EQ ;
+                         IF { DROP ; RIGHT (pair nat (list nat)) }
+                            { SWAP ;
+                              PUSH nat 1 ;
+                              DUP 3 ;
+                              SUB ;
+                              ABS ;
+                              DUP 5 ;
+                              PUSH nat 1 ;
+                              PAIR ;
+                              PAIR ;
+                              LEFT nat ;
+                              LOOP_LEFT
+                                { UNPAIR ;
+                                  UNPAIR ;
+                                  PUSH nat 0 ;
+                                  DUP 4 ;
+                                  COMPARE ;
+                                  EQ ;
+                                  IF { SWAP ; DIG 2 ; DROP 2 ; RIGHT (pair (pair nat nat) nat) }
+                                     { PUSH nat 1 ;
+                                       DIG 3 ;
+                                       SUB ;
+                                       ABS ;
+                                       DIG 2 ;
+                                       DUP ;
+                                       DIG 3 ;
+                                       MUL ;
+                                       PAIR ;
+                                       PAIR ;
+                                       LEFT nat } } ;
+                              PUSH nat 1 ;
+                              DUP 4 ;
+                              SUB ;
+                              ABS ;
+                              PUSH nat 10000 ;
+                              PUSH nat 1 ;
+                              PAIR ;
+                              PAIR ;
+                              LEFT nat ;
+                              LOOP_LEFT
+                                { UNPAIR ;
+                                  UNPAIR ;
+                                  PUSH nat 0 ;
+                                  DUP 4 ;
+                                  COMPARE ;
+                                  EQ ;
+                                  IF { SWAP ; DIG 2 ; DROP 2 ; RIGHT (pair (pair nat nat) nat) }
+                                     { PUSH nat 1 ;
+                                       DIG 3 ;
+                                       SUB ;
+                                       ABS ;
+                                       DIG 2 ;
+                                       DUP ;
+                                       DIG 3 ;
+                                       MUL ;
+                                       PAIR ;
+                                       PAIR ;
+                                       LEFT nat } } ;
+                              DUP 6 ;
+                              PUSH nat 10000 ;
+                              SUB ;
+                              ABS ;
+                              PUSH nat 1 ;
+                              DUP 7 ;
+                              SUB ;
+                              ABS ;
+                              PUSH nat 10000 ;
+                              PUSH nat 1 ;
+                              PAIR ;
+                              PAIR ;
+                              LEFT nat ;
+                              LOOP_LEFT
+                                { UNPAIR ;
+                                  UNPAIR ;
+                                  PUSH nat 0 ;
+                                  DUP 4 ;
+                                  COMPARE ;
+                                  EQ ;
+                                  IF { SWAP ; DIG 2 ; DROP 2 ; RIGHT (pair (pair nat nat) nat) }
+                                     { PUSH nat 1 ;
+                                       DIG 3 ;
+                                       SUB ;
+                                       ABS ;
+                                       DIG 2 ;
+                                       DUP ;
+                                       DIG 3 ;
+                                       MUL ;
+                                       PAIR ;
+                                       PAIR ;
+                                       LEFT nat } } ;
+                              SWAP ;
+                              MUL ;
+                              DUP 6 ;
+                              DUP 8 ;
+                              PUSH nat 1 ;
+                              PAIR ;
+                              PAIR ;
+                              LEFT nat ;
+                              LOOP_LEFT
+                                { UNPAIR ;
+                                  UNPAIR ;
+                                  PUSH nat 0 ;
+                                  DUP 4 ;
+                                  COMPARE ;
+                                  EQ ;
+                                  IF { SWAP ; DIG 2 ; DROP 2 ; RIGHT (pair (pair nat nat) nat) }
+                                     { PUSH nat 1 ;
+                                       DIG 3 ;
+                                       SUB ;
+                                       ABS ;
+                                       DIG 2 ;
+                                       DUP ;
+                                       DIG 3 ;
+                                       MUL ;
+                                       PAIR ;
+                                       PAIR ;
+                                       LEFT nat } } ;
+                              DUP 7 ;
+                              PUSH nat 10000 ;
+                              PUSH nat 1 ;
+                              PAIR ;
+                              PAIR ;
+                              LEFT nat ;
+                              LOOP_LEFT
+                                { UNPAIR ;
+                                  UNPAIR ;
+                                  PUSH nat 0 ;
+                                  DUP 4 ;
+                                  COMPARE ;
+                                  EQ ;
+                                  IF { SWAP ; DIG 2 ; DROP 2 ; RIGHT (pair (pair nat nat) nat) }
+                                     { PUSH nat 1 ;
+                                       DIG 3 ;
+                                       SUB ;
+                                       ABS ;
+                                       DIG 2 ;
+                                       DUP ;
+                                       DIG 3 ;
+                                       MUL ;
+                                       PAIR ;
+                                       PAIR ;
+                                       LEFT nat } } ;
+                              SUB ;
+                              ABS ;
+                              DIG 2 ;
+                              MUL ;
+                              DIG 2 ;
+                              DUP 8 ;
+                              DIG 3 ;
+                              MUL ;
+                              MUL ;
+                              EDIV ;
+                              IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+                              CAR ;
+                              CONS ;
+                              PUSH nat 1 ;
+                              DIG 2 ;
+                              SUB ;
+                              ABS ;
+                              PAIR ;
+                              LEFT (list nat) } } ;
+                     SWAP ;
+                     DIG 2 ;
+                     DIG 3 ;
+                     DROP 3 ;
+                     PUSH nat 1 ;
+                     DIG 3 ;
+                     SUB ;
+                     ABS ;
+                     SWAP ;
+                     PAIR ;
+                     LEFT (list nat) ;
+                     LOOP_LEFT
+                       { UNPAIR ;
+                         PUSH nat 0 ;
+                         DUP 3 ;
+                         COMPARE ;
+                         EQ ;
+                         IF { SWAP ; DROP ; RIGHT (pair (list nat) nat) }
+                            { PUSH nat 1 ;
+                              DIG 2 ;
+                              SUB ;
+                              ABS ;
+                              SWAP ;
+                              PUSH nat 0 ;
+                              CONS ;
+                              PAIR ;
+                              LEFT (list nat) } } ;
+                     PUSH bool True ;
+                     SWAP ;
+                     DIG 2 ;
+                     NIL nat ;
+                     NIL nat ;
+                     DIG 3 ;
+                     DIG 3 ;
+                     PAIR ;
+                     PAIR ;
+                     LEFT (list nat) ;
+                     LOOP_LEFT
+                       { UNPAIR ;
+                         UNPAIR ;
+                         IF_CONS
+                           { DIG 2 ;
+                             IF_CONS
+                               { PUSH bool True ;
+                                 DUP 8 ;
+                                 COMPARE ;
+                                 EQ ;
+                                 IF { DIG 2 ; ADD } { DIG 2 ; SUB ; ABS } ;
+                                 DIG 3 ;
+                                 SWAP ;
+                                 CONS ;
+                                 SWAP ;
+                                 DIG 2 ;
+                                 PAIR ;
+                                 PAIR ;
+                                 LEFT (list nat) }
+                               { DROP 3 ; PUSH string "size don't match" ; FAILWITH } }
+                           { IF_CONS
+                               { DROP 3 ; PUSH string "size don't match" ; FAILWITH }
+                               { RIGHT (pair (pair (list nat) (list nat)) (list nat)) } } } ;
+                     DIG 2 ;
+                     DROP ;
+                     PAIR ;
+                     LEFT (list nat) ;
+                     LOOP_LEFT
+                       { UNPAIR ;
+                         IF_CONS
+                           { DIG 2 ; SWAP ; CONS ; SWAP ; PAIR ; LEFT (list nat) }
+                           { RIGHT (pair (list nat) (list nat)) } } ;
+                     DUP 5 ;
+                     CDR ;
+                     CDR ;
                      DUP 6 ;
                      CDR ;
-                     CDR ;
-                     DUP 7 ;
-                     CDR ;
                      CAR ;
                      CDR ;
-                     DIG 3 ;
+                     DUP 6 ;
+                     DUP 8 ;
+                     CDR ;
+                     CAR ;
+                     CAR ;
+                     ADD ;
                      PAIR ;
                      PAIR ;
                      DIG 5 ;
@@ -556,7 +553,7 @@
                      PAIR ;
                      PAIR ;
                      PAIR ;
-                     SWAP ;
+                     NIL operation ;
                      PAIR } }
                { IF_LEFT
                    { DROP ;
@@ -564,15 +561,30 @@
                      SWAP ;
                      DUP ;
                      DUG 2 ;
-                     DIG 4 ;
+                     CAR ;
+                     CAR ;
+                     CAR ;
+                     CDR ;
+                     NOW ;
+                     SUB ;
+                     ABS ;
+                     PUSH nat 1 ;
+                     PUSH nat 604800 ;
+                     DIG 2 ;
+                     EDIV ;
+                     IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+                     CAR ;
+                     ADD ;
+                     DROP ;
                      SWAP ;
-                     EXEC ;
-                     DUP 3 ;
+                     DUP ;
+                     DUG 2 ;
                      CDR ;
                      CAR ;
                      CDR ;
-                     DIG 10 ;
-                     DUP 5 ;
+                     PUSH string
+                          "Only the contract admin can change the contract administrator or increase reward" ;
+                     DUP 4 ;
                      CAR ;
                      CAR ;
                      CAR ;
@@ -581,28 +593,28 @@
                      COMPARE ;
                      EQ ;
                      IF { DROP } { FAILWITH } ;
-                     DIG 9 ;
+                     PUSH string "You must not send Tezos to the smart contract" ;
                      PUSH mutez 0 ;
                      AMOUNT ;
                      COMPARE ;
                      EQ ;
                      IF { DROP } { FAILWITH } ;
-                     DIG 8 ;
-                     DIG 8 ;
+                     PUSH string "There are no more weeks left for staking" ;
+                     PUSH nat 604800 ;
                      INT ;
-                     DUP 6 ;
+                     DUP 5 ;
                      CAR ;
                      CAR ;
                      CAR ;
                      CDR ;
                      ADD ;
-                     DUP 5 ;
+                     DUP 4 ;
                      COMPARE ;
                      LT ;
                      IF { DROP } { FAILWITH } ;
                      PUSH string "The contract is already initialized" ;
                      PUSH nat 0 ;
-                     DUP 6 ;
+                     DUP 5 ;
                      CAR ;
                      CDR ;
                      CDR ;
@@ -612,7 +624,7 @@
                      EQ ;
                      IF { DROP } { FAILWITH } ;
                      DUP ;
-                     DIG 6 ;
+                     NIL nat ;
                      PAIR ;
                      LEFT (list nat) ;
                      LOOP_LEFT
@@ -631,24 +643,196 @@
                               CONS ;
                               PAIR ;
                               LEFT (list nat) } } ;
-                     DUP 5 ;
+                     DROP ;
+                     DUP 3 ;
+                     CDR ;
+                     CAR ;
+                     CAR ;
+                     DUP 4 ;
+                     CAR ;
                      CDR ;
                      CAR ;
                      CAR ;
                      DIG 2 ;
-                     PAIR ;
-                     DUP 5 ;
-                     CAR ;
-                     CDR ;
-                     CAR ;
-                     CAR ;
-                     DIG 3 ;
-                     PAIR ;
-                     PAIR ;
-                     PAIR ;
-                     DIG 3 ;
+                     NIL nat ;
                      SWAP ;
-                     EXEC ;
+                     DUP ;
+                     DUG 2 ;
+                     PAIR ;
+                     LEFT (list nat) ;
+                     LOOP_LEFT
+                       { UNPAIR ;
+                         PUSH nat 0 ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
+                         COMPARE ;
+                         EQ ;
+                         IF { DROP ; RIGHT (pair nat (list nat)) }
+                            { SWAP ;
+                              PUSH nat 1 ;
+                              DUP 3 ;
+                              SUB ;
+                              ABS ;
+                              DUP 5 ;
+                              PUSH nat 1 ;
+                              PAIR ;
+                              PAIR ;
+                              LEFT nat ;
+                              LOOP_LEFT
+                                { UNPAIR ;
+                                  UNPAIR ;
+                                  PUSH nat 0 ;
+                                  DUP 4 ;
+                                  COMPARE ;
+                                  EQ ;
+                                  IF { SWAP ; DIG 2 ; DROP 2 ; RIGHT (pair (pair nat nat) nat) }
+                                     { PUSH nat 1 ;
+                                       DIG 3 ;
+                                       SUB ;
+                                       ABS ;
+                                       DIG 2 ;
+                                       DUP ;
+                                       DIG 3 ;
+                                       MUL ;
+                                       PAIR ;
+                                       PAIR ;
+                                       LEFT nat } } ;
+                              PUSH nat 1 ;
+                              DUP 4 ;
+                              SUB ;
+                              ABS ;
+                              PUSH nat 10000 ;
+                              PUSH nat 1 ;
+                              PAIR ;
+                              PAIR ;
+                              LEFT nat ;
+                              LOOP_LEFT
+                                { UNPAIR ;
+                                  UNPAIR ;
+                                  PUSH nat 0 ;
+                                  DUP 4 ;
+                                  COMPARE ;
+                                  EQ ;
+                                  IF { SWAP ; DIG 2 ; DROP 2 ; RIGHT (pair (pair nat nat) nat) }
+                                     { PUSH nat 1 ;
+                                       DIG 3 ;
+                                       SUB ;
+                                       ABS ;
+                                       DIG 2 ;
+                                       DUP ;
+                                       DIG 3 ;
+                                       MUL ;
+                                       PAIR ;
+                                       PAIR ;
+                                       LEFT nat } } ;
+                              DUP 6 ;
+                              PUSH nat 10000 ;
+                              SUB ;
+                              ABS ;
+                              PUSH nat 1 ;
+                              DUP 7 ;
+                              SUB ;
+                              ABS ;
+                              PUSH nat 10000 ;
+                              PUSH nat 1 ;
+                              PAIR ;
+                              PAIR ;
+                              LEFT nat ;
+                              LOOP_LEFT
+                                { UNPAIR ;
+                                  UNPAIR ;
+                                  PUSH nat 0 ;
+                                  DUP 4 ;
+                                  COMPARE ;
+                                  EQ ;
+                                  IF { SWAP ; DIG 2 ; DROP 2 ; RIGHT (pair (pair nat nat) nat) }
+                                     { PUSH nat 1 ;
+                                       DIG 3 ;
+                                       SUB ;
+                                       ABS ;
+                                       DIG 2 ;
+                                       DUP ;
+                                       DIG 3 ;
+                                       MUL ;
+                                       PAIR ;
+                                       PAIR ;
+                                       LEFT nat } } ;
+                              SWAP ;
+                              MUL ;
+                              DUP 6 ;
+                              DUP 8 ;
+                              PUSH nat 1 ;
+                              PAIR ;
+                              PAIR ;
+                              LEFT nat ;
+                              LOOP_LEFT
+                                { UNPAIR ;
+                                  UNPAIR ;
+                                  PUSH nat 0 ;
+                                  DUP 4 ;
+                                  COMPARE ;
+                                  EQ ;
+                                  IF { SWAP ; DIG 2 ; DROP 2 ; RIGHT (pair (pair nat nat) nat) }
+                                     { PUSH nat 1 ;
+                                       DIG 3 ;
+                                       SUB ;
+                                       ABS ;
+                                       DIG 2 ;
+                                       DUP ;
+                                       DIG 3 ;
+                                       MUL ;
+                                       PAIR ;
+                                       PAIR ;
+                                       LEFT nat } } ;
+                              DUP 7 ;
+                              PUSH nat 10000 ;
+                              PUSH nat 1 ;
+                              PAIR ;
+                              PAIR ;
+                              LEFT nat ;
+                              LOOP_LEFT
+                                { UNPAIR ;
+                                  UNPAIR ;
+                                  PUSH nat 0 ;
+                                  DUP 4 ;
+                                  COMPARE ;
+                                  EQ ;
+                                  IF { SWAP ; DIG 2 ; DROP 2 ; RIGHT (pair (pair nat nat) nat) }
+                                     { PUSH nat 1 ;
+                                       DIG 3 ;
+                                       SUB ;
+                                       ABS ;
+                                       DIG 2 ;
+                                       DUP ;
+                                       DIG 3 ;
+                                       MUL ;
+                                       PAIR ;
+                                       PAIR ;
+                                       LEFT nat } } ;
+                              SUB ;
+                              ABS ;
+                              DIG 2 ;
+                              MUL ;
+                              DIG 2 ;
+                              DUP 8 ;
+                              DIG 3 ;
+                              MUL ;
+                              MUL ;
+                              EDIV ;
+                              IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+                              CAR ;
+                              CONS ;
+                              PUSH nat 1 ;
+                              DIG 2 ;
+                              SUB ;
+                              ABS ;
+                              PAIR ;
+                              LEFT (list nat) } } ;
+                     SWAP ;
+                     DIG 2 ;
+                     DIG 3 ;
+                     DROP 3 ;
                      DUP 3 ;
                      CDR ;
                      DUP 4 ;
@@ -689,15 +873,10 @@
                      PAIR ;
                      PAIR ;
                      PAIR ;
-                     SWAP ;
+                     NIL operation ;
                      PAIR }
-                   { DIG 2 ;
-                     DIG 3 ;
-                     DIG 4 ;
-                     DIG 6 ;
-                     DIG 7 ;
-                     DROP 5 ;
-                     DIG 4 ;
+                   { PUSH string
+                          "Only the contract admin can change the contract administrator or increase reward" ;
                      DUP 3 ;
                      CAR ;
                      CAR ;
@@ -707,7 +886,7 @@
                      COMPARE ;
                      EQ ;
                      IF { DROP } { FAILWITH } ;
-                     DIG 3 ;
+                     PUSH string "You must not send Tezos to the smart contract" ;
                      PUSH mutez 0 ;
                      AMOUNT ;
                      COMPARE ;
@@ -734,16 +913,10 @@
                      PAIR ;
                      PAIR ;
                      PAIR ;
-                     SWAP ;
+                     NIL operation ;
                      PAIR } } }
-           { DIG 2 ;
-             DIG 8 ;
-             DIG 13 ;
-             DROP 3 ;
-             IF_LEFT
-               { DIG 4 ;
-                 DROP ;
-                 NOW ;
+           { IF_LEFT
+               { NOW ;
                  SENDER ;
                  DUP 4 ;
                  CDR ;
@@ -763,12 +936,25 @@
                                (pair %getTotalSupply (unit %request) (contract %callback nat))))
                        (or (pair %mintOrBurn (int %quantity) (address %target))
                            (pair %transfer (address %from) (pair (address %to) (nat %value))))) ;
-                 IF_NONE { DIG 12 ; FAILWITH } { DIG 13 ; DROP } ;
+                 IF_NONE
+                   { PUSH string "This farm works with a different LP token" ; FAILWITH }
+                   {} ;
                  DUP 6 ;
-                 DIG 8 ;
-                 SWAP ;
-                 EXEC ;
-                 DUP 11 ;
+                 CAR ;
+                 CAR ;
+                 CAR ;
+                 CDR ;
+                 NOW ;
+                 SUB ;
+                 ABS ;
+                 PUSH nat 1 ;
+                 PUSH nat 604800 ;
+                 DIG 2 ;
+                 EDIV ;
+                 IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+                 CAR ;
+                 ADD ;
+                 PUSH nat 604800 ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
@@ -780,7 +966,7 @@
                  CAR ;
                  CDR ;
                  ADD ;
-                 DIG 13 ;
+                 PUSH string "You must not send Tezos to the smart contract" ;
                  PUSH mutez 0 ;
                  AMOUNT ;
                  COMPARE ;
@@ -792,8 +978,8 @@
                  COMPARE ;
                  GT ;
                  IF { DROP } { FAILWITH } ;
-                 DIG 12 ;
-                 DUP 13 ;
+                 PUSH string "There are no more weeks left for staking" ;
+                 PUSH nat 604800 ;
                  DUP 10 ;
                  CDR ;
                  CAR ;
@@ -850,9 +1036,9 @@
                  SWAP ;
                  MUL ;
                  DIG 6 ;
-                 DIG 11 ;
+                 PUSH nat 604800 ;
                  MUL ;
-                 DIG 10 ;
+                 NIL nat ;
                  DUP 9 ;
                  CDR ;
                  CAR ;
@@ -892,19 +1078,94 @@
                  GET ;
                  IF_NONE
                    { DUP }
-                   { DUP 9 ; DUP 3 ; DIG 2 ; PAIR ; PAIR ; DUP 8 ; SWAP ; EXEC } ;
-                 DIG 8 ;
+                   { PUSH bool True ;
+                     DUP 3 ;
+                     DIG 2 ;
+                     NIL nat ;
+                     NIL nat ;
+                     DIG 3 ;
+                     DIG 3 ;
+                     PAIR ;
+                     PAIR ;
+                     LEFT (list nat) ;
+                     LOOP_LEFT
+                       { UNPAIR ;
+                         UNPAIR ;
+                         IF_CONS
+                           { DIG 2 ;
+                             IF_CONS
+                               { PUSH bool True ;
+                                 DUP 8 ;
+                                 COMPARE ;
+                                 EQ ;
+                                 IF { DIG 2 ; ADD } { DIG 2 ; SUB ; ABS } ;
+                                 DIG 3 ;
+                                 SWAP ;
+                                 CONS ;
+                                 SWAP ;
+                                 DIG 2 ;
+                                 PAIR ;
+                                 PAIR ;
+                                 LEFT (list nat) }
+                               { DROP 3 ; PUSH string "size don't match" ; FAILWITH } }
+                           { IF_CONS
+                               { DROP 3 ; PUSH string "size don't match" ; FAILWITH }
+                               { RIGHT (pair (pair (list nat) (list nat)) (list nat)) } } } ;
+                     DIG 2 ;
+                     DROP ;
+                     PAIR ;
+                     LEFT (list nat) ;
+                     LOOP_LEFT
+                       { UNPAIR ;
+                         IF_CONS
+                           { DIG 2 ; SWAP ; CONS ; SWAP ; PAIR ; LEFT (list nat) }
+                           { RIGHT (pair (list nat) (list nat)) } } } ;
+                 PUSH bool True ;
                  DIG 2 ;
                  DUP 8 ;
                  CAR ;
                  CAR ;
                  CDR ;
                  CAR ;
+                 NIL nat ;
+                 NIL nat ;
+                 DIG 3 ;
+                 DIG 3 ;
                  PAIR ;
                  PAIR ;
-                 DIG 7 ;
-                 SWAP ;
-                 EXEC ;
+                 LEFT (list nat) ;
+                 LOOP_LEFT
+                   { UNPAIR ;
+                     UNPAIR ;
+                     IF_CONS
+                       { DIG 2 ;
+                         IF_CONS
+                           { PUSH bool True ;
+                             DUP 8 ;
+                             COMPARE ;
+                             EQ ;
+                             IF { DIG 2 ; ADD } { DIG 2 ; SUB ; ABS } ;
+                             DIG 3 ;
+                             SWAP ;
+                             CONS ;
+                             SWAP ;
+                             DIG 2 ;
+                             PAIR ;
+                             PAIR ;
+                             LEFT (list nat) }
+                           { DROP 3 ; PUSH string "size don't match" ; FAILWITH } }
+                       { IF_CONS
+                           { DROP 3 ; PUSH string "size don't match" ; FAILWITH }
+                           { RIGHT (pair (pair (list nat) (list nat)) (list nat)) } } } ;
+                 DIG 2 ;
+                 DROP ;
+                 PAIR ;
+                 LEFT (list nat) ;
+                 LOOP_LEFT
+                   { UNPAIR ;
+                     IF_CONS
+                       { DIG 2 ; SWAP ; CONS ; SWAP ; PAIR ; LEFT (list nat) }
+                       { RIGHT (pair (list nat) (list nat)) } } ;
                  DIG 2 ;
                  DUP 7 ;
                  CDR ;
@@ -962,26 +1223,34 @@
                  DIG 2 ;
                  CONS ;
                  PAIR }
-               { DIG 5 ;
-                 DIG 8 ;
-                 DROP 2 ;
-                 NOW ;
+               { NOW ;
                  DUP 3 ;
-                 DIG 5 ;
-                 SWAP ;
-                 EXEC ;
+                 CAR ;
+                 CAR ;
+                 CAR ;
+                 CDR ;
+                 NOW ;
+                 SUB ;
+                 ABS ;
+                 PUSH nat 1 ;
+                 PUSH nat 604800 ;
+                 DIG 2 ;
+                 EDIV ;
+                 IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+                 CAR ;
+                 ADD ;
                  DUP 4 ;
                  CDR ;
                  CDR ;
                  CAR ;
-                 DIG 9 ;
+                 PUSH string "You must not send Tezos to the smart contract" ;
                  PUSH mutez 0 ;
                  AMOUNT ;
                  COMPARE ;
                  EQ ;
                  IF { DROP } { FAILWITH } ;
                  SENDER ;
-                 DUP 10 ;
+                 PUSH nat 604800 ;
                  DUP 4 ;
                  MUL ;
                  INT ;
@@ -1029,7 +1298,9 @@
                                (pair %getTotalSupply (unit %request) (contract %callback nat))))
                        (or (pair %mintOrBurn (int %quantity) (address %target))
                            (pair %transfer (address %from) (pair (address %to) (nat %value))))) ;
-                 IF_NONE { DIG 12 ; FAILWITH } { DIG 13 ; DROP } ;
+                 IF_NONE
+                   { PUSH string "This farm works with a different LP token" ; FAILWITH }
+                   {} ;
                  SELF_ADDRESS ;
                  DUP 5 ;
                  DUP 10 ;
@@ -1060,9 +1331,9 @@
                       SWAP ;
                       MUL ;
                       DIG 6 ;
-                      DIG 11 ;
+                      PUSH nat 604800 ;
                       MUL ;
-                      DIG 10 ;
+                      NIL nat ;
                       DUP 9 ;
                       CDR ;
                       CAR ;
@@ -1102,19 +1373,94 @@
                       GET ;
                       IF_NONE
                         { PUSH string "Some points should exist" ; FAILWITH }
-                        { DUP 9 ; DUP 3 ; DIG 2 ; PAIR ; PAIR ; DUP 8 ; SWAP ; EXEC } ;
-                      DIG 8 ;
+                        { PUSH bool False ;
+                          DUP 3 ;
+                          DIG 2 ;
+                          NIL nat ;
+                          NIL nat ;
+                          DIG 3 ;
+                          DIG 3 ;
+                          PAIR ;
+                          PAIR ;
+                          LEFT (list nat) ;
+                          LOOP_LEFT
+                            { UNPAIR ;
+                              UNPAIR ;
+                              IF_CONS
+                                { DIG 2 ;
+                                  IF_CONS
+                                    { PUSH bool True ;
+                                      DUP 8 ;
+                                      COMPARE ;
+                                      EQ ;
+                                      IF { DIG 2 ; ADD } { DIG 2 ; SUB ; ABS } ;
+                                      DIG 3 ;
+                                      SWAP ;
+                                      CONS ;
+                                      SWAP ;
+                                      DIG 2 ;
+                                      PAIR ;
+                                      PAIR ;
+                                      LEFT (list nat) }
+                                    { DROP 3 ; PUSH string "size don't match" ; FAILWITH } }
+                                { IF_CONS
+                                    { DROP 3 ; PUSH string "size don't match" ; FAILWITH }
+                                    { RIGHT (pair (pair (list nat) (list nat)) (list nat)) } } } ;
+                          DIG 2 ;
+                          DROP ;
+                          PAIR ;
+                          LEFT (list nat) ;
+                          LOOP_LEFT
+                            { UNPAIR ;
+                              IF_CONS
+                                { DIG 2 ; SWAP ; CONS ; SWAP ; PAIR ; LEFT (list nat) }
+                                { RIGHT (pair (list nat) (list nat)) } } } ;
+                      PUSH bool False ;
                       DIG 2 ;
                       DUP 8 ;
                       CAR ;
                       CAR ;
                       CDR ;
                       CAR ;
+                      NIL nat ;
+                      NIL nat ;
+                      DIG 3 ;
+                      DIG 3 ;
                       PAIR ;
                       PAIR ;
-                      DIG 7 ;
-                      SWAP ;
-                      EXEC ;
+                      LEFT (list nat) ;
+                      LOOP_LEFT
+                        { UNPAIR ;
+                          UNPAIR ;
+                          IF_CONS
+                            { DIG 2 ;
+                              IF_CONS
+                                { PUSH bool True ;
+                                  DUP 8 ;
+                                  COMPARE ;
+                                  EQ ;
+                                  IF { DIG 2 ; ADD } { DIG 2 ; SUB ; ABS } ;
+                                  DIG 3 ;
+                                  SWAP ;
+                                  CONS ;
+                                  SWAP ;
+                                  DIG 2 ;
+                                  PAIR ;
+                                  PAIR ;
+                                  LEFT (list nat) }
+                                { DROP 3 ; PUSH string "size don't match" ; FAILWITH } }
+                            { IF_CONS
+                                { DROP 3 ; PUSH string "size don't match" ; FAILWITH }
+                                { RIGHT (pair (pair (list nat) (list nat)) (list nat)) } } } ;
+                      DIG 2 ;
+                      DROP ;
+                      PAIR ;
+                      LEFT (list nat) ;
+                      LOOP_LEFT
+                        { UNPAIR ;
+                          IF_CONS
+                            { DIG 2 ; SWAP ; CONS ; SWAP ; PAIR ; LEFT (list nat) }
+                            { RIGHT (pair (list nat) (list nat)) } } ;
                       DIG 3 ;
                       DUP 7 ;
                       CDR ;
@@ -1176,11 +1522,7 @@
                       DIG 5 ;
                       DIG 6 ;
                       DIG 7 ;
-                      DIG 9 ;
-                      DIG 10 ;
-                      DIG 11 ;
-                      DIG 12 ;
-                      DROP 10 ;
+                      DROP 6 ;
                       SWAP ;
                       DUP 3 ;
                       CDR ;
