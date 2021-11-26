@@ -18,7 +18,7 @@ let get_current_week (s : storage_farm) : nat =
     let delay : nat = abs(Tezos.now - s.creation_time) in
     delay / week_in_seconds + 1n
 
-let get_weeks_list_indices (first, last : nat * nat) : nat list =
+let get_weeks_list_indices (first, last : nat * nat) : nat list = // TODO refacto 
     let rec append (acc, elt, last: nat list * nat * nat) : nat list = 
         if elt <= last then append (elt :: acc, elt + 1n, last) 
         else acc
@@ -40,6 +40,11 @@ let power (x, y : nat * nat) : nat =
     let rec multiply(acc, elt, last: nat * nat * nat ) : nat = if last = 0n then acc else multiply(acc * elt, elt, abs(last - 1n)) in
     multiply(1n, x, y)
 
+let rec reverse_list (lst, res : nat list * nat list) : nat list =
+    match lst, res with
+    [], _lst -> _lst
+    |  hd1::tl1, _lst -> reverse_list(tl1, hd1 :: _lst)
+
 let add_or_subtract_list(lst1, lst2, is_added : nat list * nat list * bool) : nat list =
     let rec merge_list(lst1, lst2, res : nat list * nat list * nat list) : nat list =
         match lst1, lst2 with
@@ -57,45 +62,28 @@ let add_or_subtract_list(lst1, lst2, is_added : nat list * nat list * bool) : na
     in
     reverse_list(merge_list(lst1, lst2, empty_nat_list), empty_nat_list)
 
-let compute_new_rewards (current_week, rate, total_weeks, total_reward, reward_at_week : nat * nat * nat * nat * nat list) : nat list =
-    let weeks_list_indices : nat list = get_weeks_list_indices(1n, total_weeks) in 
-    //let _print : unit = assert_with_error (false) (List.size weeks_list_indices : string) in
- 
+//let compute_new_rewards (week_number:nat) (rate:nat) (total_reward:nat) : nat list = EXEMPLE CURRIFIE
+let compute_new_rewards (week_number, rate, total_reward : nat * nat * nat) : nat list =
+
     let update_reward_per_week (week_indice : nat) : nat =
         let t_before : nat = power(rate, abs(week_indice - 1n)) in  
         let t_before_divisor : nat = power(10_000n, abs(week_indice - 1n)) in
         let un_moins_rate : nat = abs(10_000n - rate) in 
-        let m_10000_4 : nat = power(10_000n, abs(total_weeks - 1n)) in
+        let m_10000_4 : nat = power(10_000n, abs(week_number - 1n)) in
         let numerator : nat = un_moins_rate * m_10000_4 in 
-        let t_I_max : nat = power(rate, total_weeks) in 
-        let m_10000_5 : nat = power(10_000n, total_weeks) in
+        let t_I_max : nat = power(rate, week_number) in 
+        let m_10000_5 : nat = power(10_000n, week_number) in
         let denominator : nat = abs(m_10000_5 - t_I_max) in
         let final_denominator : nat = t_before_divisor * denominator in 
         let final_numerator : nat = numerator * total_reward * t_before in 
         final_numerator / final_denominator
     in
-    let rec update_rewards(lst1, lst2, res : nat list * nat list * nat list) : nat list =
-        match lst1, lst2 with
-        [], [] -> res
-        | [], _lst -> failwith "size don't match"
-        | _lst, [] -> failwith "size don't match"
-        | hd1::tl1, hd2::tl2 ->
-            let new_res : nat list =
-                if hd1 < current_week
-                then hd2 :: res
-                else update_reward_per_week(hd1) :: res
-            in
-            update_rewards(tl1, tl2, new_res)
-    in
-    // let rec reverse_list (lst, res : nat list * nat list) : nat list =
-    //     match lst, res with
-    //     [], _lst -> _lst
-    //     |  hd1::tl1, _lst -> reverse_list(tl1, hd1 :: _lst)
-    // in
-    // let final_reward_list : nat list = update_rewards(weeks_list_indices, reward_at_week, empty_nat_list) in
-    // reverse_list(final_reward_list, empty_nat_list)
-    update_rewards(weeks_list_indices, reward_at_week, empty_nat_list)
 
+    let rec create_reward_list(week_indice, res : nat * nat list ) : nat list =
+        if (week_indice = 0n) then res
+        else create_reward_list(abs(week_indice - 1n), update_reward_per_week(week_indice) :: res )
+    in
+    create_reward_list(week_number, empty_nat_list)
 
 // ------------------
 // -- ENTRY POINTS --
@@ -128,7 +116,8 @@ let initialize(storage : storage_farm) : return =
 
     let reward_at_week_initialized_at_zero : nat list = initialize_at_zero(empty_nat_list, total_weeks) in
 
-    let new_reward_at_week : nat list = compute_new_rewards(current_week, rate, total_weeks, total_reward, reward_at_week_initialized_at_zero) in
+    let new_reward_at_week : nat list = compute_new_rewards(total_weeks, rate, total_reward) in
+    
     let final_storage = { storage with reward_at_week = new_reward_at_week ;
                                        creation_time = initialized_creation_time } in
     (no_operation, final_storage)
@@ -147,16 +136,26 @@ let increase_reward(value, storage : nat * storage_farm) : return =
     let _check_if_admin : unit = assert_with_error (Tezos.sender = storage.admin) only_admin in
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
     let _check_current_week : unit = assert_with_error (current_time < creation_time + int(total_weeks * week_in_seconds)) no_week_left in
-    let _check_if_positive : unit = assert_with_error (value = 0n) increase_amount_is_null in
+    let _check_if_positive : unit = assert_with_error (value > 0n) increase_amount_is_null in
 
     let folded (acc, elt: nat * nat) : nat = acc + elt in
     let sum_R : nat = List.fold folded reward_at_week 0n in
     let new_total_reward : nat = delta + abs(storage.total_reward - sum_R) in
 
-    let new_reward_at_week : nat list = compute_new_rewards(current_week, rate, total_weeks, total_reward, reward_at_week) in
+    let new_reward_at_week : nat list = compute_new_rewards(abs(total_weeks-current_week+1n), rate, value) in
 
-    let final_storage = { storage with total_reward = new_total_reward ;
-                                       reward_at_week = new_reward_at_week ;
+    let rec create_list (lst, acc : nat list * nat) : nat list =
+        if acc = 0n then lst
+        else create_list( 0n :: lst, abs(acc - 1n))
+    in
+
+    let new_list_to_add = create_list(new_reward_at_week, abs(current_week-1n)) in
+
+    let final_reward_at_week = add_or_subtract_list(reward_at_week, new_list_to_add, add) in
+
+    
+    let final_storage = { storage with total_reward = total_reward + value ;
+                                       reward_at_week = final_reward_at_week ;
                                        creation_time = initialized_creation_time } in
     (no_operation, final_storage)
 
