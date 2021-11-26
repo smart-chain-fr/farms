@@ -75,9 +75,9 @@ class FarmsContractTest(TestCase):
         else:
             self.assertEqual(f"'{error_message}': ", r.exception.format_stdout())
 
-    ######################
+    #######################
     # Tests for set_admin #
-    ######################
+    #######################
 
     def test_set_admin_should_work(self):
         init_storage = deepcopy(initial_storage)
@@ -95,9 +95,9 @@ class FarmsContractTest(TestCase):
         with self.raisesMichelsonError(amount_must_be_zero_tez):
             self.farms.set_admin(bob).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2), amount=1)
 
-    ############################
-    # Test rewards computation #
-    ############################
+    #######################
+    # Test for initialize #
+    #######################
 
     def test_initializeReward_5week_20Kreward_75rate_initialization_should_work(self):
         init_storage = deepcopy(initial_storage)
@@ -127,7 +127,7 @@ class FarmsContractTest(TestCase):
         self.assertEqual(res.storage["reward_at_week"], expected_rewards)
 
     #########################
-    # Test rewards increase #
+    # Test increase rewards #
     #########################
 
     def test_increase_reward_reward_50k_on_week_3_should_work(self):
@@ -147,48 +147,24 @@ class FarmsContractTest(TestCase):
         init_storage["total_reward"] = 10_000_000
         init_storage["total_weeks"] = 3
         init_storage["rate"] = 7500
-        init_storage["reward_at_week"] = {
-            1: 4324324,
-            2: 3243243,
-            3: 2432432,
-        }
+        init_storage["reward_at_week"] = [4324324, 3243243, 2432432]
         res = self.farms.increase_reward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2))
-
+        expected_rewards = [4324324, 14671814, 11003860]
         self.assertEqual(res.storage["total_reward"], 30000000)
-        self.assertEqual(res.storage["weeks"], 3)
-        reward_week_1 = int(res.storage["reward_at_week"][1])
-        reward_week_2 = int(res.storage["reward_at_week"][2])
-        reward_week_3 = int(res.storage["reward_at_week"][3])
-        self.assertEqual(reward_week_1, 4324324)
-        self.assertEqual(reward_week_2, 14671814)
-        self.assertEqual(reward_week_3, 11003861)
+        self.assertEqual(res.storage["total_weeks"], 3)
+        self.assertEqual(res.storage["reward_at_week"], expected_rewards)
 
     def test_increase_reward_if_not_admin_should_fail(self):
         init_storage = deepcopy(initial_storage)
-        init_storage["total_reward"] = 10_000_000
-        init_storage["total_weeks"] = 3
-        init_storage["rate"] = 7500
-        init_storage["reward_at_week"] = {
-            1: 4324324,
-            2: 3243243,
-            3: 2432432,
-        }
+        init_storage["reward_at_week"] = [6555697, 4916773, 3687580, 2765685, 2074263]
         with self.raisesMichelsonError(only_admin):
             res = self.farms.increase_reward(20_000_000).interpret(storage=init_storage, sender=fox, now=int(sec_week + sec_week/2))
 
     def test_increase_reward_after_end_of_pool_should_fail(self):
         init_storage = deepcopy(initial_storage)
-        init_storage["total_reward"] = 10_000_000
-        init_storage["total_weeks"] = 3
-        init_storage["rate"] = 7500
-        init_storage["reward_at_week"] = {
-            1: 4324324,
-            2: 3243243,
-            3: 2432432,
-        }
+        init_storage["reward_at_week"] = [6555697, 4916773, 3687580, 2765685, 2074263]
         with self.raisesMichelsonError(no_week_left):
             res = self.farms.increase_reward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week * 20 + sec_week/2))
-
 
     ######################
     # Tests for Staking #
@@ -198,7 +174,7 @@ class FarmsContractTest(TestCase):
         init_storage = deepcopy(initial_storage)
         init_storage["user_stakes"] = {}
         init_storage["user_points"] = {}
-        init_storage["farm_points"] = {}
+        init_storage["farm_points"] = []
         init_storage["creation_time"] = 0
         staking_time = int(sec_week + sec_week/2)
         locked_amount = 20
