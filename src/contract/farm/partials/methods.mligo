@@ -19,7 +19,10 @@ let get_current_week (s : storage_farm) : nat =
     delay / week_in_seconds + 1n
 
 let get_weeks_list_indices (first, last : nat * nat) : nat list =
-    let rec append (acc, elt, last: nat list * nat * nat) : nat list = if elt <= last then append (elt :: acc, elt + 1n, last) else acc in
+    let rec append (acc, elt, last: nat list * nat * nat) : nat list = 
+        if elt <= last then append (elt :: acc, elt + 1n, last) 
+        else acc
+    in
     append(([]:nat list), first, last)
 
 let sendReward(token_amount, user_address, smak_address, reserve_address : nat * address * address * address) : operation = 
@@ -56,6 +59,8 @@ let add_or_subtract_list(lst1, lst2, is_added : nat list * nat list * bool) : na
 
 let compute_new_rewards (current_week, rate, total_weeks, total_reward, reward_at_week : nat * nat * nat * nat * nat list) : nat list =
     let weeks_list_indices : nat list = get_weeks_list_indices(1n, total_weeks) in 
+    //let _print : unit = assert_with_error (false) (List.size weeks_list_indices : string) in
+ 
     let update_reward_per_week (week_indice : nat) : nat =
         let t_before : nat = power(rate, abs(week_indice - 1n)) in  
         let t_before_divisor : nat = power(10_000n, abs(week_indice - 1n)) in
@@ -82,13 +87,15 @@ let compute_new_rewards (current_week, rate, total_weeks, total_reward, reward_a
             in
             update_rewards(tl1, tl2, new_res)
     in
-    let rec reverse_list (lst, res : nat list * nat list) : nat list =
-        match lst, res with
-        [], _lst -> _lst
-        |  hd1::tl1, _lst -> reverse_list(tl1, hd1 :: _lst)
-    in
-    let final_reward_list : nat list = update_rewards(weeks_list_indices, reward_at_week, empty_nat_list) in
-    reverse_list(final_reward_list, empty_nat_list)
+    // let rec reverse_list (lst, res : nat list * nat list) : nat list =
+    //     match lst, res with
+    //     [], _lst -> _lst
+    //     |  hd1::tl1, _lst -> reverse_list(tl1, hd1 :: _lst)
+    // in
+    // let final_reward_list : nat list = update_rewards(weeks_list_indices, reward_at_week, empty_nat_list) in
+    // reverse_list(final_reward_list, empty_nat_list)
+    update_rewards(weeks_list_indices, reward_at_week, empty_nat_list)
+
 
 // ------------------
 // -- ENTRY POINTS --
@@ -112,9 +119,16 @@ let initialize(storage : storage_farm) : return =
     let _check_if_admin : unit = assert_with_error (Tezos.sender = storage.admin) only_admin in
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
     let _check_current_week : unit = assert_with_error (initialized_creation_time < creation_time + int(week_in_seconds)) no_week_left in
-    let _check_if_unitialized : unit = assert_with_error (List.size storage.reward_at_week <> 0n) contract_already_initialized in
+    let _check_if_unitialized : unit = assert_with_error (List.size reward_at_week = 0n) contract_already_initialized in
 
-    let new_reward_at_week : nat list = compute_new_rewards(current_week, rate, total_weeks, total_reward, reward_at_week) in
+    let rec initialize_at_zero(list_to_initialize, total_weeks : nat list * nat) : nat list=
+        if total_weeks = 0n then list_to_initialize
+        else initialize_at_zero(0n :: list_to_initialize, abs(total_weeks - 1n))
+    in
+
+    let reward_at_week_initialized_at_zero : nat list = initialize_at_zero(empty_nat_list, total_weeks) in
+
+    let new_reward_at_week : nat list = compute_new_rewards(current_week, rate, total_weeks, total_reward, reward_at_week_initialized_at_zero) in
     let final_storage = { storage with reward_at_week = new_reward_at_week ;
                                        creation_time = initialized_creation_time } in
     (no_operation, final_storage)

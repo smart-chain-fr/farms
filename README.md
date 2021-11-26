@@ -83,6 +83,7 @@ _cf._ https://pypi.org/project/pytezos/
 
 - In the contract/test/ repository, run `pytest [-k "filename"] [-s]`
 - OR If you want to have more verbose run `python3 -m unittest test_farm.py -v` for Farm tests or `python3 -m unittest test_database.py -v` for Database tests
+- OR If you want to run a specific test, run `python3 -m unittest test_farm.py -v -k 'test_initializeReward_5week_20Kreward_75rate_initialization_should_work'`
 
 ---
 
