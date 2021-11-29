@@ -2,7 +2,7 @@ type week = nat
 type week_in_seconds = nat
 type stake_param = nat
 type reward_param = nat
-type smak_transfer = address * (address * nat)
+type fa12_transfer = address * (address * nat)
 
 type storage_farm = {
     admin: address;
@@ -12,9 +12,9 @@ type storage_farm = {
     reserve_address: address;
     reward_at_week : nat list; // change to list
     farm_points : nat list; // change to list
-    smak_address: address;
+    fa12_address: address;
     total_reward: nat;
-    user_points : (address, nat list) big_map;
+    user_points : (address, nat list) big_map; // change to list
     user_stakes : (address, nat) big_map;
     total_weeks: nat
 }

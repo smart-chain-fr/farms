@@ -173,7 +173,7 @@ class FarmsContractTest(TestCase):
     def test_stake_one_time_on_second_week_should_work(self):
         init_storage = deepcopy(initial_storage)
         init_storage["user_stakes"] = {}
-        init_storage["user_points"] = {}
+        init_storage["user_points"] = { bob: [0, 0, int(300 * sec_week / 2), 300 * sec_week, 300 * sec_week] }
         init_storage["farm_points"] = []
         init_storage["creation_time"] = 0
         staking_time = int(sec_week + sec_week/2)
@@ -1557,5 +1557,5 @@ class FarmsContractTest(TestCase):
         self.assertEqual('transaction', transfer_txs2[0]["kind"])
         transfer_tx_params2 = transfer_txs2[0]["parameters"]["value"]['args']
         self.assertEqual(initial_storage["reserve_address"], transfer_tx_params2[0]['string'])
-        self.assertEqual(alice, transfer_tx_params2[1]['string'])
         self.assertEqual(str(int(res5.storage["reward_at_week"][2])), transfer_tx_params2[2]['int'])
+        self.assertEqual(alice, transfer_tx_params2[1]['string'])

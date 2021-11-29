@@ -1,4 +1,3 @@
-#include "../../../../lib/contract/fa12.mligo"
 #include "types.mligo"
 #include "error.mligo"
 
@@ -18,15 +17,15 @@ let get_current_week (storage : storage_farm) : nat =
     let delay : nat = abs(Tezos.now - storage.creation_time) in
     delay / week_in_seconds + 1n
 
-let sendReward (token_amount : nat) (user_address : address) (smak_address : address) (reserve_address : address ) : operation = 
-    let smak_contract_otp : smak_transfer contract option = Tezos.get_entrypoint_opt "%transfer" smak_address in
-    let transfer_smak : smak_transfer contract = 
-        match smak_contract_otp with
+let sendReward (token_amount : nat) (user_address : address) (fa12_address : address) (reserve_address : address ) : operation = 
+    let fa12_contract_opt : fa12_transfer contract option = Tezos.get_entrypoint_opt "%transfer" fa12_address in
+    let transfer_fa12 : fa12_transfer contract = 
+        match fa12_contract_opt with
         | Some c -> c
-        | None -> (failwith unknown_smak_contract:  smak_transfer contract)
+        | None -> (failwith unknown_smak_contract: fa12_transfer contract)
     in
-    let transfer_param : smak_transfer = reserve_address,  (user_address , token_amount ) in 
-    let op : operation = Tezos.transaction (transfer_param) 0mutez transfer_smak in
+    let transfer_param : fa12_transfer = reserve_address,  (user_address , token_amount ) in 
+    let op : operation = Tezos.transaction (transfer_param) 0mutez transfer_fa12 in
     op
 
 let power (x : nat) (y : nat) : nat = 
@@ -137,17 +136,19 @@ let increase_reward (storage : storage_farm) (added_new_reward : nat ) : return 
     (no_operation, final_storage)
 
 let stake_some (storage : storage_farm) (lp_amount : nat) : return =
+    let fa12_address : address = storage.fa12_address in
     let current_time : timestamp = Tezos.now in
     let sender_address : address = Tezos.sender in // Avoids recalculating Tezos.sender each time for gas
     let farm_points : nat list = storage.farm_points in
     let user_points : (address, nat list) big_map = storage.user_points in
     let total_weeks : nat = storage.total_weeks in
-    let lp_contract_opt : parameter contract option = Tezos.get_contract_opt(storage.lp_token_address) in
-    let lp_contract : parameter contract =
-        match lp_contract_opt with
-        | None -> (failwith(unknown_lp_contract) : parameter contract)
-        | Some(x) -> x
+    let smak_contract_otp : fa12_transfer contract option = Tezos.get_entrypoint_opt "%transfer" fa12_address in
+    let transfer_fa12 : fa12_transfer contract = 
+        match smak_contract_otp with
+        | Some c -> c
+        | None -> (failwith unknown_smak_contract:  fa12_transfer contract)
     in
+
     let current_week : nat = get_current_week(storage) in
     let endofweek_in_seconds : timestamp = storage.creation_time + int(current_week * week_in_seconds) in
 
@@ -157,8 +158,9 @@ let stake_some (storage : storage_farm) (lp_amount : nat) : return =
     let _check_in_week : unit = assert_with_error (current_time - endofweek_in_seconds < 0) time_too_early in
 
     // create a transfer transaction (for LP token contract)
-    let transfer_param : transfer = { address_from = sender_address; address_to = Tezos.self_address; value = lp_amount } in 
-    let op : operation = Tezos.transaction (Transfer(transfer_param)) 0mutez lp_contract in
+    let transfer_param : fa12_transfer = sender_address, (Tezos.self_address, lp_amount ) in 
+    let op : operation = Tezos.transaction (transfer_param) 0mutez transfer_fa12 in
+
     let operations : operation list = [ op; ] in
     // update current storage with updated user_stakes map
     let existing_bal_opt : nat option = Big_map.find_opt sender_address storage.user_stakes in
@@ -202,6 +204,7 @@ let stake_some (storage : storage_farm) (lp_amount : nat) : return =
     (operations, final_storage)
 
 let unstake_some (storage : storage_farm) (lp_amount : nat) : return =
+    let fa12_address : address = storage.fa12_address in
     let current_time : timestamp = Tezos.now in
     let current_week : nat = get_current_week(storage) in
     let farm_points : nat list = storage.farm_points in
@@ -220,15 +223,19 @@ let unstake_some (storage : storage_farm) (lp_amount : nat) : return =
     in
     let _check_lp_amount : unit = assert_with_error (user_stakes >= lp_amount) unstake_more_than_stake in
     let new_user_stakes : (address, nat) big_map = Big_map.update sender_address (Some(abs(user_stakes - lp_amount))) storage.user_stakes in
-    let lp_contract_opt : parameter contract option = Tezos.get_contract_opt(storage.lp_token_address) in
-    let lp_contract : parameter contract =
+
+    let lp_contract_opt : fa12_transfer contract option = Tezos.get_entrypoint_opt "%transfer" fa12_address in
+    let transfer_fa12 : fa12_transfer contract = 
         match lp_contract_opt with
-        | None -> (failwith(unknown_lp_contract) : parameter contract)
-        | Some(x) -> x
+        | Some c -> c
+        | None -> (failwith unknown_smak_contract: fa12_transfer contract)
     in
+
     // create a transfer transaction (for LP token contract)
-    let transfer_param : transfer = { address_from = Tezos.self_address; address_to = sender_address; value = lp_amount } in 
-    let op : operation = Tezos.transaction (Transfer(transfer_param)) 0mutez lp_contract in
+    let transfer_param : fa12_transfer = Tezos.self_address,  (sender_address , lp_amount ) in    
+    let op : operation = Tezos.transaction (transfer_param) 0mutez transfer_fa12 in
+
+    // create a transfer transaction (for LP token contract)
     let operations : operation list = [ op; ] in
 
     if (current_time < endofweek_in_seconds ) then // TODO : simplify before end of life
@@ -273,7 +280,7 @@ let claim_all (storage : storage_farm) : return =
     let farm_points : nat list = storage.farm_points in
     let user_points : (address, nat list) big_map = storage.user_points in
     let sender_address : address = Tezos.sender in // Avoids recalculating Tezos.sender each time for gas
-    let smak_address : address = storage.smak_address in
+    let fa12_address : address = storage.fa12_address in
     let reserve_address : address = storage.reserve_address in
 
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
@@ -293,7 +300,7 @@ let claim_all (storage : storage_farm) : return =
         in
 
         let total_reward_for_user : nat = aux( 0n, user_points, farm_points, storage.reward_at_week) in
-        let send_reward : operation = sendReward total_reward_for_user sender_address smak_address reserve_address in
+        let send_reward : operation = sendReward total_reward_for_user sender_address fa12_address reserve_address in
 
         let new_user_points = List.map (fun (_i : nat) -> 0n) user_points in
         let user_points_map = Big_map.update sender_address (Some(new_user_points)) storage.user_points in
