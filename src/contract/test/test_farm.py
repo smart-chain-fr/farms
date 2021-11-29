@@ -18,32 +18,21 @@ compiled_contract_path = "compiled/farm.tz"
 
 initial_storage = ContractInterface.from_file(compiled_contract_path).storage.dummy()
 initial_storage["admin"] = admin
-initial_storage["lp_token_address"] ="KT1XtQeSap9wvJGY1Lmek84NU6PK6cjzC9Qd"
+initial_storage["fa12_lp_contract_address"] ="KT1XtQeSap9wvJGY1Lmek84NU6PK6cjzC9Qd"
+initial_storage["fa12_reward_contract_address"] = "KT1TwzD6zV3WeJ39ukuqxcfK2fJCnhvrdN1X"
+initial_storage["fa12_reward_reserve_address"] = "tz1fABJ97CJMSP2DKrQx2HAFazh6GgahQ7ZK"
 initial_storage["total_reward"] = 10000000
 initial_storage["total_weeks"] = 5
 initial_storage["rate"] = 7500
-initial_storage["smak_address"] = "KT1TwzD6zV3WeJ39ukuqxcfK2fJCnhvrdN1X"
-initial_storage["reserve_address"] = "tz1fABJ97CJMSP2DKrQx2HAFazh6GgahQ7ZK"
-
-# only_admin = "Only the contract admin can change the contract administrator or increase reward"
-# unknown_lp_contract = "This farm works with a different LP token"
-# unknown_smak_contract  = "Cannot connect to the SMAK contract"
-# unknown_user_unstake = "You do not have any LP token to unstake"
-# unknown_user_claim = "You do not have any reward to claim"
-# farm_empty_week = "Farm has no cumulated stake for one week"
-# amount_is_null = "The staking amount must be greater than zero"
-# amount_must_be_zero_tez = "You must not send Tezos to the smart contract"
-# time_too_early ="Please try again in few seconds"
-# no_stakes  = "You did not stake any token yet"
-# unstake_more_than_stake  = "You cannot unstake more than your staking"
-# user_no_points = "You do not have or no longer have any rewards"
-# rewards_sent_but_missing_points = "You do not have any reward to claim"
-# no_week_left = "There are no more weeks left for staking"
-
+initial_storage["user_stakes"] = {}
+initial_storage["user_points"] = {}
+initial_storage["farm_points"] = []
+initial_storage["creation_time"] = 0
 
 only_admin = "Only the contract admin can change the contract administrator or increase reward"
 unknown_lp_contract = "This farm works with a different LP token"
-unknown_smak_contract = "Cannot connect to the SMAK contract"
+unknown_fa12_lp_contract_entrypoint = "Cannot connect to the lp FA12 entrypoint"
+unknown_fa12_reward_contract_entrypoint = "Cannot connect to the reward FA12 entrypoint"
 unknown_user_claim = "You do not have any reward to claim"
 unknown_user_unstake = "You do not have any LP token to unstake"
 farm_empty_week = "Farm has no cumulated stake for one week" 
@@ -172,109 +161,50 @@ class FarmsContractTest(TestCase):
 
     def test_stake_one_time_on_second_week_should_work(self):
         init_storage = deepcopy(initial_storage)
-        init_storage["user_stakes"] = {}
-        init_storage["user_points"] = { bob: [0, 0, int(300 * sec_week / 2), 300 * sec_week, 300 * sec_week] }
-        init_storage["farm_points"] = []
-        init_storage["creation_time"] = 0
-        staking_time = int(sec_week + sec_week/2)
         locked_amount = 20
-
-        res = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=bob, now=staking_time)
-
-        self.assertEqual(admin, res.storage["admin"])
-        transfer_tx = res.operations[0]
-        transfer_tx_params = transfer_tx["parameters"]["value"]['args'][0]['args'][0]['args']
+        res = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=bob, now=int(sec_week + sec_week/2))
+        self.assertEqual(len(res.operations), 1)
+        transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
         self.assertEqual(bob, transfer_tx_params[0]['string'])
         self.assertEqual(farm_address, transfer_tx_params[1]['string'])
         self.assertEqual(locked_amount, int(transfer_tx_params[2]['int']))
-
-        user_stakes = res.storage["user_stakes"]
-        self.assertEqual(locked_amount, user_stakes[bob])
-        self.assertEqual(1, len(user_stakes.keys()))
-
-        farm_points = res.storage["farm_points"]
-        self.assertEqual(sec_week * locked_amount / 2, farm_points[2])
-        self.assertEqual(sec_week * locked_amount, farm_points[3])
-        self.assertEqual(sec_week * locked_amount, farm_points[4])
-        self.assertEqual(sec_week * locked_amount, farm_points[5])
-
-        user_points = res.storage["user_points"]
-        user_points_keys = user_points.keys()
-        self.assertEqual(1, len(user_points_keys))
-        self.assertEqual(bob, list(user_points_keys)[0])
-        self.assertEqual(sec_week * locked_amount / 2, user_points[bob][2])
-        self.assertEqual(sec_week * locked_amount, user_points[bob][3])
-        self.assertEqual(sec_week * locked_amount, user_points[bob][4])
-        self.assertEqual(sec_week * locked_amount, user_points[bob][5])
+        self.assertEqual(locked_amount, res.storage["user_stakes"][bob])
+        expected_user_points = [0, sec_week * locked_amount / 2, sec_week * locked_amount, sec_week * locked_amount, sec_week * locked_amount]
+        self.assertEqual(expected_user_points, res.storage["user_points"][bob])
+        self.assertEqual(expected_user_points, res.storage["farm_points"])
 
     def test_stake_with_XTZ_should_fail(self):
         init_storage = deepcopy(initial_storage)
-        init_storage["user_stakes"] = {}
-        init_storage["user_points"] = {}
-        init_storage["farm_points"] = {}
-        init_storage["creation_time"] = 0
-        staking_time = int(sec_week + sec_week/2)
-        locked_amount = 20
-
         with self.raisesMichelsonError(amount_must_be_zero_tez):
-            self.farms.stake(locked_amount).interpret(storage=init_storage, sender=bob, now=staking_time, amount=1)
+            self.farms.stake(20).interpret(storage=init_storage, sender=bob, now=int(sec_week + sec_week/2), amount=1)
 
 
     def test_stake_multiple_times_should_work(self):
         init_storage = deepcopy(initial_storage)
-        init_storage["user_stakes"] = {}
-        init_storage["user_points"] = {}
-        init_storage["farm_points"] = {}
-        init_storage["creation_time"] = 0
         staking_time_1 = int(2*sec_week + sec_week/2)
         locked_amount_1 = 300
 
         res1 = self.farms.stake(locked_amount_1).interpret(storage=init_storage, sender=bob, now=staking_time_1)
 
-        self.assertEqual(admin, res1.storage["admin"])
-        transfer_tx = res1.operations[0]
-        transfer_tx_params = transfer_tx["parameters"]["value"]['args'][0]['args'][0]['args']
-        self.assertEqual(bob, transfer_tx_params[0]['string'])
-        self.assertEqual(farm_address, transfer_tx_params[1]['string'])
-        self.assertEqual(locked_amount_1, int(transfer_tx_params[2]['int']))
-
-        user_stakes = res1.storage["user_stakes"]
-        self.assertEqual(locked_amount_1, user_stakes[bob])
-        self.assertEqual(1, len(user_stakes.keys()))
-
-        farm_points = res1.storage["farm_points"]
-        self.assertEqual(sec_week * locked_amount_1 / 2, farm_points[3])
-        self.assertEqual(sec_week * locked_amount_1, farm_points[4])
-        self.assertEqual(sec_week * locked_amount_1, farm_points[5])
-
-        user_points = res1.storage["user_points"]
-        user_points_keys = user_points.keys()
-        self.assertEqual(1, len(user_points_keys))
-        self.assertEqual(bob, list(user_points_keys)[0])
-        self.assertEqual(sec_week * locked_amount_1 / 2, user_points[bob][3])
-        self.assertEqual(sec_week * locked_amount_1, user_points[bob][4])
-        self.assertEqual(sec_week * locked_amount_1, user_points[bob][5])
-
-        new_storage = deepcopy(initial_storage)
-        new_storage["user_stakes"][bob] = 300
-        new_storage["user_points"] = {
-            bob: {
-                1: 0,
-                2: 0,
-                3: int(300 * sec_week / 2),
-                4: 300 * sec_week,
-                5: 300 * sec_week
-            }
-        }
-        new_storage["farm_points"] = {
-            1: 0,
-            2: 0,
-            3: int(300 * sec_week / 2),
-            4: 300 * sec_week,
-            5: 300 * sec_week
-        }
-        new_storage["creation_time"] = 0
-        staking_time_2 = int(3*sec_week + sec_week*2/3)
+        # new_storage["user_stakes"][bob] = 300
+        # new_storage["user_points"] = {
+        #     bob: {
+        #         1: 0,
+        #         2: 0,
+        #         3: int(300 * sec_week / 2),
+        #         4: 300 * sec_week,
+        #         5: 300 * sec_week
+        #     }
+        # }
+        # new_storage["farm_points"] = {
+        #     1: 0,
+        #     2: 0,
+        #     3: int(300 * sec_week / 2),
+        #     4: 300 * sec_week,
+        #     5: 300 * sec_week
+        # }
+        # new_storage["creation_time"] = 0
+        # staking_time_2 = int(3*sec_week + sec_week*2/3)
         locked_amount_2 = 500
 
         res2 = self.farms.stake(locked_amount_2).interpret(storage=new_storage, sender=bob, now=staking_time_2)

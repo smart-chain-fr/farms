@@ -4,9 +4,9 @@
         (or (nat %stake) (nat %unstake))) ;
   storage
     (pair (pair (pair (pair (address %admin) (timestamp %creation_time))
-                      (pair (address %fa12_address) (list %farm_points nat)))
-                (pair (pair (address %lp_token_address) (nat %rate))
-                      (pair (address %reserve_address) (list %reward_at_week nat))))
+                      (pair (address %fa12_lp_contract_address) (address %fa12_reward_contract_address)))
+                (pair (pair (address %fa12_reward_reserve_address) (list %farm_points nat))
+                      (pair (nat %rate) (list %reward_at_week nat))))
           (pair (pair (nat %total_reward) (nat %total_weeks))
                 (pair (big_map %user_points address (list nat)) (big_map %user_stakes address nat)))) ;
   code { UNPAIR ;
@@ -40,8 +40,8 @@
                          CDR ;
                          DUP 4 ;
                          CAR ;
-                         CAR ;
                          CDR ;
+                         CAR ;
                          CDR ;
                          PAIR ;
                          SWAP ;
@@ -108,9 +108,11 @@
                          CAR ;
                          CAR ;
                          CDR ;
-                         CAR ;
+                         CDR ;
                          CONTRACT %transfer (pair address (pair address nat)) ;
-                         IF_NONE { PUSH string "Cannot connect to the SMAK contract" ; FAILWITH } {} ;
+                         IF_NONE
+                           { PUSH string "Cannot connect to the reward FA12 entrypoint" ; FAILWITH }
+                           {} ;
                          PUSH mutez 0 ;
                          DIG 2 ;
                          DUP 5 ;
@@ -118,7 +120,7 @@
                          DUP 6 ;
                          CAR ;
                          CDR ;
-                         CDR ;
+                         CAR ;
                          CAR ;
                          PAIR ;
                          TRANSFER_TOKENS ;
@@ -220,8 +222,8 @@
                      DUP 6 ;
                      CAR ;
                      CDR ;
-                     CAR ;
                      CDR ;
+                     CAR ;
                      NIL nat ;
                      DUP 3 ;
                      PAIR ;
@@ -595,8 +597,8 @@
                      DUP 3 ;
                      CAR ;
                      CDR ;
-                     CAR ;
                      CDR ;
+                     CAR ;
                      NIL nat ;
                      DUP 3 ;
                      PAIR ;
@@ -860,8 +862,8 @@
                  SENDER ;
                  DUP 4 ;
                  CAR ;
-                 CAR ;
                  CDR ;
+                 CAR ;
                  CDR ;
                  DUP 5 ;
                  CDR ;
@@ -873,7 +875,9 @@
                  CDR ;
                  CAR ;
                  CONTRACT %transfer (pair address (pair address nat)) ;
-                 IF_NONE { PUSH string "Cannot connect to the SMAK contract" ; FAILWITH } {} ;
+                 IF_NONE
+                   { PUSH string "Cannot connect to the lp FA12 entrypoint" ; FAILWITH }
+                   {} ;
                  DUP 7 ;
                  CAR ;
                  CAR ;
@@ -1126,18 +1130,18 @@
                  DUG 2 ;
                  CAR ;
                  CDR ;
+                 CDR ;
                  DIG 3 ;
                  DUP 4 ;
                  CAR ;
-                 CAR ;
                  CDR ;
                  CAR ;
-                 PAIR ;
-                 DIG 3 ;
-                 CAR ;
-                 CAR ;
                  CAR ;
                  PAIR ;
+                 PAIR ;
+                 DIG 2 ;
+                 CAR ;
+                 CAR ;
                  PAIR ;
                  PAIR ;
                  NIL operation ;
@@ -1211,7 +1215,9 @@
                  CDR ;
                  CAR ;
                  CONTRACT %transfer (pair address (pair address nat)) ;
-                 IF_NONE { PUSH string "Cannot connect to the SMAK contract" ; FAILWITH } {} ;
+                 IF_NONE
+                   { PUSH string "Cannot connect to the lp FA12 entrypoint" ; FAILWITH }
+                   {} ;
                  DUP 8 ;
                  DUP 5 ;
                  PAIR ;
@@ -1320,8 +1326,8 @@
                       DIG 3 ;
                       DUP 9 ;
                       CAR ;
-                      CAR ;
                       CDR ;
+                      CAR ;
                       CDR ;
                       PAIR ;
                       PAIR ;
@@ -1395,18 +1401,18 @@
                       DUG 2 ;
                       CAR ;
                       CDR ;
+                      CDR ;
                       DIG 3 ;
                       DUP 4 ;
                       CAR ;
-                      CAR ;
                       CDR ;
                       CAR ;
-                      PAIR ;
-                      DIG 3 ;
-                      CAR ;
-                      CAR ;
                       CAR ;
                       PAIR ;
+                      PAIR ;
+                      DIG 2 ;
+                      CAR ;
+                      CAR ;
                       PAIR ;
                       PAIR ;
                       SWAP ;
