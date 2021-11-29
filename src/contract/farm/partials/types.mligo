@@ -7,14 +7,14 @@ type fa12_transfer = address * (address * nat)
 type storage_farm = {
     admin: address;
     creation_time: timestamp;
-    lp_token_address: address;
+    fa12_lp_contract_address: address;
+    fa12_reward_contract_address: address;
+    fa12_reward_reserve_address: address;
     rate: nat;
-    reserve_address: address;
-    reward_at_week : nat list; // change to list
-    farm_points : nat list; // change to list
-    fa12_address: address;
+    reward_at_week : nat list;
+    farm_points : nat list;
     total_reward: nat;
-    user_points : (address, nat list) big_map; // change to list
+    user_points : (address, nat list) big_map;
     user_stakes : (address, nat) big_map;
     total_weeks: nat
 }

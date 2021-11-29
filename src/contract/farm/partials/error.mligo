@@ -1,6 +1,7 @@
 let only_admin : string = "Only the contract admin can change the contract administrator or increase reward"
 let unknown_lp_contract : string = "This farm works with a different LP token"
-let unknown_smak_contract : string = "Cannot connect to the SMAK contract"
+let unknown_fa12_lp_contract_entrypoint : string = "Cannot connect to the lp FA12 entrypoint"
+let unknown_fa12_reward_contract_entrypoint : string = "Cannot connect to the reward FA12 entrypoint"
 let unknown_user_claim : string = "You do not have any reward to claim"
 let unknown_user_unstake : string = "You do not have any LP token to unstake"
 let farm_empty_week : string = "Farm has no cumulated stake for one week" 
