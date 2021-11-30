@@ -212,66 +212,13 @@ class FarmsContractTest(TestCase):
 
     def test_stake_0_LP_should_fail(self):
         init_storage = deepcopy(initial_storage)
-        init_storage["user_stakes"] = {}
-        init_storage["user_points"] = {}
-        init_storage["farm_points"] = {}
-        init_storage["creation_time"] = 0
-        locked_amount = 0
-
         with self.raisesMichelsonError(amount_is_null):
             res = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=alice, now=int(sec_week + sec_week/2))
     
     def test_stake_after_end_of_pool_should_fail(self):
         init_storage = deepcopy(initial_storage)
-        init_storage["user_stakes"] = {}
-        init_storage["user_points"] = {}
-        init_storage["farm_points"] = {}
-        init_storage["creation_time"] = 0
-        locked_amount = 10
-
         with self.raisesMichelsonError(no_week_left):
-            self.farms.stake(locked_amount).interpret(storage=init_storage, sender=alice, now=int(5 * sec_week + sec_week/2))
-
-    def test_stake_after_increasing_reward_should_work(self):
-            init_storage = deepcopy(initial_storage)
-            init_storage["total_reward"] = 10_000_000
-            init_storage["total_weeks"] = 3
-            init_storage["rate"] = 7500
-            init_storage["reward_at_week"] = {
-                1: 4324324,
-                2: 3243243,
-                3: 2432432,
-            }
-            locked_amount = 10000
-            res = self.farms.increase_reward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2))
-            res2 = self.farms.stake(locked_amount).interpret(storage=res.storage, sender=alice, now=int(2 * sec_week + sec_week/2))
-
-            self.assertEqual(res.storage["total_reward"], 30000000)
-            self.assertEqual(res.storage["weeks"], 3)
-            
-            self.assertEqual(admin, res.storage["admin"])
-            transfer_tx = res2.operations[0]
-            transfer_tx_params = transfer_tx["parameters"]["value"]['args'][0]['args'][0]['args']
-            self.assertEqual(alice, transfer_tx_params[0]['string'])
-
-            self.assertEqual(farm_address, transfer_tx_params[1]['string'])
-            self.assertEqual(locked_amount, int(transfer_tx_params[2]['int']))
-
-            user_stakes = res2.storage["user_stakes"]
-            self.assertEqual(locked_amount, user_stakes[alice])
-            self.assertEqual(1, len(user_stakes.keys()))
-
-            farm_points = res2.storage["farm_points"]
-            
-            self.assertEqual(sec_week/2 * 10000, farm_points[3])
-
-            user_points = res2.storage["user_points"]
-            user_points_keys = user_points.keys()
-            self.assertEqual(1, len(user_points_keys))
-            self.assertEqual(alice, list(user_points_keys)[0])
-            
-            self.assertEqual(sec_week/2 * 10000, user_points[alice][3])
-
+            self.farms.stake(10).interpret(storage=init_storage, sender=alice, now=int(5 * sec_week + sec_week/2))
 
     #####################
     # Tests for Unstake #
@@ -279,265 +226,67 @@ class FarmsContractTest(TestCase):
 
     def test_unstake_basic_should_work(self):
         init_storage = deepcopy(initial_storage)
-        init_storage["user_stakes"] = {
-            alice: 500
-        }
-        init_storage["user_points"] = {
-            alice: {
-                1: int(500 * sec_week/2),
-                2: 500 * sec_week,
-                3: 500 * sec_week,
-                4: 500 * sec_week,
-                5: 500 * sec_week
-            }
-        }
-        init_storage["farm_points"] = {
-            1: int(500 * sec_week / 2),
-            2: 500 * sec_week,
-            3: 500 * sec_week,
-            4: 500 * sec_week,
-            5: 500 * sec_week
-        }
-
-        final_userpoint = {
-            alice: {
-                1: int(500 * sec_week/2),
-                2: int((500+250) * sec_week/2),
-                3: 250 * sec_week,
-                4: 250 * sec_week,
-                5: 250 * sec_week
-            }
-        }
-
-        final_farmpoint = {
-            1: int(500 * sec_week / 2),
-            2: int((500+250) * sec_week/2),
-            3: 250 * sec_week,
-            4: 250 * sec_week,
-            5: 250 * sec_week
-        }
+        init_storage["user_stakes"][alice] = 500
+        init_storage["user_points"][alice] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["farm_points"] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
         res = self.farms.unstake(250).interpret(sender=alice, storage=init_storage, now=int(sec_week + sec_week/2))
-        self.assertDictEqual(res.storage["user_points"], final_userpoint)
-        self.assertDictEqual(res.storage["farm_points"], final_farmpoint)
+        expected_user_points = [int(500 * sec_week/2), int((500+250) * sec_week/2), 250 * sec_week, 250 * sec_week, 250 * sec_week]
+        self.assertDictEqual(res.storage["user_points"], expected_user_points)
+        self.assertDictEqual(res.storage["farm_points"], expected_user_points)
         self.assertEqual(res.storage["user_stakes"][alice], 250)
-
 
     def test_unstake_same_week_should_work(self):
         init_storage = deepcopy(initial_storage)
-        init_storage["user_stakes"] = {
-            alice: 500
-        }
-        init_storage["user_points"] = {
-            alice: {
-                1: int(500 * sec_week/2),
-                2: 500 * sec_week,
-                3: 500 * sec_week,
-                4: 500 * sec_week,
-                5: 500 * sec_week
-            }
-        }
-        init_storage["farm_points"] = {
-            1: int(500 * sec_week / 2),
-            2: 500 * sec_week,
-            3: 500 * sec_week,
-            4: 500 * sec_week,
-            5: 500 * sec_week
-        }
-
-        final_userpoint = {
-            alice: {
-                1: int(500 * sec_week/2) - int(499 * sec_week/4),
-                2: sec_week,
-                3: sec_week,
-                4: sec_week,
-                5: sec_week
-            }
-        }
-
-        final_farmpoint = {
-            1: int(500 * sec_week/2) - int(499 * sec_week/4),
-            2: sec_week,
-            3: sec_week,
-            4: sec_week,
-            5: sec_week
-        }
+        init_storage["user_stakes"][alice] = 500
+        init_storage["user_points"][alice] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["farm_points"] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
         res = self.farms.unstake(499).interpret(sender=alice, storage=init_storage, now=int(sec_week*3/4))
-        self.assertDictEqual(res.storage["user_points"], final_userpoint)
-        self.assertDictEqual(res.storage["farm_points"], final_farmpoint)
+        expected_user_points = [int(500 * sec_week/2) - int(499 * sec_week/4), sec_week, sec_week, sec_week, sec_week ]
+        self.assertDictEqual(res.storage["user_points"], expected_user_points)
+        self.assertDictEqual(res.storage["farm_points"], expected_user_points)
         self.assertEqual(res.storage["user_stakes"][alice], 1)
-
 
     def test_unstake_total_stake_should_work(self):
         init_storage = deepcopy(initial_storage)
-        init_storage["user_stakes"] = {
-            alice: 500
-        }
-        init_storage["user_points"] = {
-            alice: {
-                1: int(500 * sec_week/2),
-                2: 500 * sec_week,
-                3: 500 * sec_week,
-                4: 500 * sec_week,
-                5: 500 * sec_week
-            }
-        }
-        init_storage["farm_points"] = {
-            1: int(500 * sec_week / 2),
-            2: 500 * sec_week,
-            3: 500 * sec_week,
-            4: 500 * sec_week,
-            5: 500 * sec_week
-        }
-
-        final_userpoint = {
-            alice: {
-                1: int(500 * sec_week/2),
-                2: int(500 * sec_week/2),
-                3: 0,
-                4: 0,
-                5: 0
-            }
-        }
-
-        final_farmpoint = {
-            1: int(500 * sec_week / 2),
-            2: int(500 * sec_week / 2),
-            3: 0,
-            4: 0,
-            5: 0
-        }
+        init_storage["user_stakes"][alice] = 500
+        init_storage["user_points"][alice] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["farm_points"] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
         res = self.farms.unstake(500).interpret(sender=alice, storage=init_storage, now=int(sec_week + sec_week/2))
-        self.assertDictEqual(res.storage["user_points"], final_userpoint)
-        self.assertDictEqual(res.storage["farm_points"], final_farmpoint)
+        expected_user_points = [int(500 * sec_week/2), int(500 * sec_week/2), 0, 0, 0 ]
+        self.assertDictEqual(res.storage["user_points"], expected_user_points)
+        self.assertDictEqual(res.storage["farm_points"], expected_user_points)
         self.assertEqual(res.storage["user_stakes"][alice], 0)
 
     def test_unstake_more_than_staked_should_fail(self):
-
         init_storage = deepcopy(initial_storage)
-        init_storage["user_stakes"] = {
-            alice: 500
-        }
-        init_storage["user_points"] = {
-            alice: {
-                1: int(500 * sec_week/2),
-                2: 500 * sec_week,
-                3: 500 * sec_week,
-                4: 500 * sec_week,
-                5: 500 * sec_week
-            }
-        }
-        init_storage["farm_points"] = {
-            1: int(500 * sec_week / 2),
-            2: 500 * sec_week,
-            3: 500 * sec_week,
-            4: 500 * sec_week,
-            5: 500 * sec_week
-        }
-
-        final_userpoint = {
-            alice: {
-                1: int(500 * sec_week/2),
-                2: int((500+250) * sec_week/2),
-                3: 250 * sec_week,
-                4: 250 * sec_week,
-                5: 250 * sec_week
-            }
-        }
-
-        final_farmpoint = {
-            1: int(500 * sec_week / 2),
-            2: int((500+250) * sec_week/2),
-            3: 250 * sec_week,
-            4: 250 * sec_week,
-            5: 250 * sec_week
-        }
-
+        init_storage["user_stakes"][alice] = 500
+        init_storage["user_points"][alice] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["farm_points"] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
         with self.raisesMichelsonError(unstake_more_than_stake):
             self.farms.unstake(501).interpret(sender=alice, storage=init_storage, now=int(sec_week + sec_week / 2))
 
-
     def test_unstake_with_0_staked_should_fail(self):
-
         init_storage = deepcopy(initial_storage)
-        init_storage["user_stakes"] = {
-            alice: 500
-        }
-        init_storage["user_points"] = {
-            alice: {
-                1: int(500 * sec_week/2),
-                2: 500 * sec_week,
-                3: 500 * sec_week,
-                4: 500 * sec_week,
-                5: 500 * sec_week
-            }
-        }
-        init_storage["farm_points"] = {
-            1: int(500 * sec_week / 2),
-            2: 500 * sec_week,
-            3: 500 * sec_week,
-            4: 500 * sec_week,
-            5: 500 * sec_week
-        }
-
+        init_storage["user_stakes"][alice] = 500
+        init_storage["user_points"][alice] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["farm_points"] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
         with self.raisesMichelsonError(no_stakes):
             self.farms.unstake(10).interpret(storage=init_storage, sender=bob)
 
     def test_unstake_with_two_users_should_work(self):
-
         init_storage = deepcopy(initial_storage)
         init_storage["user_stakes"][bob] = 600
-        init_storage["user_points"] = {
-            bob: {
-                1: 0,
-                2: 0,
-                3: int(600 * sec_week / 3),
-                4: 600 * sec_week,
-                5: 600 * sec_week
-            },
-            alice: {
-                1: int(500 * sec_week / 2),
-                2: 500 * sec_week,
-                3: 500 * sec_week,
-                4: 500 * sec_week,
-                5: 500 * sec_week
-            }
-        }
-        init_storage["farm_points"] = {
-            1: int(500 * sec_week / 2),
-            2: 500 * sec_week,
-            3: int(600 * sec_week / 3) + 500 * sec_week,
-            4: 600 * sec_week + 500 * sec_week,
-            5: 600 * sec_week + 500 * sec_week
-        }
-
-        final_userpoint = {
-            bob: {
-                1: 0,
-                2: 0,
-                3: int(600 * sec_week / 3),
-                4: int((600 * (6 / 7) + 500 / 7) * sec_week),
-                5: 500 * sec_week
-            },
-            alice: {
-                1: int(500 * sec_week / 2),
-                2: 500 * sec_week,
-                3: 500 * sec_week,
-                4: 500 * sec_week,
-                5: 500 * sec_week
-            }
-        }
-
-        final_farmpoint = {
-            1: int(500 * sec_week / 2),
-            2: 500 * sec_week,
-            3: int(600 * sec_week / 3) + 500 * sec_week,
-            4: int(500 * sec_week + (600 * (6 / 7) + 500 / 7) * sec_week),
-            5: 500 * sec_week + 500 * sec_week
-        }
-        res2 = self.farms.unstake(100).interpret(storage=init_storage, sender=bob, now=int(3 * sec_week + sec_week * 6 / 7))
-        self.assertDictEqual(res2.storage["farm_points"], final_farmpoint)
-        self.assertDictEqual(res2.storage["user_points"], final_userpoint)
-        self.assertEqual(res2.storage["user_stakes"][bob], 500)
+        init_storage["user_points"][bob] = [0, 0, int(600 * sec_week / 3), 600 * sec_week, 600 * sec_week]
+        init_storage["user_points"][alice] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["farm_points"] = [int(500 * sec_week / 2), 500 * sec_week, int(600 * sec_week / 3) + 500 * sec_week, 600 * sec_week + 500 * sec_week, 600 * sec_week + 500 * sec_week]
+        res = self.farms.unstake(100).interpret(storage=init_storage, sender=bob, now=int(3 * sec_week + sec_week * 6 / 7))
+        expected_userpoint_bob = [0, 0, int(600 * sec_week / 3), int((600 * (6 / 7) + 500 / 7) * sec_week), 500 * sec_week]
+        expected_userpoint_alice = [int(500 * sec_week / 2), 500 * sec_week,500 * sec_week,500 * sec_week,500 * sec_week]
+        expected_farmpoint = [int(500 * sec_week / 2), 500 * sec_week, int(500 * sec_week + (600 * (6 / 7) + 500 / 7) * sec_week), 600 * sec_week, 500 * sec_week + 500 * sec_week]
+        self.assertDictEqual(res.storage["user_points"][bob], expected_userpoint_bob)
+        self.assertDictEqual(res.storage["user_points"][alice], expected_userpoint_alice)
+        self.assertDictEqual(res.storage["farm_points"], expected_farmpoint)
+        self.assertEqual(res.storage["user_stakes"][bob], 500)
 
     def test_unstake_should_work_after_pool_end(self):
         init_storage = deepcopy(initial_storage)
