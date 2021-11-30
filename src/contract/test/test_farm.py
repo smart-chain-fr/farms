@@ -178,111 +178,37 @@ class FarmsContractTest(TestCase):
         with self.raisesMichelsonError(amount_must_be_zero_tez):
             self.farms.stake(20).interpret(storage=init_storage, sender=bob, now=int(sec_week + sec_week/2), amount=1)
 
-
-    def test_stake_multiple_times_should_work(self):
+    def test_stake_two_times_should_work(self):
         init_storage = deepcopy(initial_storage)
-        staking_time_1 = int(2*sec_week + sec_week/2)
-        locked_amount_1 = 300
-
-        res1 = self.farms.stake(locked_amount_1).interpret(storage=init_storage, sender=bob, now=staking_time_1)
-
-        # new_storage["user_stakes"][bob] = 300
-        # new_storage["user_points"] = {
-        #     bob: {
-        #         1: 0,
-        #         2: 0,
-        #         3: int(300 * sec_week / 2),
-        #         4: 300 * sec_week,
-        #         5: 300 * sec_week
-        #     }
-        # }
-        # new_storage["farm_points"] = {
-        #     1: 0,
-        #     2: 0,
-        #     3: int(300 * sec_week / 2),
-        #     4: 300 * sec_week,
-        #     5: 300 * sec_week
-        # }
-        # new_storage["creation_time"] = 0
-        # staking_time_2 = int(3*sec_week + sec_week*2/3)
-        locked_amount_2 = 500
-
-        res2 = self.farms.stake(locked_amount_2).interpret(storage=new_storage, sender=bob, now=staking_time_2)
-
-        self.assertEqual(admin, res2.storage["admin"])
-        transfer_tx = res2.operations[0]
-        transfer_tx_params = transfer_tx["parameters"]["value"]['args'][0]['args'][0]['args']
+        init_storage["user_stakes"][bob] = 300
+        new_storage["user_points"][bob] = [0,0,int(300 * sec_week / 2),300 * sec_week, 300 * sec_week ]
+        new_storage["farm_points"] = [0,0,int(300 * sec_week / 2),300 * sec_week, 300 * sec_week ]
+        res = self.farms.stake(500).interpret(storage=new_storage, sender=bob, now=int(3*sec_week + sec_week*2/3))
+        self.assertEqual(len(res.operations), 1)
+        transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
         self.assertEqual(bob, transfer_tx_params[0]['string'])
-
         self.assertEqual(farm_address, transfer_tx_params[1]['string'])
-        self.assertEqual(locked_amount_2, int(transfer_tx_params[2]['int']))
+        self.assertEqual(500, int(transfer_tx_params[2]['int']))
+        self.assertEqual(500, res.storage["user_stakes"][bob])
+        expected_user_points = [0, sec_week * 500 / 2, sec_week * 300 / 2, sec_week * 300 + sec_week * 500 / 3, sec_week * 300 + sec_week * 500 ]
+        self.assertEqual(expected_user_points, res.storage["user_points"][bob])
+        self.assertEqual(expected_user_points, res.storage["farm_points"])
 
-        user_stakes = res2.storage["user_stakes"]
-        self.assertEqual(locked_amount_1 + locked_amount_2, user_stakes[bob])
-        self.assertEqual(1, len(user_stakes.keys()))
-
-        farm_points = res2.storage["farm_points"]
-        self.assertEqual(sec_week * locked_amount_1 / 2, farm_points[3])
-        self.assertEqual(sec_week * locked_amount_1 + sec_week * locked_amount_2 / 3, farm_points[4])
-        self.assertEqual(sec_week * locked_amount_1 + sec_week * locked_amount_2 , farm_points[5])
-
-        user_points = res2.storage["user_points"]
-        user_points_keys = user_points.keys()
-        self.assertEqual(1, len(user_points_keys))
-        self.assertEqual(bob, list(user_points_keys)[0])
-        self.assertEqual(sec_week * locked_amount_1 / 2, user_points[bob][3])
-        self.assertEqual(sec_week * locked_amount_1 + sec_week * locked_amount_2 / 3, user_points[bob][4])
-        self.assertEqual(sec_week * locked_amount_1 + sec_week * locked_amount_2 , user_points[bob][5])
-
-    def test_stake_with_two_users_should_work(self):
+    def test_stake_with_two_different_users_should_work(self):
         new_storage = deepcopy(initial_storage)
         new_storage["user_stakes"][bob] = 300
-        new_storage["user_points"] = {
-            bob: {
-                1: 0,
-                2: 0,
-                3: int(300 * sec_week / 2),
-                4: 300 * sec_week,
-                5: 300 * sec_week
-            }
-        }
-        new_storage["farm_points"] = {
-            1: 0,
-            2: 0,
-            3: int(300 * sec_week / 2),
-            4: 300 * sec_week,
-            5: 300 * sec_week
-        }
-        new_storage["creation_time"] = 0
-        locked_amount_1 = 300
-        staking_time_2 = int(2*sec_week + sec_week*2/3)
-        locked_amount_2 = 400
-
-        res2 = self.farms.stake(locked_amount_2).interpret(storage=new_storage, sender=alice, now=staking_time_2)
-
-        self.assertEqual(admin, res2.storage["admin"])
-        transfer_tx = res2.operations[0]
-        transfer_tx_params = transfer_tx["parameters"]["value"]['args'][0]['args'][0]['args']
+        new_storage["user_points"][bob] = [0,0,int(300 * sec_week / 2),300 * sec_week, 300 * sec_week ]
+        new_storage["farm_points"] = [0,0,int(300 * sec_week / 2),300 * sec_week, 300 * sec_week ]
+        res = self.farms.stake(400).interpret(storage=new_storage, sender=alice, now=int(2*sec_week + sec_week*2/3))
+        self.assertEqual(len(res.operations), 1)
+        transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
         self.assertEqual(alice, transfer_tx_params[0]['string'])
         self.assertEqual(farm_address, transfer_tx_params[1]['string'])
-        self.assertEqual(locked_amount_2, int(transfer_tx_params[2]['int']))
-
-        user_stakes = res2.storage["user_stakes"]
-        self.assertEqual(locked_amount_2, user_stakes[alice])
-        self.assertEqual(2, len(user_stakes.keys()))
-
-        farm_points = res2.storage["farm_points"]
-        self.assertEqual(sec_week * locked_amount_1 / 2 + sec_week * locked_amount_2 / 3, farm_points[3])
-        self.assertEqual(sec_week * locked_amount_1 + sec_week * locked_amount_2, farm_points[4])
-        self.assertEqual(sec_week * locked_amount_1 + sec_week * locked_amount_2, farm_points[5])
-
-        user_points = res2.storage["user_points"]
-        user_points_keys = user_points.keys()
-        self.assertEqual(2, len(user_points_keys))
-        self.assertEqual(alice, list(user_points_keys)[1])
-        self.assertEqual(sec_week * locked_amount_2 / 3, user_points[alice][3])
-        self.assertEqual(sec_week * locked_amount_2, user_points[alice][4])
-        self.assertEqual(sec_week * locked_amount_2, user_points[alice][5])
+        self.assertEqual(400, int(transfer_tx_params[2]['int']))
+        self.assertEqual(400, res.storage["user_stakes"][alice])
+        expected_user_points = [0, sec_week * 500 / 2, sec_week * 300 / 2, sec_week * 300 + sec_week * 400 / 3, sec_week * 300 + sec_week * 400 ]
+        self.assertEqual(expected_user_points, res.storage["user_points"][alice])
+        self.assertEqual(expected_user_points, res.storage["farm_points"])
 
     def test_stake_0_LP_should_fail(self):
         init_storage = deepcopy(initial_storage)
