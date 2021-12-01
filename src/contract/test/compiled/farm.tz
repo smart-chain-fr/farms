@@ -4,9 +4,9 @@
         (or (nat %stake) (nat %unstake))) ;
   storage
     (pair (pair (pair (pair (address %admin) (timestamp %creation_time))
-                      (pair (address %fa12_lp_contract_address) (address %fa12_reward_contract_address)))
-                (pair (pair (address %fa12_reward_reserve_address) (list %farm_points nat))
-                      (pair (nat %rate) (list %reward_at_week nat))))
+                      (pair (list %farm_points nat) (address %input_token_address)))
+                (pair (pair (nat %rate) (list %reward_at_week nat))
+                      (pair (address %reward_reserve_address) (address %reward_token_address))))
           (pair (pair (nat %total_reward) (nat %total_weeks))
                 (pair (big_map %user_points address (list nat)) (big_map %user_stakes address nat)))) ;
   code { UNPAIR ;
@@ -36,13 +36,13 @@
                        { DUP 3 ;
                          CAR ;
                          CDR ;
-                         CDR ;
+                         CAR ;
                          CDR ;
                          DUP 4 ;
                          CAR ;
-                         CDR ;
                          CAR ;
                          CDR ;
+                         CAR ;
                          PAIR ;
                          SWAP ;
                          DUP ;
@@ -106,12 +106,12 @@
                                        { RIGHT (pair (pair nat (list nat)) (pair (list nat) (list nat))) } } } } ;
                          DUP 4 ;
                          CAR ;
-                         CAR ;
+                         CDR ;
                          CDR ;
                          CDR ;
                          CONTRACT %transfer (pair address (pair address nat)) ;
                          IF_NONE
-                           { PUSH string "Cannot connect to the reward FA12 entrypoint" ; FAILWITH }
+                           { PUSH string "Cannot connect to the reward token entrypoint" ; FAILWITH }
                            {} ;
                          PUSH mutez 0 ;
                          DIG 2 ;
@@ -120,7 +120,7 @@
                          DUP 6 ;
                          CAR ;
                          CDR ;
-                         CAR ;
+                         CDR ;
                          CAR ;
                          PAIR ;
                          TRANSFER_TOKENS ;
@@ -194,7 +194,7 @@
                      COMPARE ;
                      EQ ;
                      IF { DROP } { FAILWITH } ;
-                     PUSH string "There are no more weeks left for staking" ;
+                     PUSH string "There are no more weeks left for staking in the farm" ;
                      PUSH nat 604800 ;
                      DUP 6 ;
                      MUL ;
@@ -222,7 +222,7 @@
                      DUP 6 ;
                      CAR ;
                      CDR ;
-                     CDR ;
+                     CAR ;
                      CAR ;
                      NIL nat ;
                      DUP 3 ;
@@ -426,7 +426,7 @@
                      DUP 7 ;
                      CAR ;
                      CDR ;
-                     CDR ;
+                     CAR ;
                      CDR ;
                      PAIR ;
                      PAIR ;
@@ -481,18 +481,19 @@
                      PAIR ;
                      DUP ;
                      CDR ;
-                     DUG 2 ;
+                     SWAP ;
                      DUP ;
-                     DUG 3 ;
+                     DUG 2 ;
                      CAR ;
                      CDR ;
                      CDR ;
+                     DIG 3 ;
+                     DUP 4 ;
+                     CAR ;
+                     CDR ;
+                     CAR ;
                      CAR ;
                      PAIR ;
-                     DUP 3 ;
-                     CAR ;
-                     CDR ;
-                     CAR ;
                      PAIR ;
                      DIG 2 ;
                      CAR ;
@@ -564,7 +565,7 @@
                      COMPARE ;
                      EQ ;
                      IF { DROP } { FAILWITH } ;
-                     PUSH string "There are no more weeks left for staking" ;
+                     PUSH string "There are no more weeks left for staking in the farm" ;
                      PUSH nat 604800 ;
                      INT ;
                      DUP 4 ;
@@ -582,7 +583,7 @@
                      DUP 4 ;
                      CAR ;
                      CDR ;
-                     CDR ;
+                     CAR ;
                      CDR ;
                      SIZE ;
                      COMPARE ;
@@ -597,7 +598,7 @@
                      DUP 3 ;
                      CAR ;
                      CDR ;
-                     CDR ;
+                     CAR ;
                      CAR ;
                      NIL nat ;
                      DUP 3 ;
@@ -777,17 +778,17 @@
                      DROP 2 ;
                      DUP 3 ;
                      CDR ;
-                     SWAP ;
                      DUP 4 ;
                      CAR ;
                      CDR ;
                      CDR ;
+                     DIG 2 ;
+                     DUP 5 ;
+                     CAR ;
+                     CDR ;
+                     CAR ;
                      CAR ;
                      PAIR ;
-                     DUP 4 ;
-                     CAR ;
-                     CDR ;
-                     CAR ;
                      PAIR ;
                      DIG 3 ;
                      CAR ;
@@ -862,9 +863,9 @@
                  SENDER ;
                  DUP 4 ;
                  CAR ;
-                 CDR ;
                  CAR ;
                  CDR ;
+                 CAR ;
                  DUP 5 ;
                  CDR ;
                  CDR ;
@@ -873,10 +874,10 @@
                  CAR ;
                  CAR ;
                  CDR ;
-                 CAR ;
+                 CDR ;
                  CONTRACT %transfer (pair address (pair address nat)) ;
                  IF_NONE
-                   { PUSH string "Cannot connect to the lp FA12 entrypoint" ; FAILWITH }
+                   { PUSH string "Cannot connect to the input token entrypoint" ; FAILWITH }
                    {} ;
                  DUP 7 ;
                  CAR ;
@@ -911,13 +912,13 @@
                  COMPARE ;
                  EQ ;
                  IF { DROP } { FAILWITH } ;
-                 PUSH string "The staking amount must be greater than zero" ;
+                 PUSH string "The farm staking amount must be greater than zero" ;
                  PUSH nat 0 ;
                  DUP 10 ;
                  COMPARE ;
                  GT ;
                  IF { DROP } { FAILWITH } ;
-                 PUSH string "There are no more weeks left for staking" ;
+                 PUSH string "There are no more weeks left for staking in the farm" ;
                  PUSH nat 604800 ;
                  DUP 11 ;
                  CDR ;
@@ -1130,18 +1131,18 @@
                  DUG 2 ;
                  CAR ;
                  CDR ;
+                 DUP 3 ;
+                 CAR ;
+                 CAR ;
                  CDR ;
+                 CDR ;
+                 DIG 4 ;
+                 PAIR ;
                  DIG 3 ;
-                 DUP 4 ;
                  CAR ;
-                 CDR ;
                  CAR ;
                  CAR ;
                  PAIR ;
-                 PAIR ;
-                 DIG 2 ;
-                 CAR ;
-                 CAR ;
                  PAIR ;
                  PAIR ;
                  NIL operation ;
@@ -1192,7 +1193,7 @@
                  DUP 3 ;
                  GET ;
                  IF_NONE { PUSH string "You did not stake any token yet" ; FAILWITH } {} ;
-                 PUSH string "You cannot unstake more than your staking" ;
+                 PUSH string "You cannot unstake more than your farm staking" ;
                  DUP 8 ;
                  DUP 3 ;
                  COMPARE ;
@@ -1213,10 +1214,10 @@
                  CAR ;
                  CAR ;
                  CDR ;
-                 CAR ;
+                 CDR ;
                  CONTRACT %transfer (pair address (pair address nat)) ;
                  IF_NONE
-                   { PUSH string "Cannot connect to the lp FA12 entrypoint" ; FAILWITH }
+                   { PUSH string "Cannot connect to the input token entrypoint" ; FAILWITH }
                    {} ;
                  DUP 8 ;
                  DUP 5 ;
@@ -1326,9 +1327,9 @@
                       DIG 3 ;
                       DUP 9 ;
                       CAR ;
-                      CDR ;
                       CAR ;
                       CDR ;
+                      CAR ;
                       PAIR ;
                       PAIR ;
                       LEFT (list nat) ;
@@ -1401,18 +1402,18 @@
                       DUG 2 ;
                       CAR ;
                       CDR ;
+                      DUP 3 ;
+                      CAR ;
+                      CAR ;
                       CDR ;
+                      CDR ;
+                      DIG 4 ;
+                      PAIR ;
                       DIG 3 ;
-                      DUP 4 ;
                       CAR ;
-                      CDR ;
                       CAR ;
                       CAR ;
                       PAIR ;
-                      PAIR ;
-                      DIG 2 ;
-                      CAR ;
-                      CAR ;
                       PAIR ;
                       PAIR ;
                       SWAP ;

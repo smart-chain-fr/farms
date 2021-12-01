@@ -214,7 +214,7 @@ class FarmsContractTest(TestCase):
     def test_stake_0_LP_should_fail(self):
         init_storage = deepcopy(initial_storage)
         with self.raisesMichelsonError(amount_is_null):
-            res = self.farms.stake(locked_amount).interpret(storage=init_storage, sender=alice, now=int(sec_week + sec_week/2))
+            res = self.farms.stake(0).interpret(storage=init_storage, sender=alice, now=int(sec_week + sec_week/2))
     
     def test_stake_after_end_of_pool_should_fail(self):
         init_storage = deepcopy(initial_storage)
