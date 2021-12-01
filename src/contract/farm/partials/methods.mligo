@@ -153,7 +153,7 @@ let stake_some (storage : storage_farm) (lp_amount : nat) : return =
     let endofweek_in_seconds : timestamp = storage.creation_time + int(current_week * week_in_seconds) in
 
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
-    let _check_amount_positive : unit = assert_with_error (lp_amount > 0n) amount_is_null in // TODO : why ?
+    let _check_amount_positive : unit = assert_with_error (lp_amount > 0n) amount_is_null in
     let _check_current_week : unit = assert_with_error (current_time < storage.creation_time + int(storage.total_weeks * week_in_seconds)) no_week_left in
     let _check_in_week : unit = assert_with_error (current_time - endofweek_in_seconds < 0) time_too_early in
 
@@ -238,7 +238,7 @@ let unstake_some (storage : storage_farm) (lp_amount : nat) : return =
     // create a transfer transaction (for LP token contract)
     let operations : operation list = [ op; ] in
 
-    if (current_time < endofweek_in_seconds ) then // TODO : simplify before end of life
+    if (current_time < endofweek_in_seconds ) then
 
         let before_end_week : nat = abs(current_time - endofweek_in_seconds) in 
         let points_current_week : nat = before_end_week * lp_amount in
@@ -282,25 +282,42 @@ let claim_all (storage : storage_farm) : return =
     let sender_address : address = Tezos.sender in // Avoids recalculating Tezos.sender each time for gas
     let reward_token_address : address = storage.reward_token_address in
     let reward_reserve_address : address = storage.reward_reserve_address in
+    let current_week : nat = get_current_week(storage) in
 
+    let _check_if_first_week : unit = assert_with_error (current_week > 1n) no_claim_first_week in
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
+
+    let elapsed_weeks : nat = abs(current_week-1n) in
 
     match Big_map.find_opt sender_address user_points with
     | None -> (no_operation, storage)
     | Some(user_points) ->
-        let rec aux (acc, user_points, farm_points, reward_at_weeks : nat * nat list * nat list * nat list) : nat =
+        let rec aux (acc, elapsed_weeks, user_points, farm_points, reward_at_weeks : nat * nat * nat list * nat list * nat list) : nat =
             match user_points, farm_points, reward_at_weeks with 
             [], [], [] -> acc
             | [], lst2, lst3 -> failwith "size don't match"
             | lst1, [], lst3 -> failwith "size don't match"
             | lst1, lst2, [] -> failwith "size don't match"
             | hd1::_tl1, hd2::_tl2, hd3::_tl3 ->
-                let acc = acc + hd1 * hd3 / hd2 in
-                aux (acc, user_points, farm_points, reward_at_weeks)
+                if elapsed_weeks > 0n then
+                    let acc = acc + hd1 * hd3 / hd2 in
+                    aux (acc, abs(elapsed_weeks-1n), _tl1, _tl2, _tl3)
+                else acc
         in
 
-        let total_reward_for_user : nat = aux( 0n, user_points, farm_points, storage.reward_at_week) in
+        let rec aux2 (new_user_points, elapsed_weeks, user_points : nat * nat list) : nat =
+            match user_points with
+            [] -> new_user_points
+            | hd1::_tl1 ->
+                if elapsed_weeks > 0n then aux2(0n::new_user_points, elapsed_weeks - 1n, user_points)
+                else aux2(0n::new_user_points, elapsed_weeks - 1n, _tl1)
+        in
+
+        let total_reward_for_user : nat = aux(0n, elapsed_weeks, user_points, farm_points, storage.reward_at_week) in
         let send_reward : operation = sendReward total_reward_for_user sender_address reward_token_address reward_reserve_address in
+
+        //feed 0 only on elapsed weeks TODO : rename
+  
 
         let new_user_points = List.map (fun (_i : nat) -> 0n) user_points in
         let user_points_map = Big_map.update sender_address (Some(new_user_points)) storage.user_points in

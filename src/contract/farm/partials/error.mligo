@@ -7,5 +7,6 @@ let amount_must_be_zero_tez : string = "You must not send Tezos to the smart con
 let time_too_early : string = "Please try again in few seconds" 
 let no_stakes : string = "You did not stake any token yet"
 let unstake_more_than_stake : string = "You cannot unstake more than your farm staking"
+let no_claim_first_week : string = "You cannot claim any reward before the first farm week as passed"
 let no_week_left : string = "There are no more weeks left for staking in the farm"
 let contract_already_initialized : string = "The contract is already initialized"
