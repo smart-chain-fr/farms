@@ -181,16 +181,16 @@ class FarmsContractTest(TestCase):
     def test_stake_two_times_should_work(self):
         init_storage = deepcopy(initial_storage)
         init_storage["user_stakes"][bob] = 300
-        new_storage["user_points"][bob] = [0,0,int(300 * sec_week / 2),300 * sec_week, 300 * sec_week ]
-        new_storage["farm_points"] = [0,0,int(300 * sec_week / 2),300 * sec_week, 300 * sec_week ]
-        res = self.farms.stake(500).interpret(storage=new_storage, sender=bob, now=int(3*sec_week + sec_week*2/3))
+        init_storage["user_points"][bob] = [0,0,int(300 * sec_week / 2),300 * sec_week, 300 * sec_week ]
+        init_storage["farm_points"] = [0,0,int(300 * sec_week / 2),300 * sec_week, 300 * sec_week ]
+        res = self.farms.stake(500).interpret(storage=init_storage, sender=bob, now=int(3 * sec_week + sec_week*2/3))
         self.assertEqual(len(res.operations), 1)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
         self.assertEqual(bob, transfer_tx_params[0]['string'])
         self.assertEqual(farm_address, transfer_tx_params[1]['string'])
         self.assertEqual(500, int(transfer_tx_params[2]['int']))
-        self.assertEqual(500, res.storage["user_stakes"][bob])
-        expected_user_points = [0, sec_week * 500 / 2, sec_week * 300 / 2, sec_week * 300 + sec_week * 500 / 3, sec_week * 300 + sec_week * 500 ]
+        self.assertEqual(800, res.storage["user_stakes"][bob])
+        expected_user_points = [0, 0, int(sec_week * 300 / 2), int(sec_week * 300 + sec_week * 500 / 3), int(sec_week * 300 + sec_week * 500) ]
         self.assertEqual(expected_user_points, res.storage["user_points"][bob])
         self.assertEqual(expected_user_points, res.storage["farm_points"])
 
@@ -206,9 +206,10 @@ class FarmsContractTest(TestCase):
         self.assertEqual(farm_address, transfer_tx_params[1]['string'])
         self.assertEqual(400, int(transfer_tx_params[2]['int']))
         self.assertEqual(400, res.storage["user_stakes"][alice])
-        expected_user_points = [0, sec_week * 500 / 2, sec_week * 300 / 2, sec_week * 300 + sec_week * 400 / 3, sec_week * 300 + sec_week * 400 ]
+        expected_user_points = [0, 0, int(sec_week * 400 / 3), sec_week * 400, sec_week * 400 ]
+        expected_farm_points = [0, 0, int(sec_week * 400 / 3) + int(300 * sec_week / 2), sec_week * 700, sec_week * 700 ]
         self.assertEqual(expected_user_points, res.storage["user_points"][alice])
-        self.assertEqual(expected_user_points, res.storage["farm_points"])
+        self.assertEqual(expected_farm_points, res.storage["farm_points"])
 
     def test_stake_0_LP_should_fail(self):
         init_storage = deepcopy(initial_storage)
