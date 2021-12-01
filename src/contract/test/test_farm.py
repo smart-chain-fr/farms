@@ -368,7 +368,7 @@ class FarmsContractTest(TestCase):
         self.assertEqual(int(transfer_tx_params[2]['int']), init_storage["reward_at_week"][0])
         expected_userpoint_alice = [0, 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
         self.assertEqual(res.storage["user_points"][alice], expected_userpoint_alice)
-        self.assertEqual(res.storage["user_stakes"][alice], 0)
+        self.assertEqual(res.storage["user_stakes"][alice], 500)
         self.assertEqual(res.storage["farm_points"], init_storage["farm_points"] )
 
     def test_claimall_with_0_points_should_fail(self):

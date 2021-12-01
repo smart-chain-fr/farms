@@ -68,7 +68,7 @@
                          CAR ;
                          DUP 3 ;
                          PAIR ;
-                         DIG 3 ;
+                         DUP 4 ;
                          PUSH nat 0 ;
                          PAIR ;
                          PAIR ;
@@ -130,7 +130,7 @@
                                    { IF_CONS
                                        { DROP 3 ; PUSH string "size don't match" ; FAILWITH }
                                        { RIGHT (pair (pair (pair nat nat) (pair (list nat) (list nat))) (list nat)) } } } } ;
-                         DUP 4 ;
+                         DUP 5 ;
                          CAR ;
                          CDR ;
                          CDR ;
@@ -141,17 +141,51 @@
                            {} ;
                          PUSH mutez 0 ;
                          DIG 2 ;
-                         DUP 5 ;
-                         PAIR ;
                          DUP 6 ;
+                         PAIR ;
+                         DUP 7 ;
                          CAR ;
                          CDR ;
                          CDR ;
                          CAR ;
                          PAIR ;
                          TRANSFER_TOKENS ;
-                         SWAP ;
-                         MAP { DROP ; PUSH nat 0 } ;
+                         NIL nat ;
+                         DIG 2 ;
+                         DIG 3 ;
+                         NIL nat ;
+                         PAIR ;
+                         PAIR ;
+                         LEFT (list nat) ;
+                         LOOP_LEFT
+                           { UNPAIR ;
+                             UNPAIR ;
+                             DIG 2 ;
+                             IF_CONS
+                               { PUSH nat 0 ;
+                                 DUP 5 ;
+                                 COMPARE ;
+                                 GT ;
+                                 IF { DROP ;
+                                      PUSH nat 1 ;
+                                      DIG 3 ;
+                                      SUB ;
+                                      ABS ;
+                                      DIG 2 ;
+                                      PUSH nat 0 ;
+                                      CONS ;
+                                      PAIR ;
+                                      PAIR ;
+                                      LEFT (list nat) }
+                                    { SWAP ; DUG 3 ; CONS ; PAIR ; PAIR ; LEFT (list nat) } }
+                               { SWAP ; DROP ; RIGHT (pair (pair (list nat) nat) (list nat)) } } ;
+                         PAIR ;
+                         LEFT (list nat) ;
+                         LOOP_LEFT
+                           { UNPAIR ;
+                             IF_CONS
+                               { DIG 2 ; SWAP ; CONS ; SWAP ; PAIR ; LEFT (list nat) }
+                               { RIGHT (pair (list nat) (list nat)) } } ;
                          DUP 4 ;
                          CDR ;
                          CDR ;

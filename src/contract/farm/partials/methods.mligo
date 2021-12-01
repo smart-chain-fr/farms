@@ -35,6 +35,11 @@ let power (x : nat) (y : nat) : nat =
     in
     multiply(1n, x, y)
 
+let rec reverse_list (lst, res : nat list * nat list) : nat list =
+    match lst, res with
+    [], _lst -> _lst
+    |  hd1::tl1, _lst -> reverse_list(tl1, hd1 :: _lst)
+
 let add_or_subtract_list (lst1 : nat list) (lst2 : nat list) (is_added : bool) : nat list =
     let rec merge_list (lst1, lst2, res : nat list * nat list * nat list) : nat list =
         match lst1, lst2 with
@@ -44,11 +49,6 @@ let add_or_subtract_list (lst1 : nat list) (lst2 : nat list) (is_added : bool) :
         | hd1::tl1, hd2::tl2 ->
             let new_hd : nat = if (is_added = true) then hd1 + hd2 else abs(hd1 - hd2) in
             merge_list(tl1, tl2, new_hd :: res)
-    in
-    let rec reverse_list (lst, res : nat list * nat list) : nat list =
-        match lst, res with
-        [], _lst -> _lst
-        |  hd1::tl1, _lst -> reverse_list(tl1, hd1 :: _lst)
     in
     reverse_list(merge_list(lst1, lst2, empty_nat_list), empty_nat_list)
 
@@ -292,34 +292,31 @@ let claim_all (storage : storage_farm) : return =
     match Big_map.find_opt sender_address user_points with
     | None -> (no_operation, storage)
     | Some(user_points) ->
-        let rec aux (acc, elapsed_weeks, user_points, farm_points, reward_at_weeks : nat * nat * nat list * nat list * nat list) : nat =
+        let rec compute_total_reward (acc, elapsed_weeks, user_points, farm_points, reward_at_weeks : nat * nat * nat list * nat list * nat list) : nat =
             match user_points, farm_points, reward_at_weeks with 
             [], [], [] -> acc
             | [], lst2, lst3 -> failwith "size don't match"
             | lst1, [], lst3 -> failwith "size don't match"
             | lst1, lst2, [] -> failwith "size don't match"
-            | hd1::_tl1, hd2::_tl2, hd3::_tl3 ->
+            | hd1::tl1, hd2::tl2, hd3::tl3 ->
                 if elapsed_weeks > 0n then
                     let acc = acc + hd1 * hd3 / hd2 in
-                    aux (acc, abs(elapsed_weeks-1n), _tl1, _tl2, _tl3)
+                    compute_total_reward (acc, abs(elapsed_weeks-1n), tl1, tl2, tl3)
                 else acc
         in
 
-        let rec aux2 (new_user_points, elapsed_weeks, user_points : nat * nat list) : nat =
+        let rec create_new_user_point (new_user_points, elapsed_weeks, user_points : nat list * nat * nat list) : nat list =
             match user_points with
             [] -> new_user_points
-            | hd1::_tl1 ->
-                if elapsed_weeks > 0n then aux2(0n::new_user_points, elapsed_weeks - 1n, user_points)
-                else aux2(0n::new_user_points, elapsed_weeks - 1n, _tl1)
+            | hd1::tl1 ->
+                if elapsed_weeks > 0n then create_new_user_point(0n::new_user_points, abs(elapsed_weeks - 1n), tl1)
+                else create_new_user_point(hd1::new_user_points, elapsed_weeks , tl1)
         in
 
-        let total_reward_for_user : nat = aux(0n, elapsed_weeks, user_points, farm_points, storage.reward_at_week) in
+        let total_reward_for_user : nat = compute_total_reward(0n, elapsed_weeks, user_points, farm_points, storage.reward_at_week) in
         let send_reward : operation = sendReward total_reward_for_user sender_address reward_token_address reward_reserve_address in
 
-        //feed 0 only on elapsed weeks TODO : rename
-  
-
-        let new_user_points = List.map (fun (_i : nat) -> 0n) user_points in
+        let new_user_points : nat list = reverse_list(create_new_user_point (empty_nat_list, elapsed_weeks, user_points), empty_nat_list) in
         let user_points_map = Big_map.update sender_address (Some(new_user_points)) storage.user_points in
 
         let final_storage = { storage with user_points = user_points_map } in
