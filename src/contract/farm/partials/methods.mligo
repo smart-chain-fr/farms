@@ -2,6 +2,19 @@
 #include "error.mligo"
 
 // -----------------
+// --  DEBUG  --
+// -----------------
+let rec print_elt_list (lst, indice : nat list * nat) : unit = 
+    if indice = 0n then 
+        match List.head_opt lst with
+        | None -> failwith("[print_elt_list] indice out of bound")
+        | Some(elt) -> failwith(elt)
+    else
+        match List.tail_opt lst with
+        | None -> failwith("[print_elt_list] unreachable")
+        | Some(tl) -> print_elt_list(tl, abs(indice - 1n))
+        
+// -----------------
 // --  CONSTANTS  --
 // -----------------
 let week_in_seconds : nat  = 604800n
@@ -28,13 +41,17 @@ let sendReward (token_amount : nat) (user_address : address) (reward_token_addre
     let op : operation = Tezos.transaction (transfer_param) 0mutez transfer_fa12 in
     op
 
-let power (x : nat) (y : nat) : nat = 
-    let rec multiply(acc, elt, last: nat * nat * nat ) : nat = 
-        if last = 0n then acc 
-        else multiply(acc * elt, elt, abs(last - 1n))
-    in
-    multiply(1n, x, y)
+// let power (x : nat) (y : nat) : nat = 
+//     let rec multiply(acc, elt, last: nat * nat * nat ) : nat = 
+//         if last = 0n then acc 
+//         else multiply(acc * elt, elt, abs(last - 1n))
+//     in
+//     multiply(1n, x, y)
 
+let power (x, y : nat * nat) : nat = 
+    let rec multiply(acc, elt, last: nat * nat * nat ) : nat = if last = 0n then acc else multiply(acc * elt, elt, abs(last - 1n)) in
+    multiply(1n, x, y)
+    
 let rec reverse_list (lst, res : nat list * nat list) : nat list =
     match lst, res with
     [], _lst -> _lst
@@ -54,14 +71,13 @@ let add_or_subtract_list (lst1 : nat list) (lst2 : nat list) (is_added : bool) :
 
 let compute_new_rewards (total_reward:nat) (week_number:nat) (rate:nat) : nat list =
     let update_reward_per_week (week_indice : nat) : nat =
-        let week = abs(week_indice - 1n) in
-        let t_before : nat = power rate week in  
-        let t_before_divisor : nat = power 10_000n week in
+        let t_before : nat = power(rate, abs(week_indice - 1n)) in  
+        let t_before_divisor : nat = power(10_000n, abs(week_indice - 1n)) in
         let un_moins_rate : nat = abs(10_000n - rate) in 
-        let m_10000_4 : nat = power 10_000n week in
+        let m_10000_4 : nat = power(10_000n, abs(week_number - 1n)) in
         let numerator : nat = un_moins_rate * m_10000_4 in 
-        let t_I_max : nat = power rate week_number in 
-        let m_10000_5 : nat = power 10_000n week_number in
+        let t_I_max : nat = power(rate, week_number) in 
+        let m_10000_5 : nat = power(10_000n, week_number) in
         let denominator : nat = abs(m_10000_5 - t_I_max) in
         let final_denominator : nat = t_before_divisor * denominator in 
         let final_numerator : nat = numerator * total_reward * t_before in 
@@ -70,11 +86,9 @@ let compute_new_rewards (total_reward:nat) (week_number:nat) (rate:nat) : nat li
     let rec create_reward_list (week_indice, res : nat * nat list ) : nat list =
         if (week_indice = 0n) then res
         else 
-
             create_reward_list (abs(week_indice - 1n), update_reward_per_week(week_indice) :: res)
     in
-    //11000 9000
-
+    
     create_reward_list(week_number, empty_nat_list)
 
 
