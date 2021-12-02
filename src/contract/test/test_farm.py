@@ -88,6 +88,7 @@ class FarmsContractTest(TestCase):
     # Test for initialize #
     #######################
 
+
     def test_initializeReward_5week_20Kreward_75rate_initialization_should_work(self):
         # Init
         init_storage = deepcopy(initial_storage)
