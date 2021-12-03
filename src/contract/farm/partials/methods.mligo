@@ -157,6 +157,10 @@ let increase_reward (storage : storage_farm) (added_new_reward : nat ) : return 
 
 let stake_some (storage : storage_farm) (lp_amount : nat) : return =
     let input_token_address : address = storage.input_token_address in
+    let is_input_fa2 : bool = match storage.input_fa2_token_id with 
+    | None -> false
+    | Some(id) -> true 
+    in
     let current_time : timestamp = Tezos.now in
     let sender_address : address = Tezos.sender in // Avoids recalculating Tezos.sender each time for gas
     let farm_points : nat list = storage.farm_points in
