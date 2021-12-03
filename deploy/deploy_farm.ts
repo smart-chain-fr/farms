@@ -53,7 +53,7 @@ async function orig() {
         console.log('confirmed farm: ', originated.contractAddress);
 
         const farmAddress : string = originated.contractAddress as string
-        const op = await (await Tezos.contract.at(farmAddress)).methods.Initialize().send();
+        const op = await (await Tezos.contract.at(farmAddress)).methods.initialize().send();
             console.log(`Waiting for increaseReward(0) ${op.hash} to be confirmed...`);
             await op.confirmation(3);
             console.log('confirmed increaseReward(0): ', op.hash);
