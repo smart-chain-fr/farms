@@ -125,7 +125,7 @@ WEEKS=[length of the farm lifetime]
 
 - In the folder /deploy, run `tsc deploy.ts --resolveJsonModule -esModuleInterop`
 
-- Be sure to compile your database and farm, following  II.2 and  II.3. The database contract reference all farm pools and is only needed to be generated once at the start of the project.
+- Be sure to compile your database and farm, following  III.1 and  III.2 The database contract reference all farm pools and is only needed to be generated once at the start of the project.
 
 - In the folder /deploy, run `node deploy_database.js`.
 
