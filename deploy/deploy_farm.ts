@@ -1,6 +1,6 @@
 import { InMemorySigner } from '@taquito/signer';
 import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
-import farm from './artefact/Farm.json';
+import farm from './artefact/farm.json';
 import * as dotenv from 'dotenv'
 
 dotenv.config(({path:__dirname+'/.env'}))
@@ -11,7 +11,7 @@ const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
 Tezos.setProvider({ signer: signer })
 
-const farms = "KT1UpdxizDq8YTHr7Y9RB5mmdzn3UQfvpPDY";
+const database = "KT1UUUiSjdiEHwtigYz2YgFAMfNPd8BJAVe4";
 const admin = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
 const creation_time = new Date();
 const farm_points: [] = [];
@@ -19,7 +19,7 @@ const input_token_address = 'KT1J7AAzfgdVXSLkRiGVkjXCwWUG9rjJzN2Y';
 const reward_token_address = "KT19LLvFdGmLgKPXqf4Tn22Y1wWqpCU1sg2d"
 const reward_reserve_address = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
 const infoFarm = process.env.INFOFARM || '';
-const rate = process.env.RATE || 95;
+const rate = process.env.RATE || 9500;
 let reward_at_week: [] = [];
 const rewards = 50000000;
 let user_points = new MichelsonMap();
@@ -65,7 +65,8 @@ async function orig() {
             console.log('confirmed approve: ', op2.hash);
         
 
-        const op3 = await (await Tezos.contract.at(farms)).methods.addFarm(farmAddress, infoFarm, input_token_address).send();
+        const database_contract = await Tezos.contract.at(database); 
+        const op3 = await database_contract.methods.add_farm(farmAddress, infoFarm, input_token_address).send();
             console.log(`Waiting for addFarm ${op3.hash} to be confirmed...`);
             await op3.confirmation(3);
             console.log('confirmed addFarm: ', op3.hash)

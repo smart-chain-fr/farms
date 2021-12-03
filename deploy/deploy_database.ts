@@ -11,7 +11,7 @@ const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
 Tezos.setProvider({ signer: signer })
 
-const admin = "tz1Xw9bmdExsTsfY6W5R2kXHAmBLFo47fcvp";
+const admin = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
 let all_farms = new Array();
 let all_farms_data = new MichelsonMap();
 let inverse_farms = new MichelsonMap();
