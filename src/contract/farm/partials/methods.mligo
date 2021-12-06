@@ -173,8 +173,6 @@ let stake_some (storage : storage_farm) (lp_amount : nat) : return =
     let farm_points : nat list = storage.farm_points in
     let user_points : (address, nat list) big_map = storage.user_points in
     let total_weeks : nat = storage.total_weeks in
-
-
     let current_week : nat = get_current_week(storage) in
     let endofweek_in_seconds : timestamp = storage.creation_time + int(current_week * week_in_seconds) in
 
@@ -186,8 +184,8 @@ let stake_some (storage : storage_farm) (lp_amount : nat) : return =
     // create a transfer transaction (for LP token contract)
     let operations : operation list = match storage.input_fa2_token_id_opt with 
     | None -> // FA12 
-        let smak_contract_otp : fa12_transfer contract option = Tezos.get_entrypoint_opt "%transfer" input_token_address in
-        let transfer_fa12 : fa12_transfer contract = match smak_contract_otp with
+        let smak_contract_opt : fa12_transfer contract option = Tezos.get_entrypoint_opt "%transfer" input_token_address in
+        let transfer_fa12 : fa12_transfer contract = match smak_contract_opt with
         | Some c -> c
         | None -> (failwith unknown_input_token_entrypoint:  fa12_transfer contract)
         in
@@ -267,19 +265,27 @@ let unstake_some (storage : storage_farm) (lp_amount : nat) : return =
     let _check_lp_amount : unit = assert_with_error (user_stakes >= lp_amount) unstake_more_than_stake in
     let new_user_stakes : (address, nat) big_map = Big_map.update sender_address (Some(abs(user_stakes - lp_amount))) storage.user_stakes in
 
-    let lp_contract_opt : fa12_transfer contract option = Tezos.get_entrypoint_opt "%transfer" input_token_address in
-    let transfer_fa12 : fa12_transfer contract = 
-        match lp_contract_opt with
+    // create a transfer transaction (for LP token contract)
+    let operations : operation list = match storage.input_fa2_token_id_opt with 
+    | None -> // FA12
+        let lp_contract_opt : fa12_transfer contract option = Tezos.get_entrypoint_opt "%transfer" input_token_address in
+        let transfer_fa12 : fa12_transfer contract = match lp_contract_opt with
         | Some c -> c
         | None -> (failwith unknown_input_token_entrypoint: fa12_transfer contract)
+        in
+        let transfer_fa12_param : fa12_transfer = Tezos.self_address,  (sender_address , lp_amount ) in    
+        let op_fa12 : operation = Tezos.transaction (transfer_fa12_param) 0mutez transfer_fa12 in
+        [ op_fa12; ]
+    | Some (tokenid) -> // FA2
+        let lp_contract_fa2_opt : fa2_transfer contract option = Tezos.get_entrypoint_opt "%transfer" input_token_address in
+        let transfer_fa2 : fa2_transfer contract = match lp_contract_fa2_opt with
+        | Some c -> c
+        | None -> (failwith unknown_input_token_entrypoint: fa2_transfer contract)
+        in
+        let transfer_fa2_param : fa2_transfer = Tezos.self_address, tokenid, (sender_address , lp_amount) in    
+        let op_fa2 : operation = Tezos.transaction (transfer_fa2_param) 0mutez transfer_fa2 in
+        [ op_fa2; ]
     in
-
-    // create a transfer transaction (for LP token contract)
-    let transfer_param : fa12_transfer = Tezos.self_address,  (sender_address , lp_amount ) in    
-    let op : operation = Tezos.transaction (transfer_param) 0mutez transfer_fa12 in
-
-    // create a transfer transaction (for LP token contract)
-    let operations : operation list = [ op; ] in
 
     if (current_time < endofweek_in_seconds ) then
 
