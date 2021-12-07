@@ -772,20 +772,54 @@ class FarmsContractTest(TestCase):
         res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=int(sec_week * 3 + sec_week / 2))
         self.assertEqual(res.storage["admin"], admin)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
-        self.assertEqual(transfer_tx_params[1]['string'], alice)
-        self.assertEqual(int(transfer_tx_params[2]['int'])+1, int(alice_week1_reward_expected+alice_week2_reward_expected))
-        print("test")
-        print(int(transfer_tx_params[2]['int']))
-        print(int(alice_week1_reward_expected+alice_week2_reward_expected))
+        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
+        # self.assertEqual(transfer_tx_params[1]['string'], alice)
+        # self.assertEqual(int(transfer_tx_params[2]['int'])+1, int(alice_week1_reward_expected+alice_week2_reward_expected))
         if OptionType(init_storage["reward_fa2_token_id"]).is_none():  # For FA12 
             verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], alice_total_reward_expected)
         expected_userpoint_alice = [0, 0, 0, 500 * sec_week, 500 * sec_week]
         self.assertEqual(res.storage["user_points"][alice], expected_userpoint_alice)
         self.assertEqual(res.storage["user_stakes"][alice], 500)
-        self.assertEqual(res.storage["farm_points"], init_storage["farm_points"] )
+        self.assertEqual(res.storage["farm_points"], init_storage["farm_points"])
 
-    def test_claimall_with_2_stakers_not_staking_middle_week_should_work(self):
+    def test_claimall_with_2_stakers_with_fa2_should_work(self):
+        # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 20_000_000
+        init_storage["reward_at_week"] = [6555697, 4916773, 3687580, 2765685, 2074263]
+        init_storage["creation_time"] = 0
+        init_storage["user_stakes"][alice] = 500
+        init_storage["user_points"][alice] = [0, int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["user_stakes"][bob] = 100
+        init_storage["user_points"][bob] = [0, int(100 * sec_week * (1 - 1/2)), 100 * sec_week, 100 * sec_week, 100 * sec_week]
+        init_storage["farm_points"] = [x + y for x, y in zip(init_storage["user_points"][alice],init_storage["user_points"][bob])]
+        alice_week1_reward_expected = init_storage["reward_at_week"][1] * init_storage["user_points"][alice][1]/ init_storage["farm_points"][1] 
+        alice_week2_reward_expected = init_storage["reward_at_week"][2] * init_storage["user_points"][alice][2]/ init_storage["farm_points"][2]
+        alice_total_reward_expected = int(alice_week1_reward_expected + alice_week2_reward_expected) -1
+        ############### FOR FA2   ################################
+        reward_token_id = 5
+        input_fa2_token_id_opt : Optional[int] = None
+        reward_fa2_token_id : Optional[int] = reward_token_id
+        init_storage["input_fa2_token_id_opt"] = input_fa2_token_id_opt
+        init_storage["reward_fa2_token_id"] = reward_fa2_token_id
+        # Execute entrypoint
+        res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=int(sec_week * 3 + sec_week / 2))
+        self.assertEqual(res.storage["admin"], admin)
+        transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
+        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
+        # self.assertEqual(transfer_tx_params[1]['string'], alice)
+        # self.assertEqual(int(transfer_tx_params[2]['int'])+1, int(alice_week1_reward_expected+alice_week2_reward_expected))
+        if OptionType(init_storage["reward_fa2_token_id"]).is_none():  # For FA12 
+            verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], alice_total_reward_expected)
+        else:
+            verify_fa2_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], init_storage["reward_fa2_token_id"], alice_total_reward_expected)
+        expected_userpoint_alice = [0, 0, 0, 500 * sec_week, 500 * sec_week]
+        self.assertEqual(res.storage["user_points"][alice], expected_userpoint_alice)
+        self.assertEqual(res.storage["user_stakes"][alice], 500)
+        self.assertEqual(res.storage["farm_points"], init_storage["farm_points"])
+
+
+    def test_claimall_with_2_stakers_not_staking_middle_week_with_fa12_should_work(self):
         # Init
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 20_000_000
@@ -798,18 +832,56 @@ class FarmsContractTest(TestCase):
         init_storage["farm_points"] = [x + y for x, y in zip(init_storage["user_points"][alice],init_storage["user_points"][bob])]
         # Execute entrypoint
         res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=int(sec_week * 3 + sec_week / 2))
-        reward_expected = int(6555697/2) + int((int(500 * sec_week * (1 - 2/3)) / int(500 * sec_week * (1 - 2/3) + 500 * sec_week * (1 - 1/2)) )* 3687580) - 1
+        reward_expected = int(6555697/2) + int((int(500 * sec_week * (1 - 2/3)) / int(500 * sec_week * (1 - 2/3) + 500 * sec_week * (1 - 1/2)) )* 3687580) - 1 + 1
         self.assertEqual(res.storage["admin"], admin)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        self.assertEqual(transfer_tx_params[0]['string'], initial_storage["reward_reserve_address"])
-        self.assertEqual(transfer_tx_params[1]['string'], alice)
-        self.assertEqual(int(transfer_tx_params[2]['int'])-1, reward_expected)
+        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
+        # self.assertEqual(transfer_tx_params[1]['string'], alice)
+        # self.assertEqual(int(transfer_tx_params[2]['int'])-1, reward_expected)
+        if OptionType(init_storage["reward_fa2_token_id"]).is_none():  # For FA12 
+            verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
+        else:
+            verify_fa2_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], init_storage["reward_fa2_token_id"], reward_expected)
         expected_userpoint_alice = [0, 0, 0, 500 * sec_week, 500 * sec_week]
         self.assertEqual(res.storage["user_points"][alice], expected_userpoint_alice)
         self.assertEqual(res.storage["user_stakes"][alice], 500)
-        self.assertEqual(res.storage["farm_points"], init_storage["farm_points"] )
+        self.assertEqual(res.storage["farm_points"], init_storage["farm_points"])
 
-    def test_claimall_after_pool_end_should_work(self):
+    def test_claimall_with_2_stakers_not_staking_middle_week_with_fa2_should_work(self):
+        # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 20_000_000
+        init_storage["reward_at_week"] = [6555697, 4916773, 3687580, 2765685, 2074263]
+        init_storage["creation_time"] = 0
+        init_storage["user_stakes"][alice] = 500
+        init_storage["user_points"][alice] = [500 * sec_week, 0, int(500 * sec_week * (1 - 2/3)), 500 * sec_week, 500 * sec_week]
+        init_storage["user_stakes"][bob] = 500
+        init_storage["user_points"][bob] = [500 * sec_week, 0, int(500 * sec_week * (1 - 1/2)), 500 * sec_week, 500 * sec_week]
+        init_storage["farm_points"] = [x + y for x, y in zip(init_storage["user_points"][alice],init_storage["user_points"][bob])]
+        ############### FOR FA2   ################################
+        reward_token_id = 5
+        input_fa2_token_id_opt : Optional[int] = None
+        reward_fa2_token_id : Optional[int] = reward_token_id
+        init_storage["input_fa2_token_id_opt"] = input_fa2_token_id_opt
+        init_storage["reward_fa2_token_id"] = reward_fa2_token_id
+        # Execute entrypoint
+        res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=int(sec_week * 3 + sec_week / 2))
+        reward_expected = int(6555697/2) + int((int(500 * sec_week * (1 - 2/3)) / int(500 * sec_week * (1 - 2/3) + 500 * sec_week * (1 - 1/2)) )* 3687580) - 1 + 1
+        self.assertEqual(res.storage["admin"], admin)
+        transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
+        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
+        # self.assertEqual(transfer_tx_params[1]['string'], alice)
+        # self.assertEqual(int(transfer_tx_params[2]['int'])-1, reward_expected)
+        if OptionType(init_storage["reward_fa2_token_id"]).is_none():  # For FA12 
+            verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
+        else:
+            verify_fa2_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], init_storage["reward_fa2_token_id"], reward_expected)
+        expected_userpoint_alice = [0, 0, 0, 500 * sec_week, 500 * sec_week]
+        self.assertEqual(res.storage["user_points"][alice], expected_userpoint_alice)
+        self.assertEqual(res.storage["user_stakes"][alice], 500)
+        self.assertEqual(res.storage["farm_points"], init_storage["farm_points"])
+
+    def test_claimall_after_pool_end_with_fa12_should_work(self):
         # Init
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 20_000_000
@@ -818,19 +890,56 @@ class FarmsContractTest(TestCase):
         init_storage["user_stakes"][alice] = 500
         init_storage["user_points"][alice] = [int(500 * sec_week / 2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
         init_storage["farm_points"] = [int(500 * sec_week / 2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        reward_expected = init_storage["total_reward"] - 2
         # Execute entrypoint
         res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=sec_week * 100)
         self.assertEqual(res.storage["admin"], admin)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        self.assertEqual(transfer_tx_params[0]['string'], initial_storage["reward_reserve_address"])
-        self.assertEqual(transfer_tx_params[1]['string'], alice)
-        self.assertEqual(int(transfer_tx_params[2]['int']) + 2, init_storage["total_reward"])
+        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
+        # self.assertEqual(transfer_tx_params[1]['string'], alice)
+        # self.assertEqual(int(transfer_tx_params[2]['int']) + 2, init_storage["total_reward"])
+        if OptionType(init_storage["reward_fa2_token_id"]).is_none():  # For FA12 
+            verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
+        else:
+            verify_fa2_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], init_storage["reward_fa2_token_id"], reward_expected)
         expected_userpoint_alice = [0, 0, 0, 0, 0]
         self.assertEqual(res.storage["user_points"][alice], expected_userpoint_alice)
         self.assertEqual(res.storage["user_stakes"][alice], 500)
-        self.assertEqual(res.storage["farm_points"], init_storage["farm_points"] )
+        self.assertEqual(res.storage["farm_points"], init_storage["farm_points"])
 
-    def test_claimall_with_2_stakers_not_staking_last_week_should_work(self):
+    def test_claimall_after_pool_end_with_fa2_should_work(self):
+        # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 20_000_000
+        init_storage["reward_at_week"] = [6555697, 4916773, 3687580, 2765685, 2074263]
+        init_storage["creation_time"] = 0
+        init_storage["user_stakes"][alice] = 500
+        init_storage["user_points"][alice] = [int(500 * sec_week / 2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["farm_points"] = [int(500 * sec_week / 2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        reward_expected = init_storage["total_reward"] - 2
+        ############### FOR FA2   ################################
+        reward_token_id = 5
+        input_fa2_token_id_opt : Optional[int] = None
+        reward_fa2_token_id : Optional[int] = reward_token_id
+        init_storage["input_fa2_token_id_opt"] = input_fa2_token_id_opt
+        init_storage["reward_fa2_token_id"] = reward_fa2_token_id
+        # Execute entrypoint
+        res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=sec_week * 100)
+        self.assertEqual(res.storage["admin"], admin)
+        transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
+        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
+        # self.assertEqual(transfer_tx_params[1]['string'], alice)
+        # self.assertEqual(int(transfer_tx_params[2]['int']) + 2, init_storage["total_reward"])
+        if OptionType(init_storage["reward_fa2_token_id"]).is_none():  # For FA12 
+            verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
+        else:
+            verify_fa2_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], init_storage["reward_fa2_token_id"], reward_expected)
+        expected_userpoint_alice = [0, 0, 0, 0, 0]
+        self.assertEqual(res.storage["user_points"][alice], expected_userpoint_alice)
+        self.assertEqual(res.storage["user_stakes"][alice], 500)
+        self.assertEqual(res.storage["farm_points"], init_storage["farm_points"])
+
+    def test_claimall_with_2_stakers_not_staking_last_week_with_fa12_should_work(self):
         # Init
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 20_000_000
@@ -846,13 +955,51 @@ class FarmsContractTest(TestCase):
         reward_expected = int(6555697 / 2) + int(4916773 / 2) + int(3687580 / 2)  + int(2765685 / 2) 
         self.assertEqual(res.storage["admin"], admin)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        self.assertEqual(transfer_tx_params[0]['string'], initial_storage["reward_reserve_address"])
-        self.assertEqual(transfer_tx_params[1]['string'], alice)
-        self.assertEqual(int(transfer_tx_params[2]['int']), reward_expected)
+        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
+        # self.assertEqual(transfer_tx_params[1]['string'], alice)
+        # self.assertEqual(int(transfer_tx_params[2]['int']), reward_expected)
+        if OptionType(init_storage["reward_fa2_token_id"]).is_none():  # For FA12 
+            verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
+        else:
+            verify_fa2_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], init_storage["reward_fa2_token_id"], reward_expected)
         expected_userpoint_alice = [0]*5
         self.assertEqual(res.storage["user_points"][alice], expected_userpoint_alice)
         self.assertEqual(res.storage["user_stakes"][alice], 500)
-        self.assertEqual(res.storage["farm_points"], init_storage["farm_points"] )
+        self.assertEqual(res.storage["farm_points"], init_storage["farm_points"])
+
+    def test_claimall_with_2_stakers_not_staking_last_week_with_fa2_should_work(self):
+        # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 20_000_000
+        init_storage["reward_at_week"] = [6555697, 4916773, 3687580, 2765685, 2074263]
+        init_storage["creation_time"] = 0
+        init_storage["user_stakes"][alice] = 500
+        init_storage["user_points"][alice] = [500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week, 0]
+        init_storage["user_stakes"][bob] = 500
+        init_storage["user_points"][bob] = [500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week, 0]
+        init_storage["farm_points"] = [x + y for x, y in zip(init_storage["user_points"][alice],init_storage["user_points"][bob])]
+        ############### FOR FA2   ################################
+        reward_token_id = 5
+        input_fa2_token_id_opt : Optional[int] = None
+        reward_fa2_token_id : Optional[int] = reward_token_id
+        init_storage["input_fa2_token_id_opt"] = input_fa2_token_id_opt
+        init_storage["reward_fa2_token_id"] = reward_fa2_token_id
+        # Execute entrypoint
+        res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=int(sec_week * 6 + sec_week / 2))
+        reward_expected = int(6555697 / 2) + int(4916773 / 2) + int(3687580 / 2)  + int(2765685 / 2) 
+        self.assertEqual(res.storage["admin"], admin)
+        transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
+        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
+        # self.assertEqual(transfer_tx_params[1]['string'], alice)
+        # self.assertEqual(int(transfer_tx_params[2]['int']), reward_expected)
+        if OptionType(init_storage["reward_fa2_token_id"]).is_none():  # For FA12 
+            verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
+        else:
+            verify_fa2_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], init_storage["reward_fa2_token_id"], reward_expected)
+        expected_userpoint_alice = [0]*5
+        self.assertEqual(res.storage["user_points"][alice], expected_userpoint_alice)
+        self.assertEqual(res.storage["user_stakes"][alice], 500)
+        self.assertEqual(res.storage["farm_points"], init_storage["farm_points"])
 
     def test_claimall_with_XTZ_should_fail(self):
         # Init
@@ -867,7 +1014,7 @@ class FarmsContractTest(TestCase):
             self.farms.claim_all().interpret(storage=init_storage, sender=bob, now=sec_week * 12, amount=1)
 
 
-    def test_claimall_two_times_after_unstake_and_staking_two_times_should_work(self):
+    def test_claimall_two_times_after_unstake_and_staking_two_times_with_fa12_should_work(self):
         # Init
         init_storage = deepcopy(initial_storage)
         init_storage["reward_at_week"] = [6555697, 4916773, 3687580, 2765685, 2074263]
@@ -875,15 +1022,52 @@ class FarmsContractTest(TestCase):
         init_storage["user_stakes"][alice] = 0
         init_storage["user_points"][alice] = [int(500 * sec_week/2), int(500 * sec_week) +  int(500 * sec_week / 2 ) - int(1000 * sec_week / 3 ), 0, 0, 0]
         init_storage["farm_points"] = [int(500 * sec_week/2), int(500 * sec_week) +  int(500 * sec_week / 2 ) - int(1000 * sec_week / 3 ), 0, 0, 0]
+        reward_expected = init_storage["reward_at_week"][1]        
         res = self.farms.claim_all().interpret(sender=alice, storage=init_storage, now=int(sec_week + sec_week*3/4))
         # Execute entrypoint
         res2 = self.farms.claim_all().interpret(sender=alice, storage=res.storage, now=int(sec_week * 2 + sec_week*3/4))
         self.assertEqual(res2.storage["admin"], admin)
         transfer_tx_params = res2.operations[0]["parameters"]["value"]['args']
-        self.assertEqual(transfer_tx_params[0]['string'], initial_storage["reward_reserve_address"])
-        self.assertEqual(transfer_tx_params[1]['string'], alice)
-        self.assertEqual(int(transfer_tx_params[2]['int']), 4916773)
+        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
+        # self.assertEqual(transfer_tx_params[1]['string'], alice)
+        # self.assertEqual(int(transfer_tx_params[2]['int']), 4916773)
+        if OptionType(init_storage["reward_fa2_token_id"]).is_none():  # For FA12 
+            verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
+        else:
+            verify_fa2_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], init_storage["reward_fa2_token_id"], reward_expected)
         expected_userpoint_alice = [0]*5
         self.assertEqual(res2.storage["user_points"][alice], expected_userpoint_alice)
         self.assertEqual(res2.storage["user_stakes"][alice], 0)
-        self.assertEqual(res2.storage["farm_points"], init_storage["farm_points"] )
+        self.assertEqual(res2.storage["farm_points"], init_storage["farm_points"])
+
+    def test_claimall_two_times_after_unstake_and_staking_two_times_with_fa2_should_work(self):
+        # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["reward_at_week"] = [6555697, 4916773, 3687580, 2765685, 2074263]
+        init_storage["creation_time"] = 0
+        init_storage["user_stakes"][alice] = 0
+        init_storage["user_points"][alice] = [int(500 * sec_week/2), int(500 * sec_week) +  int(500 * sec_week / 2 ) - int(1000 * sec_week / 3 ), 0, 0, 0]
+        init_storage["farm_points"] = [int(500 * sec_week/2), int(500 * sec_week) +  int(500 * sec_week / 2 ) - int(1000 * sec_week / 3 ), 0, 0, 0]
+        ############### FOR FA2   ################################
+        reward_token_id = 5
+        input_fa2_token_id_opt : Optional[int] = None
+        reward_fa2_token_id : Optional[int] = reward_token_id
+        init_storage["input_fa2_token_id_opt"] = input_fa2_token_id_opt
+        init_storage["reward_fa2_token_id"] = reward_fa2_token_id
+        reward_expected = init_storage["reward_at_week"][1]        
+        res = self.farms.claim_all().interpret(sender=alice, storage=init_storage, now=int(sec_week + sec_week*3/4))
+        # Execute entrypoint
+        res2 = self.farms.claim_all().interpret(sender=alice, storage=res.storage, now=int(sec_week * 2 + sec_week*3/4))
+        self.assertEqual(res2.storage["admin"], admin)
+        transfer_tx_params = res2.operations[0]["parameters"]["value"]['args']
+        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
+        # self.assertEqual(transfer_tx_params[1]['string'], alice)
+        # self.assertEqual(int(transfer_tx_params[2]['int']), 4916773)
+        if OptionType(init_storage["reward_fa2_token_id"]).is_none():  # For FA12 
+            verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
+        else:
+            verify_fa2_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], init_storage["reward_fa2_token_id"], reward_expected)
+        expected_userpoint_alice = [0]*5
+        self.assertEqual(res2.storage["user_points"][alice], expected_userpoint_alice)
+        self.assertEqual(res2.storage["user_stakes"][alice], 0)
+        self.assertEqual(res2.storage["farm_points"], init_storage["farm_points"])
