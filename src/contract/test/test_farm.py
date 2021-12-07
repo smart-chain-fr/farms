@@ -355,7 +355,7 @@ class FarmsContractTest(TestCase):
         self.assertEqual(res.storage["farm_points"], expected_user_points)
 
 
-    def test_stake_with_two_different_users_should_work(self):
+    def test_stake_fa12_with_two_different_users_should_work(self):
         # Init
         new_storage = deepcopy(initial_storage)
         new_storage["user_stakes"][bob] = 300
@@ -365,9 +365,40 @@ class FarmsContractTest(TestCase):
         res = self.farms.stake(400).interpret(storage=new_storage, sender=alice, now=int(2*sec_week + sec_week*2/3))
         self.assertEqual(len(res.operations), 1)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        self.assertEqual(alice, transfer_tx_params[0]['string'])
-        self.assertEqual(farm_address, transfer_tx_params[1]['string'])
-        self.assertEqual(400, int(transfer_tx_params[2]['int']))
+        # self.assertEqual(alice, transfer_tx_params[0]['string'])
+        # self.assertEqual(farm_address, transfer_tx_params[1]['string'])
+        # self.assertEqual(400, int(transfer_tx_params[2]['int']))
+        if OptionType(new_storage["input_fa2_token_id_opt"]).is_none():  # For FA12
+            verify_fa12_transfer_tx(transfer_tx_params, alice, farm_address, 400)   
+        self.assertEqual(400, res.storage["user_stakes"][alice])
+        expected_user_points = [0, 0, int(sec_week * 400 / 3), sec_week * 400, sec_week * 400 ]
+        expected_farm_points = [0, 0, int(sec_week * 400 / 3) + int(300 * sec_week / 2), sec_week * 700, sec_week * 700 ]
+        self.assertEqual(res.storage["user_points"][alice], expected_user_points)
+        self.assertEqual(res.storage["farm_points"], expected_farm_points)
+
+    def test_stake_fa2_with_two_different_users_should_work(self):
+        # Init
+        new_storage = deepcopy(initial_storage)
+        new_storage["user_stakes"][bob] = 300
+        new_storage["user_points"][bob] = [0,0,int(300 * sec_week / 2),300 * sec_week, 300 * sec_week ]
+        new_storage["farm_points"] = [0,0,int(300 * sec_week / 2),300 * sec_week, 300 * sec_week ]
+        ############### FOR FA2   ################################
+        input_token_id = 1
+        input_fa2_token_id_opt : Optional[int] = input_token_id
+        reward_fa2_token_id : Optional[int] = None
+        new_storage["input_fa2_token_id_opt"] = input_fa2_token_id_opt
+        new_storage["reward_fa2_token_id"] = reward_fa2_token_id
+        # Execute entrypoint
+        res = self.farms.stake(400).interpret(storage=new_storage, sender=alice, now=int(2*sec_week + sec_week*2/3))
+        self.assertEqual(len(res.operations), 1)
+        transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
+        # self.assertEqual(alice, transfer_tx_params[0]['string'])
+        # self.assertEqual(farm_address, transfer_tx_params[1]['string'])
+        # self.assertEqual(400, int(transfer_tx_params[2]['int']))
+        if OptionType(new_storage["input_fa2_token_id_opt"]).is_none():  # For FA12
+            verify_fa12_transfer_tx(transfer_tx_params, alice, farm_address, 400)
+        else:
+            verify_fa2_transfer_tx(transfer_tx_params, alice, farm_address, new_storage["input_fa2_token_id_opt"], 400)
         self.assertEqual(400, res.storage["user_stakes"][alice])
         expected_user_points = [0, 0, int(sec_week * 400 / 3), sec_week * 400, sec_week * 400 ]
         expected_farm_points = [0, 0, int(sec_week * 400 / 3) + int(300 * sec_week / 2), sec_week * 700, sec_week * 700 ]
@@ -391,21 +422,6 @@ class FarmsContractTest(TestCase):
     #####################
     # Tests for Unstake #
     #####################
-
-    def test_unstake_basic_should_work(self):
-        # Init
-        init_storage = deepcopy(initial_storage)
-        init_storage["user_stakes"][alice] = 500
-        init_storage["user_points"][alice] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
-        init_storage["farm_points"] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
-        # Execute entrypoint
-        res = self.farms.unstake(250).interpret(sender=alice, storage=init_storage, now=int(sec_week + sec_week/2))
-        expected_user_points = [int(500 * sec_week/2), int((500+250) * sec_week/2), 250 * sec_week, 250 * sec_week, 250 * sec_week]
-        self.assertEqual(res.storage["user_stakes"][alice], 250)
-        self.assertEqual(res.storage["user_points"][alice], expected_user_points)
-        self.assertEqual(res.storage["farm_points"], expected_user_points)
-        #self.assertEqual(len(res.operations), 1)
-
 
     def test_unstake_basic_with_fa12_should_work(self):
         # Init
@@ -459,7 +475,7 @@ class FarmsContractTest(TestCase):
         self.assertEqual(res.storage["farm_points"], expected_user_points)
 
 
-    def test_unstake_same_week_should_work(self):
+    def test_unstake_same_week_with_fa12_should_work(self):
         # Init
         init_storage = deepcopy(initial_storage)
         init_storage["user_stakes"][alice] = 500
@@ -476,7 +492,33 @@ class FarmsContractTest(TestCase):
         if OptionType(init_storage["input_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_unstake_tx(transfer_tx_params, alice, farm_address, 499)
 
-    def test_unstake_total_stake_should_work(self):
+
+    def test_unstake_same_week_with_fa2_should_work(self):
+        # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["user_stakes"][alice] = 500
+        init_storage["user_points"][alice] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["farm_points"] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        ############### FOR FA2   ################################
+        input_token_id = 1
+        input_fa2_token_id_opt : Optional[int] = input_token_id
+        reward_fa2_token_id : Optional[int] = None
+        init_storage["input_fa2_token_id_opt"] = input_fa2_token_id_opt
+        init_storage["reward_fa2_token_id"] = reward_fa2_token_id
+        # Execute entrypoint
+        res = self.farms.unstake(499).interpret(sender=alice, storage=init_storage, now=int(sec_week*3/4))
+        expected_user_points = [int(500 * sec_week/2) - int(499 * sec_week/4), sec_week, sec_week, sec_week, sec_week ]
+        self.assertEqual(res.storage["user_points"][alice], expected_user_points)
+        self.assertEqual(res.storage["farm_points"], expected_user_points)
+        self.assertEqual(res.storage["user_stakes"][alice], 1)
+        self.assertEqual(len(res.operations), 1)
+        transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
+        if OptionType(init_storage["input_fa2_token_id_opt"]).is_none():  # For FA12 
+            verify_fa12_unstake_tx(transfer_tx_params, alice, farm_address, 499)
+        else:
+            verify_fa2_unstake_tx(transfer_tx_params, alice, farm_address, init_storage["input_fa2_token_id_opt"], 499)
+
+    def test_unstake_total_stake_with_fa12_should_work(self):
         # Init
         init_storage = deepcopy(initial_storage)
         init_storage["user_stakes"][alice] = 500
@@ -493,6 +535,30 @@ class FarmsContractTest(TestCase):
         if OptionType(init_storage["input_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_unstake_tx(transfer_tx_params, alice, farm_address, 500)
 
+    def test_unstake_total_stake_with_fa2_should_work(self):
+        # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["user_stakes"][alice] = 500
+        init_storage["user_points"][alice] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["farm_points"] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        ############### FOR FA2   ################################
+        input_token_id = 1
+        input_fa2_token_id_opt : Optional[int] = input_token_id
+        reward_fa2_token_id : Optional[int] = None
+        init_storage["input_fa2_token_id_opt"] = input_fa2_token_id_opt
+        init_storage["reward_fa2_token_id"] = reward_fa2_token_id
+        # Execute entrypoint
+        res = self.farms.unstake(500).interpret(sender=alice, storage=init_storage, now=int(sec_week + sec_week/2))
+        expected_user_points = [int(500 * sec_week/2), int(500 * sec_week/2), 0, 0, 0 ]
+        self.assertEqual(res.storage["user_points"][alice], expected_user_points)
+        self.assertEqual(res.storage["farm_points"], expected_user_points)
+        self.assertEqual(res.storage["user_stakes"][alice], 0)
+        self.assertEqual(len(res.operations), 1)
+        transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
+        if OptionType(init_storage["input_fa2_token_id_opt"]).is_none():  # For FA12 
+            verify_fa12_unstake_tx(transfer_tx_params, alice, farm_address, 500)
+        else:   # for FA2
+            verify_fa2_unstake_tx(transfer_tx_params, alice, farm_address, init_storage["input_fa2_token_id_opt"], 500)
 
     def test_unstake_more_than_staked_should_fail(self):
         # Init
@@ -514,7 +580,7 @@ class FarmsContractTest(TestCase):
         with self.raisesMichelsonError(no_stakes):
             self.farms.unstake(10).interpret(storage=init_storage, sender=bob)
 
-    def test_unstake_with_two_users_should_work(self):
+    def test_unstake_with_two_users_with_fa12_should_work(self):
         # Init
         init_storage = deepcopy(initial_storage)
         init_storage["user_stakes"][bob] = 600
@@ -536,7 +602,36 @@ class FarmsContractTest(TestCase):
             verify_fa12_unstake_tx(transfer_tx_params, bob, farm_address, 100)
 
 
-    def test_unstake_should_work_after_pool_end(self):
+    def test_unstake_with_two_users_with_fa2_should_work(self):
+        # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["user_stakes"][bob] = 600
+        init_storage["user_points"][bob] = [0, 0, int(600 * sec_week / 3), 600 * sec_week, 600 * sec_week]
+        init_storage["user_points"][alice] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["farm_points"] = [int(500 * sec_week / 2), 500 * sec_week, int(600 * sec_week / 3) + 500 * sec_week, 600 * sec_week + 500 * sec_week, 600 * sec_week + 500 * sec_week]
+        ############### FOR FA2   ################################
+        input_token_id = 1
+        input_fa2_token_id_opt : Optional[int] = input_token_id
+        reward_fa2_token_id : Optional[int] = None
+        init_storage["input_fa2_token_id_opt"] = input_fa2_token_id_opt
+        init_storage["reward_fa2_token_id"] = reward_fa2_token_id
+        # Execute entrypoint
+        res = self.farms.unstake(100).interpret(storage=init_storage, sender=bob, now=int(3 * sec_week + sec_week * 6 / 7))
+        expected_userpoint_bob = [0, 0, int(600 * sec_week / 3), int((600 * (6 / 7) + 500 / 7) * sec_week), 500 * sec_week]
+        expected_userpoint_alice = [int(500 * sec_week / 2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        expected_farmpoint = [int(500 * sec_week / 2), 500 * sec_week, int(600 * sec_week / 3) + 500 * sec_week, int((600 * (6 / 7) + 500 / 7) * sec_week) + 500 * sec_week, 500 * sec_week + 500 * sec_week]
+        self.assertEqual(res.storage["user_points"][bob], expected_userpoint_bob)
+        self.assertEqual(res.storage["user_points"][alice], expected_userpoint_alice)
+        self.assertEqual(res.storage["farm_points"], expected_farmpoint)
+        self.assertEqual(res.storage["user_stakes"][bob], 500)
+        self.assertEqual(len(res.operations), 1)
+        transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
+        if OptionType(init_storage["input_fa2_token_id_opt"]).is_none():  # For FA12 
+            verify_fa12_unstake_tx(transfer_tx_params, bob, farm_address, 100)
+        else:
+            verify_fa2_unstake_tx(transfer_tx_params, bob, farm_address, init_storage["input_fa2_token_id_opt"], 100)
+
+    def test_unstake_fa12_should_work_after_pool_end(self):
         # Init
         init_storage = deepcopy(initial_storage)
         init_storage["user_stakes"][alice] = 500
@@ -553,8 +648,33 @@ class FarmsContractTest(TestCase):
         if OptionType(init_storage["input_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_unstake_tx(transfer_tx_params, alice, farm_address, 250)
 
+    def test_unstake_fa2_should_work_after_pool_end(self):
+        # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["user_stakes"][alice] = 500
+        init_storage["user_points"][alice] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["farm_points"] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        ############### FOR FA2   ################################
+        input_token_id = 1
+        input_fa2_token_id_opt : Optional[int] = input_token_id
+        reward_fa2_token_id : Optional[int] = None
+        init_storage["input_fa2_token_id_opt"] = input_fa2_token_id_opt
+        init_storage["reward_fa2_token_id"] = reward_fa2_token_id
+        # Execute entrypoint
+        res = self.farms.unstake(250).interpret(sender=alice, storage=init_storage, now=sec_week * 1000)
+        expected_userpoint_alice = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        self.assertEqual(res.storage["user_stakes"][alice], 250)
+        self.assertEqual(res.storage["user_points"][alice], expected_userpoint_alice)
+        self.assertEqual(res.storage["farm_points"], expected_userpoint_alice)
+        self.assertEqual(len(res.operations), 1)
+        transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
+        if OptionType(init_storage["input_fa2_token_id_opt"]).is_none():  # For FA12 
+            verify_fa12_unstake_tx(transfer_tx_params, alice, farm_address, 250)
+        else:
+            verify_fa2_unstake_tx(transfer_tx_params, alice, farm_address, init_storage["input_fa2_token_id_opt"], 250)
 
-    def test_unstake_with_two_users_at_the_pool_end_should_work(self):
+
+    def test_unstake_fa12_with_two_users_at_the_pool_end_should_work(self):
         # Init
         init_storage = deepcopy(initial_storage)
         init_storage["user_stakes"][alice] = 500
@@ -577,7 +697,39 @@ class FarmsContractTest(TestCase):
         if OptionType(init_storage["input_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_unstake_tx(transfer_tx_params, bob, farm_address, 500)
 
-    def test_unstake_everything_with_two_users_at_the_pool_end_should_work(self):
+
+    def test_unstake_fa2_with_two_users_at_the_pool_end_should_work(self):
+        # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["user_stakes"][alice] = 500
+        init_storage["user_points"][alice] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["user_stakes"][bob] = 600
+        init_storage["user_points"][bob] = [0, 0, int(600 * sec_week / 3), 600 * sec_week, 600 * sec_week]
+        init_storage["farm_points"] = [int(500 * sec_week/2), 500 * sec_week, int(600 * sec_week / 3) + 500 * sec_week, 1100 * sec_week, 1100 * sec_week]
+        ############### FOR FA2   ################################
+        input_token_id = 1
+        input_fa2_token_id_opt : Optional[int] = input_token_id
+        reward_fa2_token_id : Optional[int] = None
+        init_storage["input_fa2_token_id_opt"] = input_fa2_token_id_opt
+        init_storage["reward_fa2_token_id"] = reward_fa2_token_id
+        # Execute entrypoint
+        res = self.farms.unstake(500).interpret(storage=init_storage, sender=bob, now=int(30 * sec_week + sec_week * 6 / 7))
+        expected_userpoint_alice = [int(500 * sec_week / 2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        expected_userpoint_bob = [0, 0, int(600 * sec_week / 3), 600 * sec_week, 600 * sec_week]
+        expected_farmpoint = [int(500 * sec_week/2), 500 * sec_week, int(600 * sec_week / 3) + 500 * sec_week, 1100 * sec_week, 1100 * sec_week]
+        self.assertEqual(res.storage["user_stakes"][alice], 500)
+        self.assertEqual(res.storage["user_stakes"][bob], 100)
+        self.assertEqual(res.storage["user_points"][alice], expected_userpoint_alice)
+        self.assertEqual(res.storage["user_points"][bob], expected_userpoint_bob)
+        self.assertEqual(res.storage["farm_points"], expected_farmpoint)
+        self.assertEqual(len(res.operations), 1)
+        transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
+        if OptionType(init_storage["input_fa2_token_id_opt"]).is_none():  # For FA12 
+            verify_fa12_unstake_tx(transfer_tx_params, bob, farm_address, 500)
+        else:
+            verify_fa2_unstake_tx(transfer_tx_params, bob, farm_address, init_storage["input_fa2_token_id_opt"], 500)
+        
+    def test_unstake_fa12_everything_with_two_users_at_the_pool_end_should_work(self):
         # Init
         init_storage = deepcopy(initial_storage)
         init_storage["user_stakes"][alice] = 500
@@ -600,8 +752,39 @@ class FarmsContractTest(TestCase):
         if OptionType(init_storage["input_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_unstake_tx(transfer_tx_params, bob, farm_address, 600)
 
+    def test_unstake_fa2_everything_with_two_users_at_the_pool_end_should_work(self):
+        # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["user_stakes"][alice] = 500
+        init_storage["user_points"][alice] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["user_stakes"][bob] = 600
+        init_storage["user_points"][bob] = [0, 0, int(600 * sec_week / 3), 600 * sec_week, 600 * sec_week]
+        init_storage["farm_points"] = [int(500 * sec_week/2), 500 * sec_week, int(600 * sec_week / 3) + 500 * sec_week, 1100 * sec_week, 1100 * sec_week]
+        ############### FOR FA2   ################################
+        input_token_id = 1
+        input_fa2_token_id_opt : Optional[int] = input_token_id
+        reward_fa2_token_id : Optional[int] = None
+        init_storage["input_fa2_token_id_opt"] = input_fa2_token_id_opt
+        init_storage["reward_fa2_token_id"] = reward_fa2_token_id
+        # Execute entrypoint
+        res = self.farms.unstake(600).interpret(storage=init_storage, sender=bob, now=int(30 * sec_week + sec_week * 6 / 7))
+        expected_userpoint_alice = [int(500 * sec_week / 2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        expected_userpoint_bob = [0, 0, int(600 * sec_week / 3), 600 * sec_week, 600 * sec_week]
+        expected_farmpoint = [int(500 * sec_week/2), 500 * sec_week, int(600 * sec_week / 3) + 500 * sec_week, 1100 * sec_week, 1100 * sec_week]
+        self.assertEqual(res.storage["user_stakes"][alice], 500)
+        self.assertEqual(res.storage["user_stakes"][bob], 0)
+        self.assertEqual(res.storage["user_points"][alice], expected_userpoint_alice)
+        self.assertEqual(res.storage["user_points"][bob], expected_userpoint_bob)
+        self.assertEqual(res.storage["farm_points"], expected_farmpoint)
+        self.assertEqual(len(res.operations), 1)
+        transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
+        if OptionType(init_storage["input_fa2_token_id_opt"]).is_none():  # For FA12 
+            verify_fa12_unstake_tx(transfer_tx_params, bob, farm_address, 600)
+        else:
+            verify_fa2_unstake_tx(transfer_tx_params, bob, farm_address, init_storage["input_fa2_token_id_opt"], 600)
 
-    def test_unstake_after_increasing_reward_should_work(self):
+
+    def test_unstake_fa12_after_increasing_reward_should_work(self):
         # Init
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 10_000_000
@@ -624,6 +807,36 @@ class FarmsContractTest(TestCase):
         self.assertEqual(res3.storage["user_stakes"][alice], 0)
         
 
+    def test_unstake_fa2_after_increasing_reward_should_work(self):
+        # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["total_reward"] = 10_000_000
+        init_storage["total_weeks"] = 3
+        init_storage["rate"] = 7500
+        init_storage["reward_at_week"] = [4324324, 3243243, 2432432]
+        ############### FOR FA2   ################################
+        input_token_id = 1
+        input_fa2_token_id_opt : Optional[int] = input_token_id
+        reward_fa2_token_id : Optional[int] = None
+        init_storage["input_fa2_token_id_opt"] = input_fa2_token_id_opt
+        init_storage["reward_fa2_token_id"] = reward_fa2_token_id
+        # Execute entrypoint
+        res = self.farms.increase_reward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week + sec_week/2))
+        res2 = self.farms.stake(10000).interpret(storage=res.storage, sender=alice, now=int(2 * sec_week + sec_week/2))
+        res3 = self.farms.unstake(10000).interpret(storage=res2.storage, sender=alice, now=int(3 * sec_week + sec_week/2))
+        self.assertEqual(res3.storage["total_reward"], 30000000)
+        self.assertEqual(res3.storage["total_weeks"], 3)
+        self.assertEqual(res3.storage["admin"], admin)
+        self.assertEqual(len(res3.operations), 1)
+        transfer_tx_params = res3.operations[0]["parameters"]["value"]['args']
+        if OptionType(init_storage["input_fa2_token_id_opt"]).is_none():  # For FA12 
+            verify_fa12_unstake_tx(transfer_tx_params, alice, farm_address, 10000)
+        else: 
+            verify_fa2_unstake_tx(transfer_tx_params, alice, farm_address, init_storage["input_fa2_token_id_opt"], 10000)
+        expected_farmpoint = [0, 0, int(10000*sec_week/2)]
+        self.assertEqual(res3.storage["farm_points"], expected_farmpoint)
+        self.assertEqual(res3.storage["user_stakes"][alice], 0)
+        
 
 
 
@@ -645,7 +858,7 @@ class FarmsContractTest(TestCase):
         self.assertEqual(res.storage["admin"], admin)
         self.assertEqual(res.operations, [])
 
-    def test_claimall_2rd_week_should_work(self):
+    def test_claimall_2rd_week_with_fa12_should_work(self):
         # Init
         init_storage = deepcopy(initial_storage)
         init_storage["total_reward"] = 20_000_000
