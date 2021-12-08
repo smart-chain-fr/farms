@@ -2,12 +2,12 @@ FROM smartnodefr/pythonligo:latest
 
 COPY . .
 
-WORKDIR /contract
+WORKDIR src/contract
 
-RUN ligo compile contract main/main.mligo > test/Farm.tz
+RUN ligo compile contract farm/main.mligo > test/compiled/farm.tz
 
-RUN ligo compile contract main/farms.mligo > test/Farms.tz
+RUN ligo compile contract database/main.mligo > test/compiled/database.tz
 
-WORKDIR /contract/test
+WORKDIR test
 
 ENTRYPOINT [ "pytest"]

@@ -1,50 +1,47 @@
 import { InMemorySigner } from '@taquito/signer';
 import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
-import farm from './ressources/Farm.json';
+import farm from './artefact/farm.json';
 import * as dotenv from 'dotenv'
 
 dotenv.config(({path:__dirname+'/.env'}))
 
-const rpc = process.env.RPC || "http://127.0.0.1:20000/"
-const pk: string = process.env.PK || "";
+const rpc = "https://granadanet.smartpy.io/"
+const pk: string = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
 const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
 Tezos.setProvider({ signer: signer })
 
-const farms = process.env.FARMSDB || ""
-const admin = process.env.ADMIN || "";
-const reserve = process.env.RESERVE || "";
+const database = "KT1UUUiSjdiEHwtigYz2YgFAMfNPd8BJAVe4";
+const admin = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
 const creation_time = new Date();
-let farm_points = new MichelsonMap();
-const lp = process.env.LP || '';
+const farm_points: [] = [];
+const input_token_address = 'KT1J7AAzfgdVXSLkRiGVkjXCwWUG9rjJzN2Y';
+const reward_token_address = "KT19LLvFdGmLgKPXqf4Tn22Y1wWqpCU1sg2d"
+const reward_reserve_address = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
 const infoFarm = process.env.INFOFARM || '';
-const rate = process.env.RATE || 100;
-let reward_at_week = new MichelsonMap();
-const smak = process.env.SMAK || '';
-const rewards = process.env.REWARDS || 1;
+const rate = process.env.RATE || 9500;
+let reward_at_week: [] = [];
+const rewards = 50000000;
 let user_points = new MichelsonMap();
 let user_stakes = new MichelsonMap();
-const weeks = process.env.WEEKS || 0;
+const total_weeks = 5;
 
 
 async function orig() {
 
-    // for (let i = 0; i < weeks + 1; i++) {
-    //     farm_points[i] = 0
-    // }
     const store = {
         'admin': admin,
         'creation_time': creation_time,
         'farm_points': farm_points,
-        'lp_token_address': lp,
+        'input_token_address': input_token_address,
+        'reward_token_address': reward_token_address,
+        'reward_reserve_address': reward_reserve_address,
         'rate': rate,
-        'reserve_address': reserve,
         'reward_at_week': reward_at_week,
-        'smak_address': smak,
         'total_reward': rewards,
         'user_points': user_points,
         'user_stakes': user_stakes,
-        'weeks': weeks,
+        'total_weeks': total_weeks,
     }
     try {
         const originated = await Tezos.contract.originate({
@@ -56,24 +53,24 @@ async function orig() {
         console.log('confirmed farm: ', originated.contractAddress);
 
         const farmAddress : string = originated.contractAddress as string
-        const op = await (await Tezos.contract.at(farmAddress)).methods.increaseReward(0).send();
-            console.log(`Waiting for increaseReward(0) ${op.hash} to be confirmed...`);
+        const op = await (await Tezos.contract.at(farmAddress)).methods.initialize().send();
+            console.log(`Waiting for initialize() ${op.hash} to be confirmed...`);
             await op.confirmation(3);
-            console.log('confirmed increaseReward(0): ', op.hash);
+            console.log('confirmed initialize(): ', op.hash);
 
-        if (smak !== lp) {
-            const op2 = await (await Tezos.contract.at(smak)).methods.approve(farmAddress, rewards).send();
+
+        const op2 = await (await Tezos.contract.at(reward_token_address)).methods.approve(farmAddress, rewards).send();
             console.log(`Waiting for approve ${op2.hash} to be confirmed...`);
             await op2.confirmation(3);
             console.log('confirmed approve: ', op2.hash);
-        }
+        
 
-        if (farms !== "") {
-            const op3 = await (await Tezos.contract.at(farms)).methods.addFarm(farmAddress, infoFarm, lp).send();
+        const database_contract = await Tezos.contract.at(database); 
+        const op3 = await database_contract.methods.add_farm(farmAddress, infoFarm, input_token_address).send();
             console.log(`Waiting for addFarm ${op3.hash} to be confirmed...`);
             await op3.confirmation(3);
             console.log('confirmed addFarm: ', op3.hash)
-        }
+
     } catch (error: any) {
         console.log(error)
     }

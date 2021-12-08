@@ -11,7 +11,7 @@ bob = 'tz1c6PPijJnZYjKiSQND4pMtGMg6csGeAiiF'
 oscar = 'tz1Phy92c2n817D17dUGzxNgw1qCkNSTWZY2'
 fox = 'tz1XH5UyhRCUmCdUUbqD4tZaaqRTgGaFXt7q'
 
-compiled_contract_path = "Farms.tz"
+compiled_contract_path = "compiled/database.tz"
 # Permet de charger le smart contract zvec Pytest de le simuler avec un faux storage
 initial_storage = ContractInterface.from_file(compiled_contract_path).storage.dummy()
 initial_storage["admin"] = admin
@@ -52,7 +52,7 @@ class FarmsContractTest(TestCase):
         input["lp_address"] = lp_address
         input["farm_lp_info"] = farm_lp_info
 
-        res = self.farms.addFarm(input).interpret(storage=init_storage, sender=admin, amount=0)
+        res = self.farms.add_farm(input).interpret(storage=init_storage, sender=admin, amount=0)
         self.assertEqual(admin, res.storage["admin"])
         self.assertEqual([], res.operations)
         self.assertEqual(res.storage["all_farms"], [ farm_address ])
@@ -70,7 +70,7 @@ class FarmsContractTest(TestCase):
         input["farm_lp_info"] = farm_lp_info
 
         with self.raisesMichelsonError(only_admin):
-            self.farms.addFarm(input).interpret(storage=init_storage, sender=alice)
+            self.farms.add_farm(input).interpret(storage=init_storage, sender=alice)
 
     ######################################
     # Admin add a new farm with some tez (fails) #
@@ -83,5 +83,5 @@ class FarmsContractTest(TestCase):
         input["farm_lp_info"] = farm_lp_info
 
         with self.raisesMichelsonError(amount_zero):
-            self.farms.addFarm(input).interpret(storage=init_storage, sender=admin, amount=1)
+            self.farms.add_farm(input).interpret(storage=init_storage, sender=admin, amount=1)
 
