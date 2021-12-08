@@ -52,6 +52,22 @@ type update_operator =
   | Add_operator of operator_param
   | Remove_operator of operator_param
 
+
+type is_operator_response = 
+[@layout:comb]
+{
+  operator : operator_param;
+  is_operator : bool;
+}
+
+type is_operator_param = 
+[@layout:comb]
+{
+  operator : operator_param;
+  callback : (is_operator_response) contract;
+}
+
+
 type token_metadata =
 [@layout:comb]
 {
@@ -80,6 +96,7 @@ type fa2_entry_points =
   | Transfer of transfer list
   | Balance_of of balance_of_param
   | Update_operators of update_operator list
+  | Is_operator of is_operator_param
 
 (* 
  TZIP-16 contract metadata storage field type. 
