@@ -227,16 +227,9 @@ class FarmsContractTest(TestCase):
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
 
         if OptionType(init_storage["input_fa2_token_id_opt"]).is_none():
-            # self.assertEqual(bob, transfer_tx_params[0]['string'])
-            # self.assertEqual(farm_address, transfer_tx_params[1]['string'])
-            # self.assertEqual(locked_amount, int(transfer_tx_params[2]['int']))
             verify_fa12_stake_tx(transfer_tx_params, bob, farm_address, locked_amount)   
             self.assertEqual(locked_amount, res.storage["user_stakes"][bob])
         else:
-            # self.assertEqual(transfer_tx_params[0]['args'][0]['string'], bob)
-            # self.assertEqual(int(transfer_tx_params[0]['args'][1]['int']), input_token_id)
-            # self.assertEqual(transfer_tx_params[1]['string'], farm_address)
-            # self.assertEqual(int(transfer_tx_params[2]['int']), locked_amount)
             verify_fa2_stake_tx(transfer_tx_params, bob, farm_address, input_token_id, locked_amount)
             
         expected_user_points = [0, sec_week * locked_amount / 2, sec_week * locked_amount, sec_week * locked_amount, sec_week * locked_amount]
@@ -260,9 +253,6 @@ class FarmsContractTest(TestCase):
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
         if OptionType(init_storage["input_fa2_token_id_opt"]).is_none():
             # For FA12
-            # self.assertEqual(bob, transfer_tx_params[0]['string'])
-            # self.assertEqual(farm_address, transfer_tx_params[1]['string'])
-            # self.assertEqual(locked_amount, int(transfer_tx_params[2]['int']))
             verify_fa12_stake_tx(transfer_tx_params, bob, farm_address, locked_amount)   
             self.assertEqual(locked_amount, res.storage["user_stakes"][bob])
         else:
@@ -299,10 +289,6 @@ class FarmsContractTest(TestCase):
         res = self.farms.stake(500).interpret(storage=test_init_storage, sender=bob, now=int(3 * sec_week + sec_week*2/3))
         self.assertEqual(len(res.operations), 1)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        #print(transfer_tx_params)
-        # self.assertEqual(bob, transfer_tx_params[0]['string'])
-        # self.assertEqual(farm_address, transfer_tx_params[1]['string'])
-        # self.assertEqual(500, int(transfer_tx_params[2]['int']))
         verify_fa12_stake_tx(transfer_tx_params, bob, farm_address, 500)   
         
         self.assertEqual(800, res.storage["user_stakes"][bob])
@@ -350,9 +336,6 @@ class FarmsContractTest(TestCase):
         res = self.farms.stake(400).interpret(storage=new_storage, sender=alice, now=int(2*sec_week + sec_week*2/3))
         self.assertEqual(len(res.operations), 1)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        # self.assertEqual(alice, transfer_tx_params[0]['string'])
-        # self.assertEqual(farm_address, transfer_tx_params[1]['string'])
-        # self.assertEqual(400, int(transfer_tx_params[2]['int']))
         if OptionType(new_storage["input_fa2_token_id_opt"]).is_none():  # For FA12
             verify_fa12_stake_tx(transfer_tx_params, alice, farm_address, 400)   
         self.assertEqual(400, res.storage["user_stakes"][alice])
@@ -377,9 +360,6 @@ class FarmsContractTest(TestCase):
         res = self.farms.stake(400).interpret(storage=new_storage, sender=alice, now=int(2*sec_week + sec_week*2/3))
         self.assertEqual(len(res.operations), 1)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        # self.assertEqual(alice, transfer_tx_params[0]['string'])
-        # self.assertEqual(farm_address, transfer_tx_params[1]['string'])
-        # self.assertEqual(400, int(transfer_tx_params[2]['int']))
         if OptionType(new_storage["input_fa2_token_id_opt"]).is_none():  # For FA12
             verify_fa12_stake_tx(transfer_tx_params, alice, farm_address, 400)
         else:
@@ -857,9 +837,6 @@ class FarmsContractTest(TestCase):
         self.assertEqual(res.storage["admin"], admin)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
         if OptionType(init_storage["reward_fa2_token_id_opt"]).is_none():  # For FA12 
-            # self.assertEqual(transfer_tx_params[0]['string'], initial_storage["reward_reserve_address"])
-            # self.assertEqual(transfer_tx_params[1]['string'], alice)
-            # self.assertEqual(int(transfer_tx_params[2]['int']), init_storage["reward_at_week"][0])
             verify_fa12_claim_tx(transfer_tx_params, alice, initial_storage["reward_reserve_address"], init_storage["reward_at_week"][0])
         expected_userpoint_alice = [0, 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
         self.assertEqual(res.storage["user_points"][alice], expected_userpoint_alice)
@@ -908,9 +885,6 @@ class FarmsContractTest(TestCase):
         res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=int(sec_week * 2 + sec_week/2))
         self.assertEqual(res.storage["admin"], admin)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
-        # self.assertEqual(transfer_tx_params[1]['string'], alice)
-        # self.assertEqual(int(transfer_tx_params[2]['int']), sum(init_storage["reward_at_week"][:2]))
         if OptionType(init_storage["reward_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], sum(init_storage["reward_at_week"][:2]))
         else:
@@ -940,9 +914,6 @@ class FarmsContractTest(TestCase):
         res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=int(sec_week * 2 + sec_week/2))
         self.assertEqual(res.storage["admin"], admin)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
-        # self.assertEqual(transfer_tx_params[1]['string'], alice)
-        # self.assertEqual(int(transfer_tx_params[2]['int']), sum(init_storage["reward_at_week"][:2]))
         if OptionType(init_storage["reward_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], sum(init_storage["reward_at_week"][:2]))
         else:
@@ -970,9 +941,6 @@ class FarmsContractTest(TestCase):
         res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=int(sec_week * 3 + sec_week / 2))
         self.assertEqual(res.storage["admin"], admin)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
-        # self.assertEqual(transfer_tx_params[1]['string'], alice)
-        # self.assertEqual(int(transfer_tx_params[2]['int'])+1, int(alice_week1_reward_expected+alice_week2_reward_expected))
         if OptionType(init_storage["reward_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], alice_total_reward_expected)
         expected_userpoint_alice = [0, 0, 0, 500 * sec_week, 500 * sec_week]
@@ -1004,9 +972,6 @@ class FarmsContractTest(TestCase):
         res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=int(sec_week * 3 + sec_week / 2))
         self.assertEqual(res.storage["admin"], admin)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
-        # self.assertEqual(transfer_tx_params[1]['string'], alice)
-        # self.assertEqual(int(transfer_tx_params[2]['int'])+1, int(alice_week1_reward_expected+alice_week2_reward_expected))
         if OptionType(init_storage["reward_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], alice_total_reward_expected)
         else:
@@ -1033,9 +998,6 @@ class FarmsContractTest(TestCase):
         reward_expected = int(6555697/2) + int((int(500 * sec_week * (1 - 2/3)) / int(500 * sec_week * (1 - 2/3) + 500 * sec_week * (1 - 1/2)) )* 3687580) - 1 + 1
         self.assertEqual(res.storage["admin"], admin)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
-        # self.assertEqual(transfer_tx_params[1]['string'], alice)
-        # self.assertEqual(int(transfer_tx_params[2]['int'])-1, reward_expected)
         if OptionType(init_storage["reward_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
         else:
@@ -1067,9 +1029,6 @@ class FarmsContractTest(TestCase):
         reward_expected = int(6555697/2) + int((int(500 * sec_week * (1 - 2/3)) / int(500 * sec_week * (1 - 2/3) + 500 * sec_week * (1 - 1/2)) )* 3687580) - 1 + 1
         self.assertEqual(res.storage["admin"], admin)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
-        # self.assertEqual(transfer_tx_params[1]['string'], alice)
-        # self.assertEqual(int(transfer_tx_params[2]['int'])-1, reward_expected)
         if OptionType(init_storage["reward_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
         else:
@@ -1093,9 +1052,6 @@ class FarmsContractTest(TestCase):
         res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=sec_week * 100)
         self.assertEqual(res.storage["admin"], admin)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
-        # self.assertEqual(transfer_tx_params[1]['string'], alice)
-        # self.assertEqual(int(transfer_tx_params[2]['int']) + 2, init_storage["total_reward"])
         if OptionType(init_storage["reward_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
         else:
@@ -1125,9 +1081,6 @@ class FarmsContractTest(TestCase):
         res = self.farms.claim_all().interpret(storage=init_storage, sender=alice, now=sec_week * 100)
         self.assertEqual(res.storage["admin"], admin)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
-        # self.assertEqual(transfer_tx_params[1]['string'], alice)
-        # self.assertEqual(int(transfer_tx_params[2]['int']) + 2, init_storage["total_reward"])
         if OptionType(init_storage["reward_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
         else:
@@ -1153,9 +1106,6 @@ class FarmsContractTest(TestCase):
         reward_expected = int(6555697 / 2) + int(4916773 / 2) + int(3687580 / 2)  + int(2765685 / 2) 
         self.assertEqual(res.storage["admin"], admin)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
-        # self.assertEqual(transfer_tx_params[1]['string'], alice)
-        # self.assertEqual(int(transfer_tx_params[2]['int']), reward_expected)
         if OptionType(init_storage["reward_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
         else:
@@ -1187,9 +1137,6 @@ class FarmsContractTest(TestCase):
         reward_expected = int(6555697 / 2) + int(4916773 / 2) + int(3687580 / 2)  + int(2765685 / 2) 
         self.assertEqual(res.storage["admin"], admin)
         transfer_tx_params = res.operations[0]["parameters"]["value"]['args']
-        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
-        # self.assertEqual(transfer_tx_params[1]['string'], alice)
-        # self.assertEqual(int(transfer_tx_params[2]['int']), reward_expected)
         if OptionType(init_storage["reward_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
         else:
@@ -1226,9 +1173,6 @@ class FarmsContractTest(TestCase):
         res2 = self.farms.claim_all().interpret(sender=alice, storage=res.storage, now=int(sec_week * 2 + sec_week*3/4))
         self.assertEqual(res2.storage["admin"], admin)
         transfer_tx_params = res2.operations[0]["parameters"]["value"]['args']
-        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
-        # self.assertEqual(transfer_tx_params[1]['string'], alice)
-        # self.assertEqual(int(transfer_tx_params[2]['int']), 4916773)
         if OptionType(init_storage["reward_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
         else:
@@ -1258,9 +1202,6 @@ class FarmsContractTest(TestCase):
         res2 = self.farms.claim_all().interpret(sender=alice, storage=res.storage, now=int(sec_week * 2 + sec_week*3/4))
         self.assertEqual(res2.storage["admin"], admin)
         transfer_tx_params = res2.operations[0]["parameters"]["value"]['args']
-        # self.assertEqual(transfer_tx_params[0]['string'], init_storage["reward_reserve_address"])
-        # self.assertEqual(transfer_tx_params[1]['string'], alice)
-        # self.assertEqual(int(transfer_tx_params[2]['int']), 4916773)
         if OptionType(init_storage["reward_fa2_token_id_opt"]).is_none():  # For FA12 
             verify_fa12_claim_tx(transfer_tx_params, alice, init_storage["reward_reserve_address"], reward_expected)
         else:
