@@ -3,7 +3,7 @@ type week_in_seconds = nat
 type stake_param = nat
 type reward_param = nat
 type fa12_transfer = address * (address * nat)
-type fa2_transfer = address * nat * (address * nat)
+type fa2_transfer = address * (address * nat * nat)
 
 
 type storage_farm = {
@@ -12,7 +12,7 @@ type storage_farm = {
     input_token_address: address;
     input_fa2_token_id_opt: nat option;
     reward_token_address: address;
-    reward_fa2_token_id: nat option;
+    reward_fa2_token_id_opt: nat option;
     reward_reserve_address: address;
     rate: nat;
     reward_at_week : nat list;

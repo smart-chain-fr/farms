@@ -47,7 +47,7 @@ let sendReward (token_amount : nat) (user_address : address) (reward_token_addre
         | Some c -> c
         | None -> (failwith unknown_reward_token_entrypoint: fa2_transfer contract)
         in
-        let transfer_fa2_param : fa2_transfer = reward_reserve_address, reward_fa2_token_id, (user_address , token_amount) in 
+        let transfer_fa2_param : fa2_transfer = reward_reserve_address, (user_address, reward_fa2_token_id, token_amount) in 
         let op_fa2 : operation = Tezos.transaction (transfer_fa2_param) 0mutez transfer_fa2 in
         op_fa2
 
@@ -198,7 +198,7 @@ let stake_some (storage : storage_farm) (lp_amount : nat) : return =
         | Some c -> c
         | None -> (failwith unknown_input_token_entrypoint:  fa2_transfer contract)
         in
-        let transfer_fa2_param : fa2_transfer = sender_address, tokenid, (Tezos.self_address, lp_amount) in 
+        let transfer_fa2_param : fa2_transfer = sender_address, (Tezos.self_address, tokenid, lp_amount) in 
         let op_fa2 : operation = Tezos.transaction (transfer_fa2_param) 0mutez transfer_fa2 in
         [ op_fa2; ]
     in
@@ -282,7 +282,7 @@ let unstake_some (storage : storage_farm) (lp_amount : nat) : return =
         | Some c -> c
         | None -> (failwith unknown_input_token_entrypoint: fa2_transfer contract)
         in
-        let transfer_fa2_param : fa2_transfer = Tezos.self_address, tokenid, (sender_address , lp_amount) in    
+        let transfer_fa2_param : fa2_transfer = Tezos.self_address, (sender_address, tokenid, lp_amount) in    
         let op_fa2 : operation = Tezos.transaction (transfer_fa2_param) 0mutez transfer_fa2 in
         [ op_fa2; ]
     in
@@ -330,7 +330,7 @@ let claim_all (storage : storage_farm) : return =
     let user_points : (address, nat list) big_map = storage.user_points in
     let sender_address : address = Tezos.sender in // Avoids recalculating Tezos.sender each time for gas
     let reward_token_address : address = storage.reward_token_address in
-    let reward_fa2_token_id : nat option = storage.reward_fa2_token_id in
+    let reward_fa2_token_id_opt : nat option = storage.reward_fa2_token_id_opt in
     let reward_reserve_address : address = storage.reward_reserve_address in
     let current_week : nat = get_current_week(storage) in
 
@@ -358,7 +358,7 @@ let claim_all (storage : storage_farm) : return =
         in
 
         let total_reward_for_user : nat = compute_total_reward(0n, elapsed_weeks, user_points, farm_points, storage.reward_at_week) in
-        let send_reward : operation = sendReward total_reward_for_user sender_address reward_token_address reward_reserve_address reward_fa2_token_id in
+        let send_reward : operation = sendReward total_reward_for_user sender_address reward_token_address reward_reserve_address reward_fa2_token_id_opt in
 
         if (total_reward_for_user = 0n) then (no_operation, storage)
         else

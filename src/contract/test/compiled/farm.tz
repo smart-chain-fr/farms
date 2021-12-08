@@ -4,10 +4,11 @@
         (or (nat %stake) (nat %unstake))) ;
   storage
     (pair (pair (pair (pair (address %admin) (timestamp %creation_time))
-                      (pair (list %farm_points nat) (address %input_token_address)))
-                (pair (pair (nat %rate) (list %reward_at_week nat))
-                      (pair (address %reward_reserve_address) (address %reward_token_address))))
-          (pair (pair (nat %total_reward) (nat %total_weeks))
+                      (pair (list %farm_points nat) (option %input_fa2_token_id_opt nat)))
+                (pair (pair (address %input_token_address) (nat %rate))
+                      (pair (list %reward_at_week nat) (option %reward_fa2_token_id_opt nat))))
+          (pair (pair (pair (address %reward_reserve_address) (address %reward_token_address))
+                      (pair (nat %total_reward) (nat %total_weeks)))
                 (pair (big_map %user_points address (list nat)) (big_map %user_stakes address nat)))) ;
   code { UNPAIR ;
          IF_LEFT
@@ -59,8 +60,8 @@
                        { DUP 4 ;
                          CAR ;
                          CDR ;
-                         CAR ;
                          CDR ;
+                         CAR ;
                          DUP 5 ;
                          CAR ;
                          CAR ;
@@ -150,25 +151,47 @@
                                        { DROP 3 ; PUSH string "size don't match" ; FAILWITH }
                                        { RIGHT (pair (pair (pair nat nat) (pair (list nat) (list nat))) (list nat)) } } } } ;
                          DUP 5 ;
+                         CDR ;
+                         CAR ;
                          CAR ;
                          CDR ;
+                         DUP 6 ;
                          CDR ;
-                         CDR ;
-                         CONTRACT %transfer (pair address (pair address nat)) ;
-                         IF_NONE
-                           { PUSH string "Cannot connect to the reward token entrypoint" ; FAILWITH }
-                           {} ;
-                         PUSH mutez 0 ;
-                         DUP 3 ;
+                         CAR ;
+                         CAR ;
+                         CAR ;
                          DUP 7 ;
-                         PAIR ;
-                         DUP 8 ;
                          CAR ;
                          CDR ;
                          CDR ;
-                         CAR ;
-                         PAIR ;
-                         TRANSFER_TOKENS ;
+                         CDR ;
+                         IF_NONE
+                           { SWAP ;
+                             CONTRACT %transfer (pair address (pair address nat)) ;
+                             IF_NONE
+                               { PUSH string "Cannot connect to the reward token entrypoint" ; FAILWITH }
+                               {} ;
+                             PUSH mutez 0 ;
+                             DUP 4 ;
+                             DUP 8 ;
+                             PAIR ;
+                             DIG 3 ;
+                             PAIR ;
+                             TRANSFER_TOKENS }
+                           { DIG 2 ;
+                             CONTRACT %transfer (pair address (pair (pair address nat) nat)) ;
+                             IF_NONE
+                               { PUSH string "Cannot connect to the reward token entrypoint" ; FAILWITH }
+                               {} ;
+                             PUSH mutez 0 ;
+                             DUP 5 ;
+                             DIG 3 ;
+                             DUP 9 ;
+                             PAIR ;
+                             PAIR ;
+                             DIG 3 ;
+                             PAIR ;
+                             TRANSFER_TOKENS } ;
                          PUSH nat 0 ;
                          DIG 2 ;
                          COMPARE ;
@@ -240,6 +263,7 @@
                      CDR ;
                      CAR ;
                      CDR ;
+                     CDR ;
                      NOW ;
                      DUP 4 ;
                      CAR ;
@@ -307,7 +331,7 @@
                      CAR ;
                      CDR ;
                      CAR ;
-                     CAR ;
+                     CDR ;
                      NIL nat ;
                      DUP 3 ;
                      PAIR ;
@@ -513,8 +537,8 @@
                      DUP 7 ;
                      CAR ;
                      CDR ;
-                     CAR ;
                      CDR ;
+                     CAR ;
                      PAIR ;
                      PAIR ;
                      LEFT (list nat) ;
@@ -555,12 +579,19 @@
                      CDR ;
                      CAR ;
                      CDR ;
+                     CDR ;
                      DUP 6 ;
                      DUP 8 ;
                      CDR ;
                      CAR ;
+                     CDR ;
                      CAR ;
                      ADD ;
+                     PAIR ;
+                     DUP 7 ;
+                     CDR ;
+                     CAR ;
+                     CAR ;
                      PAIR ;
                      PAIR ;
                      DIG 5 ;
@@ -574,13 +605,13 @@
                      CAR ;
                      CDR ;
                      CDR ;
+                     CDR ;
                      DIG 3 ;
-                     DUP 4 ;
+                     PAIR ;
+                     DUP 3 ;
                      CAR ;
                      CDR ;
                      CAR ;
-                     CAR ;
-                     PAIR ;
                      PAIR ;
                      DIG 2 ;
                      CAR ;
@@ -670,8 +701,8 @@
                      DUP 4 ;
                      CAR ;
                      CDR ;
-                     CAR ;
                      CDR ;
+                     CAR ;
                      SIZE ;
                      COMPARE ;
                      EQ ;
@@ -682,11 +713,12 @@
                      CDR ;
                      CAR ;
                      CDR ;
+                     CDR ;
                      DUP 3 ;
                      CAR ;
                      CDR ;
                      CAR ;
-                     CAR ;
+                     CDR ;
                      NIL nat ;
                      DUP 3 ;
                      PAIR ;
@@ -849,6 +881,7 @@
                               DUP 9 ;
                               CDR ;
                               CAR ;
+                              CDR ;
                               CAR ;
                               DIG 3 ;
                               MUL ;
@@ -872,13 +905,13 @@
                      CAR ;
                      CDR ;
                      CDR ;
+                     CDR ;
                      DIG 2 ;
-                     DUP 5 ;
+                     PAIR ;
+                     DUP 4 ;
                      CAR ;
                      CDR ;
                      CAR ;
-                     CAR ;
-                     PAIR ;
                      PAIR ;
                      DIG 3 ;
                      CAR ;
@@ -949,26 +982,24 @@
                      NIL operation ;
                      PAIR } } }
            { IF_LEFT
-               { NOW ;
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CDR ;
+                 CAR ;
+                 CAR ;
+                 NOW ;
                  SENDER ;
-                 DUP 4 ;
-                 CAR ;
-                 CAR ;
-                 CDR ;
-                 CAR ;
                  DUP 5 ;
-                 CDR ;
+                 CAR ;
+                 CAR ;
                  CDR ;
                  CAR ;
                  DUP 6 ;
-                 CAR ;
-                 CAR ;
                  CDR ;
                  CDR ;
-                 CONTRACT %transfer (pair address (pair address nat)) ;
-                 IF_NONE
-                   { PUSH string "Cannot connect to the input token entrypoint" ; FAILWITH }
-                   {} ;
+                 CAR ;
                  DUP 7 ;
                  CAR ;
                  CAR ;
@@ -1014,6 +1045,7 @@
                  CDR ;
                  CAR ;
                  CDR ;
+                 CDR ;
                  MUL ;
                  INT ;
                  DUP 11 ;
@@ -1022,27 +1054,60 @@
                  CAR ;
                  CDR ;
                  ADD ;
-                 DUP 9 ;
+                 DUP 8 ;
                  COMPARE ;
                  LT ;
                  IF { DROP } { FAILWITH } ;
                  PUSH string "Please try again in few seconds" ;
                  PUSH int 0 ;
                  DUP 3 ;
-                 DUP 10 ;
+                 DUP 9 ;
                  SUB ;
                  COMPARE ;
                  LT ;
                  IF { DROP } { FAILWITH } ;
-                 DUP 8 ;
-                 SELF_ADDRESS ;
-                 PAIR ;
-                 DUP 7 ;
-                 PAIR ;
-                 DIG 3 ;
-                 PUSH mutez 0 ;
-                 DIG 2 ;
-                 TRANSFER_TOKENS ;
+                 DUP 9 ;
+                 CAR ;
+                 CAR ;
+                 CDR ;
+                 CDR ;
+                 IF_NONE
+                   { DIG 6 ;
+                     CONTRACT %transfer (pair address (pair address nat)) ;
+                     IF_NONE
+                       { PUSH string "Cannot connect to the input token entrypoint" ; FAILWITH }
+                       {} ;
+                     DUP 8 ;
+                     SELF_ADDRESS ;
+                     PAIR ;
+                     DUP 7 ;
+                     PAIR ;
+                     SWAP ;
+                     PUSH mutez 0 ;
+                     DIG 2 ;
+                     TRANSFER_TOKENS ;
+                     NIL operation ;
+                     SWAP ;
+                     CONS }
+                   { DIG 7 ;
+                     CONTRACT %transfer (pair address (pair (pair address nat) nat)) ;
+                     IF_NONE
+                       { PUSH string "Cannot connect to the input token entrypoint" ; FAILWITH }
+                       {} ;
+                     DUP 9 ;
+                     DIG 2 ;
+                     SELF_ADDRESS ;
+                     PAIR ;
+                     PAIR ;
+                     DUP 7 ;
+                     PAIR ;
+                     SWAP ;
+                     PUSH mutez 0 ;
+                     DIG 2 ;
+                     TRANSFER_TOKENS ;
+                     NIL operation ;
+                     SWAP ;
+                     CONS } ;
                  DUP 9 ;
                  CDR ;
                  CDR ;
@@ -1066,6 +1131,7 @@
                  DUP 10 ;
                  CDR ;
                  CAR ;
+                 CDR ;
                  CDR ;
                  PAIR ;
                  LEFT (list nat) ;
@@ -1235,12 +1301,17 @@
                  PAIR ;
                  PAIR ;
                  PAIR ;
-                 NIL operation ;
-                 DIG 2 ;
-                 CONS ;
+                 SWAP ;
                  PAIR }
-               { NOW ;
-                 DUP 3 ;
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CDR ;
+                 CAR ;
+                 CAR ;
+                 NOW ;
+                 DUP 4 ;
                  CAR ;
                  CAR ;
                  CAR ;
@@ -1255,7 +1326,7 @@
                  IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
                  CAR ;
                  ADD ;
-                 DUP 4 ;
+                 DUP 5 ;
                  CDR ;
                  CDR ;
                  CAR ;
@@ -1270,13 +1341,13 @@
                  DUP 4 ;
                  MUL ;
                  INT ;
-                 DUP 7 ;
+                 DUP 8 ;
                  CAR ;
                  CAR ;
                  CAR ;
                  CDR ;
                  ADD ;
-                 DUP 7 ;
+                 DUP 8 ;
                  CDR ;
                  CDR ;
                  CDR ;
@@ -1284,43 +1355,64 @@
                  GET ;
                  IF_NONE { PUSH string "You did not stake any token yet" ; FAILWITH } {} ;
                  PUSH string "You cannot unstake more than your farm staking" ;
-                 DUP 8 ;
+                 DUP 9 ;
                  DUP 3 ;
                  COMPARE ;
                  GE ;
                  IF { DROP } { FAILWITH } ;
-                 DUP 8 ;
+                 DUP 9 ;
                  CDR ;
                  CDR ;
                  CDR ;
-                 DUP 8 ;
+                 DUP 9 ;
                  DIG 2 ;
                  SUB ;
                  ABS ;
                  SOME ;
                  DUP 4 ;
                  UPDATE ;
-                 DUP 8 ;
+                 DUP 9 ;
                  CAR ;
                  CAR ;
                  CDR ;
                  CDR ;
-                 CONTRACT %transfer (pair address (pair address nat)) ;
                  IF_NONE
-                   { PUSH string "Cannot connect to the input token entrypoint" ; FAILWITH }
-                   {} ;
-                 DUP 8 ;
-                 DUP 5 ;
-                 PAIR ;
-                 SELF_ADDRESS ;
-                 PAIR ;
-                 SWAP ;
-                 PUSH mutez 0 ;
-                 DIG 2 ;
-                 TRANSFER_TOKENS ;
-                 NIL operation ;
-                 SWAP ;
-                 CONS ;
+                   { DIG 6 ;
+                     CONTRACT %transfer (pair address (pair address nat)) ;
+                     IF_NONE
+                       { PUSH string "Cannot connect to the input token entrypoint" ; FAILWITH }
+                       {} ;
+                     DUP 8 ;
+                     DUP 5 ;
+                     PAIR ;
+                     SELF_ADDRESS ;
+                     PAIR ;
+                     SWAP ;
+                     PUSH mutez 0 ;
+                     DIG 2 ;
+                     TRANSFER_TOKENS ;
+                     NIL operation ;
+                     SWAP ;
+                     CONS }
+                   { DIG 7 ;
+                     CONTRACT %transfer (pair address (pair (pair address nat) nat)) ;
+                     IF_NONE
+                       { PUSH string "Cannot connect to the input token entrypoint" ; FAILWITH }
+                       {} ;
+                     DUP 9 ;
+                     DIG 2 ;
+                     DUP 6 ;
+                     PAIR ;
+                     PAIR ;
+                     SELF_ADDRESS ;
+                     PAIR ;
+                     SWAP ;
+                     PUSH mutez 0 ;
+                     DIG 2 ;
+                     TRANSFER_TOKENS ;
+                     NIL operation ;
+                     SWAP ;
+                     CONS } ;
                  DUP 3 ;
                  DUP 8 ;
                  COMPARE ;
@@ -1339,6 +1431,7 @@
                       DUP 9 ;
                       CDR ;
                       CAR ;
+                      CDR ;
                       CDR ;
                       PAIR ;
                       LEFT (list nat) ;
