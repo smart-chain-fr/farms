@@ -185,3 +185,47 @@ let main (param,s : total_entry_points * storage) : return =
   | M_right specific_ep -> (match specific_ep with
     | Set_pause p -> set_pause (p,s)
     | Set_administrator p -> set_administrator (p,s))
+
+
+
+///////////////////// deploy FA2  ////////////////////////////////////
+// ligo compile contract src/contract/fa2/fa2_main.mligo > src/contract/fa2/fa2_main.tz
+// (empty) ligo compile storage src/contract/fa2/fa2_main.mligo '{administrator=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address); ledger=(Map.empty:ledger); operators=(Set.empty:operator_param set); paused=false }'
+// (empty) tezos-client originate contract fa2test transferring 1 from bootstrap1  running '/home/frank/smart-chain/SMAK-Farms/src/contract/fa2/fa2_main.tz' --init '(Pair (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" {}) {} False)' --dry-run
+// (empty) tezos-client originate contract fa2test transferring 1 from bootstrap1  running '/home/frank/smart-chain/SMAK-Farms/src/contract/fa2/fa2_main.tz' --init '(Pair (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" {}) {} False)' --burn-cap 0.6205
+
+// ligo compile storage src/contract/fa2/fa2_main.mligo '{administrator=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address); ledger=Map.literal[((("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address), 1n), {balance=100n})]; operators=(Set.empty:operator_param set); paused=false }'
+// => produces     (Pair (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" { Elt (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" 1) 100 }) {} False)
+// tezos-client originate contract input_fa2 transferring 1 from bootstrap1  running '/home/frank/smart-chain/SMAK-Farms/src/contract/fa2/fa2_main.tz' --init '(Pair (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" { Elt (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" 1) 100 }) {} False)' --dry-run
+// tezos-client originate contract input_fa2 transferring 1 from bootstrap1  running '/home/frank/smart-chain/SMAK-Farms/src/contract/fa2/fa2_main.tz' --init '(Pair (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" { Elt (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" 1) 100 }) {} False)' --burn-cap 0.6295
+
+
+
+///////////////////// deploy FA2 (for reward) ////////////////////////////////////
+// tezos-client originate contract reward_fa2 transferring 1 from bootstrap1  running '/home/frank/smart-chain/SMAK-Farms/src/contract/fa2/fa2_main.tz' --init '(Pair (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" { Elt (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" 1) 1 }) {} False)' --dry-run
+// tezos-client originate contract reward_fa2 transferring 1 from bootstrap1  running '/home/frank/smart-chain/SMAK-Farms/src/contract/fa2/fa2_main.tz' --init '(Pair (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" { Elt (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" 1) 1 }) {} False)' --burn-cap 0.62925
+
+
+
+
+
+///////////////////// deploy Farm  ////////////////////////////////////
+// sudo docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.30.0 compile contract src/contract/farm/main.mligo  > src/contract/farm/farm.tz
+// sudo docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.30.0 compile storage src/contract/farm/main.mligo '{admin=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address)}'
+// sudo docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.30.0 compile storage src/contract/farm/main.mligo '{admin=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address); creation_time=Tezos.now; input_token_address=("KT1F3MvWANZxMP9cDFWpmgdnPxTMM1ZoTeAn": address); input_fa2_token_id_opt=1n; reward_token_address=("KT1AAqwMaZ1Zw82BABBohg2hG9WpMfeEAmzf": address); reward_fa2_token_id_opt=1n; reward_reserve_address=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address); rate=7500n; reward_at_week=([] : nat list); farm_points=([] : nat list); total_reward=10000000n; user_points=(Big_map.empty : (address, nat list) big_map); user_stakes=(Big_map.empty : (address, nat) big_map); total_weeks=5n}'
+
+
+// admin=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address); 
+// creation_time=Tezos.now;
+// input_token_address=("KT1F3MvWANZxMP9cDFWpmgdnPxTMM1ZoTeAn": address);
+// input_fa2_token_id_opt=1n;
+// reward_token_address=("KT1AAqwMaZ1Zw82BABBohg2hG9WpMfeEAmzf": address);
+// reward_fa2_token_id_opt=1n;
+// reward_reserve_address=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address);
+// rate=7500n;
+// reward_at_week=([] : nat list);
+// farm_points=([] : nat list);
+// total_reward=10000000n;
+// user_points=(Big_map.empty : (address, nat list) big_map);
+// user_stakes=(Big_map.empty : (address, nat) big_map);
+// total_weeks=5n
