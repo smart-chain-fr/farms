@@ -37,7 +37,18 @@ Once the Tezos node is running , one must wait for synchronization with the rest
 In a web browser , one can check the following URLs:
 `http://127.0.0.1:8732/chains/main/blocks/head/context/constants`
 
+## Tests
 
+The campaign of testing must deal with 4 kind of farms:
+
+| kind           | input | reward |
+|----------------|-------|--------|
+| farm_fa12_fa12 | FA1.2 | FA1.2  |
+| farm_fa12_fa2  | FA1.2 | FA2    |
+| farm_fa2_fa12  | FA2   | FA1.2  |
+| farm_fa2_fa2   | FA2   | FA2    |
+
+FA1.2 and FA2 contracts can be deploy using specific scripts `deploy_fa12_input.ts` and `deploy_fa2.ts`.
 
 ## Deploy contracts for testing Launchpools
 
@@ -113,12 +124,12 @@ This script authorize the `reward_fa2_contract` address to use the minted tokens
 
 - compile the unapproval script `unapprove_fa2_reward.ts`
 ```
-tsc approve_fa2_reward.ts --resolveJsonModule -esModuleInterop
+tsc unapprove_fa2_reward.ts --resolveJsonModule -esModuleInterop
 ```
 
 - execute the unapproval script `unapprove_fa2_reward.js`
 ```
-node approve_fa2_reward.js
+node unapprove_fa2_reward.js
 ```
 This script authorize the `reward_fa2_contract` address to use the minted tokens (owned by admin)
 
