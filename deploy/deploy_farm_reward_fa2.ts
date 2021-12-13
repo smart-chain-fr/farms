@@ -61,13 +61,12 @@ async function orig() {
             console.log(`Waiting for initialize() ${op.hash} to be confirmed...`);
             await op.confirmation(3);
             console.log('confirmed initialize(): ', op.hash);
-
-        // TO DO 
-        const op2 = await (await Tezos.contract.at(reward_token_address)).methods.update_operators([add_operator({owner:"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5"; operator:farmAddress; token_id:reward_fa2_token_id})]).send();
-            console.log(`Waiting for approve ${op2.hash} to be confirmed...`);
-            await op2.confirmation(3);
-            console.log('confirmed approve: ', op2.hash);
         
+        // const op2 = await (await Tezos.contract.at(reward_token_address)).methods.update_operators([{add_operator: {owner:admin, operator: farmAddress, token_id:reward_fa2_token_id}}]).send();
+        // console.log(`Waiting for update_operators ${op2.hash} to be confirmed...`);
+        // await op2.confirmation(3);
+        // console.log('confirmed update_operators: ', op2.hash);
+
 
         const database_contract = await Tezos.contract.at(database); 
         const op3 = await database_contract.methods.add_farm(farmAddress, infoFarm, input_token_address).send();

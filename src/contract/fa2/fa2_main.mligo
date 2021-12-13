@@ -26,6 +26,7 @@ type return = (operation list * storage)
 type entry_points = 
   |  Set_pause of bool
   |  Set_administrator of address
+  |  Mint of (address * nat * nat)
 
 type total_entry_points = (fa2_entry_points, "fa2_ep", entry_points, "specific_ep") michelson_or
 
@@ -38,6 +39,13 @@ let set_pause(param,s : bool * storage): return =
 let set_administrator(param,s : address * storage): return =
     if Tezos.sender = s.administrator then
         (([] : operation list), { s with administrator=param })
+    else 
+        (failwith("only admin can do it") : return)
+
+let mint(param, s : (address * nat * nat) * storage) : return =
+    if Tezos.sender = s.administrator then
+        let new_ledger = Map.add (param.0, param.1) {balance=param.2} s.ledger in 
+        (([] : operation list), { s with ledger=new_ledger })
     else 
         (failwith("only admin can do it") : return)
 
@@ -93,42 +101,41 @@ let transfer(_params, s: transfer list * storage) : return =
         (failwith("contract in pause") : return)
     else 
         let apply_transfer = fun (l,i : ledger * transfer) ->
-            let from_ : address = i.from_ in
-            if current_sender = from_ or current_sender = s.administrator then                
-                let transfers : transfer_destination list = i.txs in
-                let apply_transfer_destination = fun (acc,j : (ledger * transfer_destination)) ->
-                    let transfer_destination : transfer_destination = j in 
-                    let tr_amount : nat = transfer_destination.amount in 
-                    let tr_to_ : address = transfer_destination.to_ in
-                    let tr_tokenid : token_id = transfer_destination.token_id in
-                    if Set.mem {owner=from_; operator=current_sender; token_id=tr_tokenid} s.operators then
-                        let temp_state_ledger : ledger = if tr_amount > 0n then
-                            let enough_funds : bool = match Map.find_opt (from_, tr_tokenid) acc with
-                                | Some bal -> (bal.balance >= tr_amount)
-                                | None -> false
+            let from_ : address = i.from_ in               
+            let transfers : transfer_destination list = i.txs in
+            let apply_transfer_destination = fun (acc,j : (ledger * transfer_destination)) ->
+                let transfer_destination : transfer_destination = j in 
+                let tr_amount : nat = transfer_destination.amount in 
+                let tr_to_ : address = transfer_destination.to_ in
+                let tr_tokenid : token_id = transfer_destination.token_id in
+                let sent_by_owner : bool = (current_sender = from_) or (current_sender = s.administrator) in
+                let sent_by_operator : bool = Set.mem {owner=from_; operator=current_sender; token_id=tr_tokenid} s.operators in
+                if sent_by_owner or sent_by_operator then
+                    let temp_state_ledger : ledger = if tr_amount > 0n then
+                        let enough_funds : bool = match Map.find_opt (from_, tr_tokenid) acc with
+                            | Some bal -> (bal.balance >= tr_amount)
+                            | None -> false
+                        in
+                        if enough_funds then
+                            let l_updated_from : ledger = match Map.find_opt (from_,tr_tokenid) acc with
+                            | Some bal -> Map.update (from_,tr_tokenid) (Some {balance=abs(bal.balance - tr_amount)} ) acc 
+                            | None -> (failwith("should not arrive here") : ledger)
                             in
-                            if enough_funds then
-                                let l_updated_from : ledger = match Map.find_opt (from_,tr_tokenid) acc with
-                                | Some bal -> Map.update (from_,tr_tokenid) (Some {balance=abs(bal.balance - tr_amount)} ) acc 
-                                | None -> (failwith("should not arrive here") : ledger)
-                                in
-                                let l_updated_from_to : ledger = match Map.find_opt (tr_to_,tr_tokenid) l_updated_from with
-                                | Some bal -> Map.update (tr_to_,tr_tokenid) (Some {balance=bal.balance + tr_amount}) l_updated_from 
-                                | None -> Map.add (tr_to_,tr_tokenid) {balance=tr_amount} l_updated_from
-                                in
-                                l_updated_from_to
-                            else
-                                (failwith(fa2_insufficient_balance) : ledger)
+                            let l_updated_from_to : ledger = match Map.find_opt (tr_to_,tr_tokenid) l_updated_from with
+                            | Some bal -> Map.update (tr_to_,tr_tokenid) (Some {balance=bal.balance + tr_amount}) l_updated_from 
+                            | None -> Map.add (tr_to_,tr_tokenid) {balance=tr_amount} l_updated_from
+                            in
+                            l_updated_from_to
                         else
-                            (failwith("transferring nothing !") : ledger)
-                        in 
-                        temp_state_ledger
+                            (failwith(fa2_insufficient_balance) : ledger)
                     else
-                        (failwith(fa2_not_operator) : ledger)
-                in
-                List.fold apply_transfer_destination transfers l
-            else
-                (failwith(fa2_not_owner) : ledger)
+                        (failwith("transferring nothing !") : ledger)
+                    in 
+                    temp_state_ledger
+                else
+                    (failwith(fa2_not_operator) : ledger)
+            in
+            List.fold apply_transfer_destination transfers l
         in
         let new_ledger : ledger = List.fold apply_transfer _params s.ledger in
         (([] : operation list), {s with ledger=new_ledger})
@@ -184,12 +191,15 @@ let main (param,s : total_entry_points * storage) : return =
     )
   | M_right specific_ep -> (match specific_ep with
     | Set_pause p -> set_pause (p,s)
-    | Set_administrator p -> set_administrator (p,s))
-
+    | Set_administrator p -> set_administrator (p,s)
+    | Mint pp -> mint(pp , s)
+    )
 
 
 ///////////////////// deploy FA2  ////////////////////////////////////
 // ligo compile contract src/contract/fa2/fa2_main.mligo > src/contract/fa2/fa2_main.tz
+// ligo compile contract src/contract/fa2/fa2_main.mligo --michelson-format json > deploy/artefact/fa2.json
+
 // (empty) ligo compile storage src/contract/fa2/fa2_main.mligo '{administrator=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address); ledger=(Map.empty:ledger); operators=(Set.empty:operator_param set); paused=false }'
 // (empty) tezos-client originate contract fa2test transferring 1 from bootstrap1  running '/home/frank/smart-chain/SMAK-Farms/src/contract/fa2/fa2_main.tz' --init '(Pair (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" {}) {} False)' --dry-run
 // (empty) tezos-client originate contract fa2test transferring 1 from bootstrap1  running '/home/frank/smart-chain/SMAK-Farms/src/contract/fa2/fa2_main.tz' --init '(Pair (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" {}) {} False)' --burn-cap 0.6205

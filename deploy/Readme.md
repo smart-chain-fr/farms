@@ -94,3 +94,11 @@ node approve_fa2_reward.js
 ```
 This script authorize the `reward_fa2_contract` address to use the minted tokens (owned by admin)
 
+
+
+
+
+### Staking
+
+[//]: # "smartlink - FA2(1).png"
+![Staking schema - night mode](smartlink_with_FA2.png)
