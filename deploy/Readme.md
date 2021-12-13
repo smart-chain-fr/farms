@@ -58,6 +58,19 @@ So, for testing launch pools, one must:
 
 Now all smart contracts are deployed and setup for testing the staking/unstaking.
 
+### deploy FA2 contract for input
+
+- compile the deployment script `deploy_fa2_input.ts`
+```
+tsc deploy_fa2_input.ts --resolveJsonModule -esModuleInterop
+```
+
+- execute the deployment script `deploy_fa2_input.js`
+```
+node deploy_fa2_input.js
+```
+
+This script deploys a FA2 contract.
 
 ### depoy FA2 contract for rewards (executed as admin)
 
@@ -94,11 +107,24 @@ node approve_fa2_reward.js
 ```
 This script authorize the `reward_fa2_contract` address to use the minted tokens (owned by admin)
 
+### unauthorize the farm contract to use the fa2_reward
+
+- copy the fa2_reward contract address into the `unapprove_fa2_reward.ts` (in field `reward_fa2_contract`)
+
+- compile the unapproval script `unapprove_fa2_reward.ts`
+```
+tsc approve_fa2_reward.ts --resolveJsonModule -esModuleInterop
+```
+
+- execute the unapproval script `unapprove_fa2_reward.js`
+```
+node approve_fa2_reward.js
+```
+This script authorize the `reward_fa2_contract` address to use the minted tokens (owned by admin)
 
 
 
 
 ### Staking
 
-[//]: # "smartlink - FA2(1).png"
 ![Staking schema - night mode](smartlink_with_FA2.png)
