@@ -63,7 +63,7 @@ var taquito_1 = require("@taquito/taquito");
 var fa2_json_1 = __importDefault(require("./artefact/fa2.json"));
 var dotenv = __importStar(require("dotenv"));
 dotenv.config(({ path: __dirname + '/.env' }));
-var rpc = "https://rpc.tzkt.io/granadanet/"; //"https://granadanet.smartpy.io/"
+var rpc = "http://127.0.0.1:8732"; //"https://hangzhounet.api.tez.ie/" //"https://127.0.0.1:8732" //"https://rpc.tzkt.io/granadanet/" //"https://granadanet.smartpy.io/"
 var pk = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
 var Tezos = new taquito_1.TezosToolkit(rpc);
 var signer = new signer_1.InMemorySigner(pk);
@@ -73,6 +73,9 @@ var ledger = new taquito_1.MichelsonMap();
 var operators_init = [];
 var admin = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
 var token_metadata = new taquito_1.MichelsonMap();
+var reward_fa2_token_id = 1;
+var mint_amount = 100;
+ledger.set({ 0: admin, 1: reward_fa2_token_id }, mint_amount);
 function orig() {
     return __awaiter(this, void 0, void 0, function () {
         var store, originated, error_1;
@@ -99,7 +102,7 @@ function orig() {
                     return [4 /*yield*/, originated.confirmation(2)];
                 case 3:
                     _a.sent();
-                    console.log('confirmed fa12: ', originated.contractAddress);
+                    console.log('confirmed fa2: ', originated.contractAddress);
                     return [3 /*break*/, 5];
                 case 4:
                     error_1 = _a.sent();

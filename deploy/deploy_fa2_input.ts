@@ -5,7 +5,7 @@ import * as dotenv from 'dotenv'
 
 dotenv.config(({path:__dirname+'/.env'}))
 
-const rpc = "https://rpc.tzkt.io/granadanet/" //"https://granadanet.smartpy.io/"
+const rpc = "http://127.0.0.1:8732" //"https://hangzhounet.api.tez.ie/" //"https://127.0.0.1:8732" //"https://rpc.tzkt.io/granadanet/" //"https://granadanet.smartpy.io/"
 const pk: string = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
 const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
@@ -17,12 +17,12 @@ let ledger = new MichelsonMap();
 const operators_init = [];
 const admin = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5"
 let token_metadata = new MichelsonMap();
+const input_fa2_token_id = 1;
+const input_reserve_address = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
+const mint_amount = 100;
+ledger.set({0:input_reserve_address, 1:input_fa2_token_id}, mint_amount);
 
 async function orig() {
-
-    // for (let i = 0; i < weeks + 1; i++) {
-    //     farm_points[i] = 0
-    // }
 
     const store = {
         'paused' : paused,
@@ -45,5 +45,6 @@ async function orig() {
         console.log(error)
     }
 }
+
 
 orig();

@@ -16,6 +16,8 @@ const admin = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
 const creation_time = new Date();
 const farm_points: [] = [];
 const input_token_address = 'KT1V5U9hTaXArCKLAW2HC41epX8BXoZaFEQE';
+const input_token_id = 1;
+const reward_fa2_token_id = 1;
 const reward_token_address = "KT1WUc6Q1V8XzikB8qgQbCwL7PdWvJLEZE9s"
 const reward_reserve_address = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
 const infoFarm = process.env.INFOFARM || '';
@@ -34,6 +36,8 @@ async function orig() {
         'creation_time': creation_time,
         'farm_points': farm_points,
         'input_token_address': input_token_address,
+        'input_fa2_token_id_opt': input_token_id,
+        'reward_fa2_token_id_opt' : reward_fa2_token_id,
         'reward_token_address': reward_token_address,
         'reward_reserve_address': reward_reserve_address,
         'rate': rate,
@@ -58,8 +62,8 @@ async function orig() {
             await op.confirmation(3);
             console.log('confirmed initialize(): ', op.hash);
 
-
-        const op2 = await (await Tezos.contract.at(reward_token_address)).methods.approve(farmAddress, rewards).send();
+        // TO DO 
+        const op2 = await (await Tezos.contract.at(reward_token_address)).methods.update_operators([add_operator({owner:"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5"; operator:farmAddress; token_id:reward_fa2_token_id})]).send();
             console.log(`Waiting for approve ${op2.hash} to be confirmed...`);
             await op2.confirmation(3);
             console.log('confirmed approve: ', op2.hash);
