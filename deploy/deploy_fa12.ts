@@ -5,8 +5,10 @@ import * as dotenv from 'dotenv'
 
 dotenv.config(({path:__dirname+'/.env'}))
 
-const rpc = "https://granadanet.smartpy.io/"
-const pk: string = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
+//const rpc = "https://hangzhounet.api.tez.ie"  // "https://rpc.hangzhounet.teztnets.xyz" // HANGZOUNET
+const rpc = "https://rpc.tzstats.com" // https://mainnet.api.tez.ie // MAINNET
+
+const pk: string = "edskS8x3MqxnSVLix29fvBh7QBoTt6WLERyatEfTpRzE1XF26Aqy2ii7cBLMwpcE6u6fnj72gNRitAbXQjCS9eGncR7P4C3hy8";
 const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
 Tezos.setProvider({ signer: signer })
@@ -14,8 +16,9 @@ Tezos.setProvider({ signer: signer })
 
 let tokens = new MichelsonMap();
 let allowances = new MichelsonMap();
-const admin = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5"
-const total_supply = 20000
+const admin = "tz1hA7UiKADZQbH8doJDiFY2bacWk8yAaU9i"
+const reserve_address = 'tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5'
+const total_supply = 0
 let metadata = new MichelsonMap();
 let token_metadata = new MichelsonMap();
 
@@ -26,9 +29,10 @@ async function orig() {
     // }
 
     const store = {
+        'admin' : admin,
+        'reserve' : reserve_address,
         'tokens' : tokens,
         'allowances' : allowances,
-        'admin' : admin,
         'total_supply' : total_supply,
         'metadata' : metadata,
         'token_metadata' : token_metadata
@@ -39,7 +43,7 @@ async function orig() {
             code: fa12,
             storage: store,
         })
-        console.log(`Waiting for farm ${originated.contractAddress} to be confirmed...`);
+        console.log(`Waiting for fa12 ${originated.contractAddress} to be confirmed...`);
         await originated.confirmation(2);
         console.log('confirmed fa12: ', originated.contractAddress);
 

