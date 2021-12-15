@@ -42,3 +42,13 @@ let main (action, store : parameter * storage) : return =
 // ./tezos-client originate contract dummy_caller_fa2 transferring 1 from test_account running '/home/frank/smart-chain/SMAK-Farms/src/contract/dummy/caller.tz' --init '"KT1WjaNHUpXiNutsDLWJugkvT7WtvWWtppg6"' --dry-run
 // CALLTRANSFER
 // ./tezos-client transfer 0 from test_account to dummy_caller_fa2 --arg '(Left (Pair (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" 1) 10))'
+
+// ./tezos-client get contract storage for fa2_good
+// => produces 
+// Pair (Pair "tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE"
+//            { Elt (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" 1) 10 ;
+//              Elt (Pair "tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE" 1) 90 })
+//      { Pair "tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE"
+//             "KT1BjcGmEPi96yhX47gapPzDaEabRo9hPTDq"
+//             1 }
+//      False
