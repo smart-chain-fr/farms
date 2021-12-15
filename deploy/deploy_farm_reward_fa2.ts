@@ -5,7 +5,7 @@ import * as dotenv from 'dotenv'
 
 dotenv.config(({path:__dirname+'/.env'}))
 
-const rpc = "http://127.0.0.1:8732"
+const rpc = process.env.RPC; //"http://127.0.0.1:8732"
 const pk: string = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
 const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
