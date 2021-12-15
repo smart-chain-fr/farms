@@ -63,15 +63,17 @@ var taquito_1 = require("@taquito/taquito");
 var fa12_json_1 = __importDefault(require("./artefact/fa12.json"));
 var dotenv = __importStar(require("dotenv"));
 dotenv.config(({ path: __dirname + '/.env' }));
-var rpc = "https://granadanet.smartpy.io/";
-var pk = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
+//const rpc = "https://hangzhounet.api.tez.ie"  // "https://rpc.hangzhounet.teztnets.xyz" // HANGZOUNET
+var rpc = "https://rpc.tzstats.com"; // https://mainnet.api.tez.ie // MAINNET
+var pk = "edskS8x3MqxnSVLix29fvBh7QBoTt6WLERyatEfTpRzE1XF26Aqy2ii7cBLMwpcE6u6fnj72gNRitAbXQjCS9eGncR7P4C3hy8";
 var Tezos = new taquito_1.TezosToolkit(rpc);
 var signer = new signer_1.InMemorySigner(pk);
 Tezos.setProvider({ signer: signer });
 var tokens = new taquito_1.MichelsonMap();
 var allowances = new taquito_1.MichelsonMap();
-var admin = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
-var total_supply = 20000;
+var admin = "tz1hA7UiKADZQbH8doJDiFY2bacWk8yAaU9i";
+var reserve_address = 'tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5';
+var total_supply = 0;
 var metadata = new taquito_1.MichelsonMap();
 var token_metadata = new taquito_1.MichelsonMap();
 function orig() {
@@ -81,9 +83,10 @@ function orig() {
             switch (_a.label) {
                 case 0:
                     store = {
+                        'admin': admin,
+                        'reserve': reserve_address,
                         'tokens': tokens,
                         'allowances': allowances,
-                        'admin': admin,
                         'total_supply': total_supply,
                         'metadata': metadata,
                         'token_metadata': token_metadata
@@ -97,7 +100,7 @@ function orig() {
                         })];
                 case 2:
                     originated = _a.sent();
-                    console.log("Waiting for farm " + originated.contractAddress + " to be confirmed...");
+                    console.log("Waiting for fa12 " + originated.contractAddress + " to be confirmed...");
                     return [4 /*yield*/, originated.confirmation(2)];
                 case 3:
                     _a.sent();
