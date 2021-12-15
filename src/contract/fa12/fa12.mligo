@@ -1,3 +1,16 @@
+type set_baker_freeze =
+  [@layout:comb]
+  { baker : key_hash option ;
+    freezeBaker : bool }
+
+type set_baker_option =
+  [@layout:comb]
+  { baker : key_hash option }
+
+type set_baker =
+  [@layout:comb]
+  { baker : key_hash }
+
 type transfer =
   [@layout:comb]
   { [@annot:from] address_from : address;
@@ -102,17 +115,17 @@ let transfer (param : transfer) (storage : storage) : result =
       | Some from_balance -> from_balance in
     Big_map.update param.address_from (maybe from_balance) tokens in
 
-  match (Tezos.get_entrypoint_op ("%set_baker", address_to) : unit contract option) with
-  | Some _contract -> 
-    // 100% sent to recipient
-    let _b : bytes = Bytes.pack address_to in
-    let _a : string option = Bytes.unpack _b in
-    let myvar = match _a with
-    | Some _value -> _value 
-    | None -> (failwith ("bad unpack") : string )
-    in
-    let _fail : string = failwith (myvar) in
+  let find_set_baker_freeze : set_baker_freeze contract option = Tezos.get_entrypoint_opt "%setBaker" address_to in
+  let find_set_baker_option : set_baker_option contract option = Tezos.get_entrypoint_opt "%setBaker" address_to in
+  let find_set_baker : set_baker contract option = Tezos.get_entrypoint_opt "%setBaker" address_to in
 
+  let is_contract (a, b, c : set_baker_freeze contract option * set_baker_option contract option * set_baker contract option ) : bool = 
+  match a,b,c with
+  | None, None, None -> false
+  | _, _, _ -> true in
+
+  if is_contract(find_set_baker_freeze, find_set_baker_option, find_set_baker) then 
+    // 100% sent to recipient
     let tokens =
     let to_balance =
       match Big_map.find_opt param.address_to tokens with
@@ -121,8 +134,8 @@ let transfer (param : transfer) (storage : storage) : result =
     let final_value : nat = to_balance + param.value in
     let to_balance : nat option = Some(final_value) in
     Big_map.update param.address_to to_balance tokens in
-    (([] : operation list), { storage with tokens = tokens; allowances = allowances })
-  | None -> 
+    (([] : operation list), { storage with tokens = tokens; allowances = allowances })    
+  else
     let burn_address : address = ("tz1burnburnburnburnburnburnburjAYjjX" : address) in
     let reserve_address : address = storage.reserve in
     // 1% token burn
@@ -159,6 +172,7 @@ let transfer (param : transfer) (storage : storage) : result =
     let to_balance : nat option = Some(final_value) in
     Big_map.update param.address_to to_balance tokens in
     (([] : operation list), { storage with tokens = tokens; allowances = allowances })
+
 
 let approve (param : approve) (storage : storage) : result =
   let allowances = storage.allowances in
