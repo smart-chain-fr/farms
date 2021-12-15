@@ -33,6 +33,8 @@ Once the Tezos node is running , one must wait for synchronization with the rest
 - Verify the Tezos node is sync with `tezos-client bootstrapped`
 - List known addresses (accounts registered on the node) with `./tezos-client list known addresses` 
 - List contracts that have been deployed on the node with `./tezos-client list known contracts`
+- Register a contract in the "known contracts" locally with `./tezos-client remember contract reward_fa2 KT18ngw3gNSQEctEmb8Smb9XQ5SHx2imLHdz`
+- Unregister a contract from the "known contracts" locally with `./tezos-client forget contract reward_fa2`
 
 In a web browser , one can check the following URLs:
 `http://127.0.0.1:8732/chains/main/blocks/head/context/constants`
@@ -81,7 +83,7 @@ tsc deploy_fa2_input.ts --resolveJsonModule -esModuleInterop
 node deploy_fa2_input.js
 ```
 
-This script deploys a FA2 contract.
+This script deploys a FA2 contract and mint some tokens.
 
 ### depoy FA2 contract for rewards (executed as admin)
 
@@ -95,6 +97,15 @@ tsc deploy_fa2_reward.ts --resolveJsonModule -esModuleInterop
 node deploy_fa2_reward.js
 ```
 This script deploys a FA2 contract, and mint some tokens for admin and output the resulting fa2_reward contract address
+
+### deploy the farm database contract
+
+-  Deploy farm database contract 
+```
+tsc deploy_database.ts --resolveJsonModule -esModuleInterop
+```
+- `node deploy_database.js`
+- copy the resulting address in the .env file (in field `FARMSDB_ADDRESS`)
 
 
 ### deploy the farm contract
@@ -139,3 +150,18 @@ This script authorize the `reward_fa2_contract` address to use the minted tokens
 ### Staking
 
 ![Staking schema - night mode](smartlink_with_FA2.png)
+
+- On FA2 (KT1DXMUuoMBMTvJ41npEwenF17hs1K7sJznc), user (tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE) authorize the farm (KT1MnDRn6L4PSA9cUVE9TLZhHW4uvgUom4ui) to take some of his token 
+```
+./tezos-client transfer 0 from tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5 to KT1DXMUuoMBMTvJ41npEwenF17hs1K7sJznc --entrypoint "update_operators" --arg '{ Left (Pair "tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE" (Pair "KT1MnDRn6L4PSA9cUVE9TLZhHW4uvgUom4ui" 1)) }'
+```
+
+- User (tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE) triggers the stake entrypoint of the farm (KT1MnDRn6L4PSA9cUVE9TLZhHW4uvgUom4ui)
+```
+./tezos-client transfer 0 from tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE to KT1MnDRn6L4PSA9cUVE9TLZhHW4uvgUom4ui --entrypoint "stake" --arg "10"
+```
+
+- On FA2 (KT1DXMUuoMBMTvJ41npEwenF17hs1K7sJznc), user (tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE) stops authorizing the farm (KT1MnDRn6L4PSA9cUVE9TLZhHW4uvgUom4ui) to take some of his token 
+```
+./tezos-client transfer 0 from tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5 to KT1DXMUuoMBMTvJ41npEwenF17hs1K7sJznc --entrypoint "update_operators" --arg '{ Right (Pair "tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE" (Pair "KT1MnDRn6L4PSA9cUVE9TLZhHW4uvgUom4ui" 1)) }'
+```

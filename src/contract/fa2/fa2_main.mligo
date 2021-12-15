@@ -44,7 +44,10 @@ let set_administrator(param,s : address * storage): return =
 
 let mint(param, s : (address * nat * nat) * storage) : return =
     if Tezos.sender = s.administrator then
-        let new_ledger = Map.add (param.0, param.1) {balance=param.2} s.ledger in 
+        let new_ledger = match Map.find_opt (param.0, param.1) s.ledger with
+        | None -> Map.add (param.0, param.1) {balance=param.2} s.ledger
+        | Some bal -> Map.update (param.0, param.1) (Some({balance=bal.balance + param.2})) s.ledger
+        in 
         (([] : operation list), { s with ledger=new_ledger })
     else 
         (failwith("only admin can do it") : return)
@@ -144,24 +147,21 @@ let transfer(_params, s: transfer list * storage) : return =
 
 let update_operators (_params,s : (update_operator list * storage)) : return =
     let current_sender : address = Tezos.sender in
-    if current_sender <> s.administrator then
-        (failwith("operators can only be modified by the admin") : return)
-    else
-        let apply_order = fun (acc,j : operator_param set * update_operator) ->   
-            match j with
-            | Add_operator opm ->
-                if (current_sender = opm.owner or current_sender = s.administrator) then
-                    Set.add opm acc
-                else
-                    (failwith(fa2_operators_not_supported) : operator_param set)
-            | Remove_operator opm -> 
-                if (current_sender = opm.owner or current_sender = s.administrator) then
-                    Set.remove opm acc
-                else
-                    (failwith(fa2_operators_not_supported) : operator_param set)
-        in
-        let new_operators : operator_param set = List.fold apply_order _params s.operators in
-        (([] : operation list), {s with operators=new_operators})
+    let apply_order = fun (acc,j : operator_param set * update_operator) ->   
+        match j with
+        | Add_operator opm ->
+            if (current_sender = opm.owner or current_sender = s.administrator) then
+                Set.add opm acc
+            else
+                (failwith(fa2_operators_not_supported) : operator_param set)
+        | Remove_operator opm -> 
+            if (current_sender = opm.owner or current_sender = s.administrator) then
+                Set.remove opm acc
+            else
+                (failwith(fa2_operators_not_supported) : operator_param set)
+    in
+    let new_operators : operator_param set = List.fold apply_order _params s.operators in
+    (([] : operation list), {s with operators=new_operators})
 
 
 let is_operator(params,s : (is_operator_param * storage)) : return =
@@ -206,36 +206,13 @@ let main (param,s : total_entry_points * storage) : return =
 
 // ligo compile storage src/contract/fa2/fa2_main.mligo '{administrator=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address); ledger=Map.literal[((("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address), 1n), {balance=100n})]; operators=(Set.empty:operator_param set); paused=false }'
 // => produces     (Pair (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" { Elt (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" 1) 100 }) {} False)
+
+// ORIGINATE
 // tezos-client originate contract input_fa2 transferring 1 from bootstrap1  running '/home/frank/smart-chain/SMAK-Farms/src/contract/fa2/fa2_main.tz' --init '(Pair (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" { Elt (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" 1) 100 }) {} False)' --dry-run
 // tezos-client originate contract input_fa2 transferring 1 from bootstrap1  running '/home/frank/smart-chain/SMAK-Farms/src/contract/fa2/fa2_main.tz' --init '(Pair (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" { Elt (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" 1) 100 }) {} False)' --burn-cap 0.6295
-
-
-
-///////////////////// deploy FA2 (for reward) ////////////////////////////////////
-// tezos-client originate contract reward_fa2 transferring 1 from bootstrap1  running '/home/frank/smart-chain/SMAK-Farms/src/contract/fa2/fa2_main.tz' --init '(Pair (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" { Elt (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" 1) 1 }) {} False)' --dry-run
-// tezos-client originate contract reward_fa2 transferring 1 from bootstrap1  running '/home/frank/smart-chain/SMAK-Farms/src/contract/fa2/fa2_main.tz' --init '(Pair (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" { Elt (Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" 1) 1 }) {} False)' --burn-cap 0.62925
-
-
-
-
-
-///////////////////// deploy Farm  ////////////////////////////////////
-// sudo docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.30.0 compile contract src/contract/farm/main.mligo  > src/contract/farm/farm.tz
-// sudo docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.30.0 compile storage src/contract/farm/main.mligo '{admin=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address)}'
-// sudo docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.30.0 compile storage src/contract/farm/main.mligo '{admin=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address); creation_time=Tezos.now; input_token_address=("KT1F3MvWANZxMP9cDFWpmgdnPxTMM1ZoTeAn": address); input_fa2_token_id_opt=1n; reward_token_address=("KT1AAqwMaZ1Zw82BABBohg2hG9WpMfeEAmzf": address); reward_fa2_token_id_opt=1n; reward_reserve_address=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address); rate=7500n; reward_at_week=([] : nat list); farm_points=([] : nat list); total_reward=10000000n; user_points=(Big_map.empty : (address, nat list) big_map); user_stakes=(Big_map.empty : (address, nat) big_map); total_weeks=5n}'
-
-
-// admin=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address); 
-// creation_time=Tezos.now;
-// input_token_address=("KT1F3MvWANZxMP9cDFWpmgdnPxTMM1ZoTeAn": address);
-// input_fa2_token_id_opt=1n;
-// reward_token_address=("KT1AAqwMaZ1Zw82BABBohg2hG9WpMfeEAmzf": address);
-// reward_fa2_token_id_opt=1n;
-// reward_reserve_address=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5": address);
-// rate=7500n;
-// reward_at_week=([] : nat list);
-// farm_points=([] : nat list);
-// total_reward=10000000n;
-// user_points=(Big_map.empty : (address, nat list) big_map);
-// user_stakes=(Big_map.empty : (address, nat) big_map);
-// total_weeks=5n
+// MINT
+// ./tezos-client transfer 0 from tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE to KT1WjaNHUpXiNutsDLWJugkvT7WtvWWtppg6 --entrypoint 'mint' --arg 'Pair (Pair "tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE" 1) 10'
+// TRANSFER
+// ./tezos-client transfer 0 from tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE to KT1WjaNHUpXiNutsDLWJugkvT7WtvWWtppg6 --entrypoint 'transfer' --arg '{ Pair "tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE" { Pair "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" (Pair 1 1) } }' --burn-cap 0.00875
+// UPDATE_OPERATOR
+// ./tezos-client transfer 0 from tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE to KT1BxmxEqWjFQdKG1Stcisj11KfeR3jjaGF1 --entrypoint "update_operators" --arg '{ Left (Pair "tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE" (Pair "KT1BjcGmEPi96yhX47gapPzDaEabRo9hPTDq" 1)) }' --burn-cap 0.015

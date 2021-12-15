@@ -63,7 +63,8 @@ var taquito_1 = require("@taquito/taquito");
 var fa2_json_1 = __importDefault(require("./artefact/fa2.json"));
 var dotenv = __importStar(require("dotenv"));
 dotenv.config(({ path: __dirname + '/.env' }));
-var rpc = "http://127.0.0.1:8732"; //"https://hangzhounet.api.tez.ie/" //"https://127.0.0.1:8732" //"https://rpc.tzkt.io/granadanet/" //"https://granadanet.smartpy.io/"
+console.log(process.env.RPC);
+var rpc = "http://127.0.0.1:8732"; //process.env.RPC //"http://127.0.0.1:8732" //"https://hangzhounet.api.tez.ie/" //"https://127.0.0.1:8732" //"https://rpc.tzkt.io/granadanet/" //"https://granadanet.smartpy.io/"
 var pk = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
 var Tezos = new taquito_1.TezosToolkit(rpc);
 var signer = new signer_1.InMemorySigner(pk);
@@ -71,11 +72,11 @@ Tezos.setProvider({ signer: signer });
 var paused = false;
 var ledger = new taquito_1.MichelsonMap();
 var operators_init = [];
-var admin = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
+var admin = process.env.ADMIN_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5"
 var token_metadata = new taquito_1.MichelsonMap();
-var input_fa2_token_id = 1;
-var input_reserve_address = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
-var mint_amount = 100;
+var input_fa2_token_id = process.env.INPUT_TOKEN_ID;
+var input_reserve_address = process.env.INPUT_RESERVE_ADDRESS;
+var mint_amount = process.env.INPUT_AMOUNT;
 ledger.set({ 0: input_reserve_address, 1: input_fa2_token_id }, mint_amount);
 function orig() {
     return __awaiter(this, void 0, void 0, function () {

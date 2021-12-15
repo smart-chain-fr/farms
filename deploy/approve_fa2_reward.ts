@@ -5,7 +5,7 @@ import * as dotenv from 'dotenv'
 
 dotenv.config(({path:__dirname+'/.env'}))
 
-const rpc = "http://127.0.0.1:8732" //"https://hangzhounet.api.tez.ie/" //"https://127.0.0.1:8732" //"https://rpc.tzkt.io/granadanet/" //"https://granadanet.smartpy.io/"
+const rpc = process.env.RPC; //"http://127.0.0.1:8732" //"https://hangzhounet.api.tez.ie/" //"https://127.0.0.1:8732" //"https://rpc.tzkt.io/granadanet/" //"https://granadanet.smartpy.io/"
 const pk: string = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
 const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
@@ -15,11 +15,11 @@ Tezos.setProvider({ signer: signer })
 let paused = false
 let ledger = new MichelsonMap();
 const operators_init = [];
-const admin = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5"
+const admin = process.env.ADMIN_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5"
 let token_metadata = new MichelsonMap();
-const reward_fa2_token_id = 1;
-const operator_address = "tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE";
-const reward_fa2_contract = "KT1CVLPrSkgzHhSWaaBSvWLGp2fce1iY3wnP";
+const reward_fa2_token_id = process.env.REWARD_TOKEN_ID;
+const operator_address = "KT1MRRhLYf3A2eJiZsDkT3FL8GjTeMNSazyQ";
+const reward_fa2_contract = process.env.REWARD_CONTRACT_ADDRESS; //"KT1CVLPrSkgzHhSWaaBSvWLGp2fce1iY3wnP";
 
 async function approve() {
 
