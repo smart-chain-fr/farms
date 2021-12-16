@@ -11,22 +11,22 @@ const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
 Tezos.setProvider({ signer: signer })
 
-const database = "KT1HCLH3bCGnVrjZuVwP8aScgdMNr9qbjmSf";
-const admin = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
+const database = process.env.FARMSDB_ADDRESS; //"KT1HCLH3bCGnVrjZuVwP8aScgdMNr9qbjmSf";
+const admin = process.env.ADMIN_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
 const creation_time = new Date();
 const farm_points: [] = [];
-const input_token_address = 'KT1V5U9hTaXArCKLAW2HC41epX8BXoZaFEQE';
-const input_token_id = 1;
-const reward_fa2_token_id = 1;
-const reward_token_address = "KT1WUc6Q1V8XzikB8qgQbCwL7PdWvJLEZE9s"
-const reward_reserve_address = "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
+const input_token_address = process.env.INPUT_CONTRACT_ADDRESS; //'KT1V5U9hTaXArCKLAW2HC41epX8BXoZaFEQE';
+const input_token_id = process.env.INPUT_TOKEN_ID || undefined; //1;
+const reward_fa2_token_id = process.env.REWARD_TOKEN_ID || undefined; //1;
+const reward_token_address = process.env.REWARD_CONTRACT_ADDRESS; //"KT1WUc6Q1V8XzikB8qgQbCwL7PdWvJLEZE9s"
+const reward_reserve_address = process.env.REWARD_RESERVE_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
 const infoFarm = process.env.INFOFARM || '';
 const rate = process.env.RATE || 9500;
 let reward_at_week: [] = [];
-const rewards = 50000000;
+const rewards = process.env.REWARD_AMOUNT; //50000000;
 let user_points = new MichelsonMap();
 let user_stakes = new MichelsonMap();
-const total_weeks = 5;
+const total_weeks = process.env.WEEKS; //5;
 
 
 async function orig() {
@@ -73,6 +73,8 @@ async function orig() {
             console.log(`Waiting for addFarm ${op3.hash} to be confirmed...`);
             await op3.confirmation(3);
             console.log('confirmed addFarm: ', op3.hash)
+
+        console.log("You must run the script approve_fa2_reward in order to allow users to claim their rewards");
 
     } catch (error: any) {
         console.log(error)

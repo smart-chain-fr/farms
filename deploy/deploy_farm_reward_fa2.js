@@ -60,39 +60,58 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 exports.__esModule = true;
 var signer_1 = require("@taquito/signer");
 var taquito_1 = require("@taquito/taquito");
-var fa12_json_1 = __importDefault(require("./artefact/fa12.json"));
+var farm_json_1 = __importDefault(require("./artefact/farm.json"));
 var dotenv = __importStar(require("dotenv"));
 dotenv.config(({ path: __dirname + '/.env' }));
-var rpc = process.env.RPC; //"https://granadanet.smartpy.io/"
+var rpc = process.env.RPC; //"http://127.0.0.1:8732"
 var pk = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
 var Tezos = new taquito_1.TezosToolkit(rpc);
 var signer = new signer_1.InMemorySigner(pk);
 Tezos.setProvider({ signer: signer });
-var tokens = new taquito_1.MichelsonMap();
-var allowances = new taquito_1.MichelsonMap();
-var admin = process.env.ADMIN_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5"
-var total_supply = process.env.INPUT_FA12_TOTAL_SUPPLY || 20000;
-var metadata = new taquito_1.MichelsonMap();
-var token_metadata = new taquito_1.MichelsonMap();
+var database = process.env.FARMSDB_ADDRESS; //"KT1HCLH3bCGnVrjZuVwP8aScgdMNr9qbjmSf";
+var admin = process.env.ADMIN_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
+var creation_time = new Date();
+var farm_points = [];
+var input_token_address = process.env.INPUT_CONTRACT_ADDRESS; //'KT1V5U9hTaXArCKLAW2HC41epX8BXoZaFEQE';
+var input_token_id = process.env.INPUT_TOKEN_ID || undefined; //1;
+console.log("input_token_id", input_token_id);
+var reward_fa2_token_id = process.env.REWARD_TOKEN_ID; //1;
+var reward_token_address = process.env.REWARD_CONTRACT_ADDRESS; //"KT1WUc6Q1V8XzikB8qgQbCwL7PdWvJLEZE9s"
+var reward_reserve_address = process.env.REWARD_RESERVE_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
+var infoFarm = process.env.INFOFARM || '';
+var rate = process.env.RATE || 9500;
+var reward_at_week = [];
+var rewards = process.env.REWARD_AMOUNT; //50000000;
+var user_points = new taquito_1.MichelsonMap();
+var user_stakes = new taquito_1.MichelsonMap();
+var total_weeks = process.env.WEEKS; //5;
 function orig() {
     return __awaiter(this, void 0, void 0, function () {
-        var store, originated, error_1;
+        var store, originated, farmAddress, op, database_contract, op3, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     store = {
-                        'tokens': tokens,
-                        'allowances': allowances,
                         'admin': admin,
-                        'total_supply': total_supply,
-                        'metadata': metadata,
-                        'token_metadata': token_metadata
+                        'creation_time': creation_time,
+                        'farm_points': farm_points,
+                        'input_token_address': input_token_address,
+                        'input_fa2_token_id_opt': input_token_id,
+                        'reward_fa2_token_id_opt': reward_fa2_token_id,
+                        'reward_token_address': reward_token_address,
+                        'reward_reserve_address': reward_reserve_address,
+                        'rate': rate,
+                        'reward_at_week': reward_at_week,
+                        'total_reward': rewards,
+                        'user_points': user_points,
+                        'user_stakes': user_stakes,
+                        'total_weeks': total_weeks
                     };
                     _a.label = 1;
                 case 1:
-                    _a.trys.push([1, 4, , 5]);
+                    _a.trys.push([1, 10, , 11]);
                     return [4 /*yield*/, Tezos.contract.originate({
-                            code: fa12_json_1["default"],
+                            code: farm_json_1["default"],
                             storage: store
                         })];
                 case 2:
@@ -101,13 +120,35 @@ function orig() {
                     return [4 /*yield*/, originated.confirmation(2)];
                 case 3:
                     _a.sent();
-                    console.log('confirmed fa12: ', originated.contractAddress);
-                    return [3 /*break*/, 5];
-                case 4:
+                    console.log('confirmed farm: ', originated.contractAddress);
+                    farmAddress = originated.contractAddress;
+                    return [4 /*yield*/, Tezos.contract.at(farmAddress)];
+                case 4: return [4 /*yield*/, (_a.sent()).methods.initialize().send()];
+                case 5:
+                    op = _a.sent();
+                    console.log("Waiting for initialize() " + op.hash + " to be confirmed...");
+                    return [4 /*yield*/, op.confirmation(3)];
+                case 6:
+                    _a.sent();
+                    console.log('confirmed initialize(): ', op.hash);
+                    return [4 /*yield*/, Tezos.contract.at(database)];
+                case 7:
+                    database_contract = _a.sent();
+                    return [4 /*yield*/, database_contract.methods.add_farm(farmAddress, infoFarm, input_token_address).send()];
+                case 8:
+                    op3 = _a.sent();
+                    console.log("Waiting for addFarm " + op3.hash + " to be confirmed...");
+                    return [4 /*yield*/, op3.confirmation(3)];
+                case 9:
+                    _a.sent();
+                    console.log('confirmed addFarm: ', op3.hash);
+                    console.log("You must run the script approve_fa2_reward in order to allow users to claim their rewards");
+                    return [3 /*break*/, 11];
+                case 10:
                     error_1 = _a.sent();
                     console.log(error_1);
-                    return [3 /*break*/, 5];
-                case 5: return [2 /*return*/];
+                    return [3 /*break*/, 11];
+                case 11: return [2 /*return*/];
             }
         });
     });

@@ -1,6 +1,6 @@
 import { InMemorySigner } from '@taquito/signer';
 import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
-import fa2 from './artefact/fa2.json';
+import fa12 from './artefact/fa12.json';
 import * as dotenv from 'dotenv'
 
 dotenv.config(({path:__dirname+'/.env'}))
@@ -17,18 +17,19 @@ let ledger = new MichelsonMap();
 const operators_init = [];
 const admin = process.env.ADMIN_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5"
 let token_metadata = new MichelsonMap();
-const reward_fa2_token_id = process.env.REWARD_TOKEN_ID || undefined;
-const operator_address = process.env.FARM_ADDRESS; //"KT1MRRhLYf3A2eJiZsDkT3FL8GjTeMNSazyQ";
-const reward_fa2_contract = process.env.REWARD_CONTRACT_ADDRESS; //"KT1CVLPrSkgzHhSWaaBSvWLGp2fce1iY3wnP";
+//const reward_fa2_token_id = process.env.REWARD_TOKEN_ID;
+const farmAddress = process.env.FARM_ADDRESS; //"KT1MRRhLYf3A2eJiZsDkT3FL8GjTeMNSazyQ";
+const reward_fa12_contract = process.env.REWARD_CONTRACT_ADDRESS; //"KT1CVLPrSkgzHhSWaaBSvWLGp2fce1iY3wnP";
+const rewards = process.env.REWARD_AMOUNT;
 
 async function approve() {
 
     try {
 
-        const op2 = await (await Tezos.contract.at(reward_fa2_contract)).methods.update_operators([{add_operator: {owner:admin, operator: operator_address, token_id:reward_fa2_token_id}}]).send();
-        console.log(`Waiting for update_operators ${op2.hash} to be confirmed...`);
+        const op2 = await (await Tezos.contract.at(reward_fa12_contract)).methods.approve(farmAddress, rewards).send();
+        console.log(`Waiting for approve ${op2.hash} to be confirmed...`);
         await op2.confirmation(3);
-        console.log('confirmed update_operators: ', op2.hash);
+        console.log('confirmed approve: ', op2.hash);
 
     } catch (error: any) {
         console.log(error)

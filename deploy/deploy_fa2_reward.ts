@@ -17,7 +17,7 @@ const operators_init = [];
 const admin = process.env.ADMIN_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5"
 let token_metadata = new MichelsonMap();
 const reward_fa2_token_id = process.env.REWARD_TOKEN_ID;
-const mint_amount = process.env.REWARD_TOKEN_ID;
+const mint_amount = process.env.REWARD_AMOUNT;
 const reward_reserve_address = process.env.REWARD_RESERVE_ADDRESS;
 ledger.set({0:reward_reserve_address, 1:reward_fa2_token_id}, mint_amount);
 

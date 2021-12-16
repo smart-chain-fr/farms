@@ -70,7 +70,7 @@ var operators_init = [];
 var admin = process.env.ADMIN_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5"
 var token_metadata = new taquito_1.MichelsonMap();
 var reward_fa2_token_id = process.env.REWARD_TOKEN_ID;
-var operator_address = "KT1MRRhLYf3A2eJiZsDkT3FL8GjTeMNSazyQ";
+var operator_address = process.env.FARM_ADDRESS; //"KT1MRRhLYf3A2eJiZsDkT3FL8GjTeMNSazyQ";
 var reward_fa2_contract = process.env.REWARD_CONTRACT_ADDRESS; //"KT1CVLPrSkgzHhSWaaBSvWLGp2fce1iY3wnP";
 function approve() {
     return __awaiter(this, void 0, void 0, function () {
