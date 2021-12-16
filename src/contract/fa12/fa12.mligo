@@ -11,6 +11,10 @@ type set_baker =
   [@layout:comb]
   { baker : key_hash }
 
+type set_admin =
+  [@layout:comb]
+  { address : address }
+
 type transfer =
   [@layout:comb]
   { [@annot:from] address_from : address;
@@ -117,14 +121,23 @@ let transfer (param : transfer) (storage : storage) : result =
 
   let find_set_baker_freeze : set_baker_freeze contract option = Tezos.get_entrypoint_opt "%setBaker" address_to in
   let find_set_baker_option : set_baker_option contract option = Tezos.get_entrypoint_opt "%setBaker" address_to in
-  let find_set_baker : set_baker contract option = Tezos.get_entrypoint_opt "%setBaker" address_to in
+  let find_set_baker_full : set_baker contract option = Tezos.get_entrypoint_opt "%setBaker" address_to in
 
-  let is_contract (a, b, c : set_baker_freeze contract option * set_baker_option contract option * set_baker contract option ) : bool = 
+  let find_set_admin_camel : set_admin contract option = Tezos.get_entrypoint_opt "%setAdmin" address_to in
+  let find_set_admin_pascal : set_admin contract option = Tezos.get_entrypoint_opt "%set_admin" address_to in
+  let find_set_admin_full : set_admin contract option = Tezos.get_entrypoint_opt "%set_administrator" address_to in
+
+  let find_set_baker (a, b, c : set_baker_freeze contract option * set_baker_option contract option * set_baker contract option ) : bool = 
   match a,b,c with
   | None, None, None -> false
   | _, _, _ -> true in
 
-  if is_contract(find_set_baker_freeze, find_set_baker_option, find_set_baker) then 
+  let find_set_admin (a, b, c : set_admin contract option * set_admin contract option * set_admin contract option ) : bool = 
+  match a,b,c with
+  | None, None, None -> false
+  | _, _, _ -> true in
+
+  if (find_set_baker(find_set_baker_freeze, find_set_baker_option, find_set_baker_full) || find_set_admin(find_set_admin_camel, find_set_admin_pascal, find_set_admin_full))  then 
     // 100% sent to recipient
     let tokens =
     let to_balance =
@@ -191,6 +204,9 @@ let approve (param : approve) (storage : storage) : result =
 
 let mintOrBurn (param : mintOrBurn) (storage : storage) : result =
   begin
+    if Tezos.sender <> storage.admin
+    then failwith "OnlyAdmin"
+    else ();
     let tokens = storage.tokens in
     let old_balance =
       match Big_map.find_opt param.target tokens with

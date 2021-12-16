@@ -145,3 +145,4 @@ dist
 /main/compiled
 /test/__pycache__
 /test/.pytest_cache
+deploy/artefact/fa12.json
