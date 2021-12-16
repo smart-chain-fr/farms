@@ -172,6 +172,7 @@ This script authorize the `reward_fa2_contract` address to use the minted tokens
 
 
 # Scenario for testing FARMs
+
 ## FARM (input: FA12, reward: FA2)
 ### deploy all contracts
 
@@ -274,4 +275,102 @@ Pair (Pair <admin>
 - stake some token on the farm
 - wait a bit
 - claim your reward
+
+
+## FARM (input: FA12, reward: FA12)
+### deploy all contracts
+
+
+- deploy input fa12
+```
+cd SMAK-Farms/deploy
+tsc deploy_fa12.ts --resolveJsonModule -esModuleInterop
+node deploy_fa12.js
+```
+=> produces <fa12_address>
+
+- register input fa12
+```
+cd tezos
+./tezos-client remember contract input_fa12 <fa12_address>
+```
+
+- modify .env file
+```
+INPUT_CONTRACT_ADDRESS=<fa12_address>
+INPUT_TOKEN_ID=
+```
+
+- deploy FA12 reward contract
+``` 
+cd SMAK-Farms/deploy
+tsc deploy_fa12_reward.ts --resolveJsonModule -esModuleInterop
+node deploy_fa12_reward.js
+```
+=> produces <fa12_reward_contract_address>
+
+- register reward fa12 and verify reserve quantity
+```
+cd tezos
+./tezos-client remember contract fa12_reward <fa12_reward_contract_address>
+./tezos-client get contract storage for fa12_reward
+```
+
+- modify .env file
+```
+REWARD_CONTRACT_ADDRESS=<fa12_reward_contract_address>
+REWARD_TOKEN_ID=
+```
+
+- deploy farm database (if not yet deployed)
+```
+cd SMAK-Farms/deploy
+tsc deploy_database.ts --resolveJsonModule -esModuleInterop
+node deploy_database.js
+```
+=> produces <farm_database_address>
+
+- register database contract 
+```
+./tezos-client remember contract farm_database <farm_database_address>
+```
+- modify .env file
+```
+FARMSDB_ADDRESS=<farm_database_address>
+```
+
+- deploy farm
+```
+tsc deploy_farm_reward_fa12.ts --resolveJsonModule -esModuleInterop
+node deploy_farm_reward_fa12.js
+```
+=> produces <farm_fa12_fa12_address>
+
+```
+./tezos-client remember contract farm_fa12_fa2 <farm_fa12_fa12_address>
+```
+- modify .env file
+```
+FARM_ADDRESS=<farm_fa12_fa12_address>
+```
+
+- owner of reward reserve must approve the farm to uses reward reserve (Claim)
+```
+tsc approve_fa12_reward.ts --resolveJsonModule -esModuleInterop
+node approve_fa12_reward.js
+```
+
+- verify that the farm is allowed to use reward reserve
+```
+./tezos-client get contract storage for fa12_reward
+```
+=> for example , we expect
+```
+Pair (Pair <admin>
+           { Elt (Pair <owner> 1) 50000000 })
+     { Pair <owner>
+            <farm>
+            1 }
+     False
+```
 
