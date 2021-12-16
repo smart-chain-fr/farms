@@ -60,20 +60,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 exports.__esModule = true;
 var signer_1 = require("@taquito/signer");
 var taquito_1 = require("@taquito/taquito");
-var fa12_json_1 = __importDefault(require("./artefact/fa12.json"));
+var fa2_json_1 = __importDefault(require("./artefact/fa2.json"));
 var dotenv = __importStar(require("dotenv"));
 dotenv.config(({ path: __dirname + '/.env' }));
-var rpc = process.env.RPC; //"https://granadanet.smartpy.io/"
+console.log(process.env.RPC);
+var rpc = "http://127.0.0.1:8732"; //process.env.RPC //"http://127.0.0.1:8732" //"https://hangzhounet.api.tez.ie/" //"https://127.0.0.1:8732" //"https://rpc.tzkt.io/granadanet/" //"https://granadanet.smartpy.io/"
 var pk = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
 var Tezos = new taquito_1.TezosToolkit(rpc);
 var signer = new signer_1.InMemorySigner(pk);
 Tezos.setProvider({ signer: signer });
-var tokens = new taquito_1.MichelsonMap();
-var allowances = new taquito_1.MichelsonMap();
+var paused = false;
+var ledger = new taquito_1.MichelsonMap();
+var operators_init = [];
 var admin = process.env.ADMIN_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5"
-var total_supply = process.env.INPUT_FA12_TOTAL_SUPPLY || 20000;
-var metadata = new taquito_1.MichelsonMap();
 var token_metadata = new taquito_1.MichelsonMap();
+var input_fa2_token_id = process.env.INPUT_TOKEN_ID;
+var input_reserve_address = process.env.INPUT_RESERVE_ADDRESS;
+var mint_amount = process.env.INPUT_AMOUNT;
+ledger.set({ 0: input_reserve_address, 1: input_fa2_token_id }, mint_amount);
 function orig() {
     return __awaiter(this, void 0, void 0, function () {
         var store, originated, error_1;
@@ -81,18 +85,17 @@ function orig() {
             switch (_a.label) {
                 case 0:
                     store = {
-                        'tokens': tokens,
-                        'allowances': allowances,
-                        'admin': admin,
-                        'total_supply': total_supply,
-                        'metadata': metadata,
-                        'token_metadata': token_metadata
+                        'paused': paused,
+                        'ledger': ledger,
+                        //'tokens' : token_metadata,
+                        'operators': operators_init,
+                        'administrator': admin
                     };
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 4, , 5]);
                     return [4 /*yield*/, Tezos.contract.originate({
-                            code: fa12_json_1["default"],
+                            code: fa2_json_1["default"],
                             storage: store
                         })];
                 case 2:
@@ -101,7 +104,7 @@ function orig() {
                     return [4 /*yield*/, originated.confirmation(2)];
                 case 3:
                     _a.sent();
-                    console.log('confirmed fa12: ', originated.contractAddress);
+                    console.log('confirmed fa2: ', originated.contractAddress);
                     return [3 /*break*/, 5];
                 case 4:
                     error_1 = _a.sent();

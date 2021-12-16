@@ -54,54 +54,40 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 exports.__esModule = true;
 var signer_1 = require("@taquito/signer");
 var taquito_1 = require("@taquito/taquito");
-var fa12_json_1 = __importDefault(require("./artefact/fa12.json"));
 var dotenv = __importStar(require("dotenv"));
 dotenv.config(({ path: __dirname + '/.env' }));
-var rpc = process.env.RPC; //"https://granadanet.smartpy.io/"
+var rpc = process.env.RPC; //"http://127.0.0.1:8732" //"https://hangzhounet.api.tez.ie/" //"https://127.0.0.1:8732" //"https://rpc.tzkt.io/granadanet/" //"https://granadanet.smartpy.io/"
 var pk = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
 var Tezos = new taquito_1.TezosToolkit(rpc);
 var signer = new signer_1.InMemorySigner(pk);
 Tezos.setProvider({ signer: signer });
-var tokens = new taquito_1.MichelsonMap();
-var allowances = new taquito_1.MichelsonMap();
+var paused = false;
+var ledger = new taquito_1.MichelsonMap();
+var operators_init = [];
 var admin = process.env.ADMIN_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5"
-var total_supply = process.env.INPUT_FA12_TOTAL_SUPPLY || 20000;
-var metadata = new taquito_1.MichelsonMap();
 var token_metadata = new taquito_1.MichelsonMap();
-function orig() {
+var reward_fa2_token_id = process.env.REWARD_TOKEN_ID;
+var operator_address = process.env.FARM_ADDRESS; //"KT1MRRhLYf3A2eJiZsDkT3FL8GjTeMNSazyQ";
+var reward_fa2_contract = process.env.REWARD_CONTRACT_ADDRESS; //"KT1CVLPrSkgzHhSWaaBSvWLGp2fce1iY3wnP";
+function approve() {
     return __awaiter(this, void 0, void 0, function () {
-        var store, originated, error_1;
+        var op2, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    store = {
-                        'tokens': tokens,
-                        'allowances': allowances,
-                        'admin': admin,
-                        'total_supply': total_supply,
-                        'metadata': metadata,
-                        'token_metadata': token_metadata
-                    };
-                    _a.label = 1;
-                case 1:
-                    _a.trys.push([1, 4, , 5]);
-                    return [4 /*yield*/, Tezos.contract.originate({
-                            code: fa12_json_1["default"],
-                            storage: store
-                        })];
+                    _a.trys.push([0, 4, , 5]);
+                    return [4 /*yield*/, Tezos.contract.at(reward_fa2_contract)];
+                case 1: return [4 /*yield*/, (_a.sent()).methods.update_operators([{ add_operator: { owner: admin, operator: operator_address, token_id: reward_fa2_token_id } }]).send()];
                 case 2:
-                    originated = _a.sent();
-                    console.log("Waiting for farm " + originated.contractAddress + " to be confirmed...");
-                    return [4 /*yield*/, originated.confirmation(2)];
+                    op2 = _a.sent();
+                    console.log("Waiting for update_operators " + op2.hash + " to be confirmed...");
+                    return [4 /*yield*/, op2.confirmation(3)];
                 case 3:
                     _a.sent();
-                    console.log('confirmed fa12: ', originated.contractAddress);
+                    console.log('confirmed update_operators: ', op2.hash);
                     return [3 /*break*/, 5];
                 case 4:
                     error_1 = _a.sent();
@@ -112,4 +98,4 @@ function orig() {
         });
     });
 }
-orig();
+approve();

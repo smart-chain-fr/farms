@@ -16,17 +16,17 @@ const admin = process.env.ADMIN_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5
 const creation_time = new Date();
 const farm_points: [] = [];
 const input_token_address = process.env.INPUT_CONTRACT_ADDRESS; //'KT1V5U9hTaXArCKLAW2HC41epX8BXoZaFEQE';
-const input_fa2_token_id_opt = process.env.INPUT_TOKEN_ID || undefined;
+const input_token_id = process.env.INPUT_TOKEN_ID || undefined; //1;
+const reward_fa2_token_id = process.env.REWARD_TOKEN_ID || undefined; //1;
 const reward_token_address = process.env.REWARD_CONTRACT_ADDRESS; //"KT1WUc6Q1V8XzikB8qgQbCwL7PdWvJLEZE9s"
 const reward_reserve_address = process.env.REWARD_RESERVE_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
-const reward_fa2_token_id_opt = process.env.REWARD_TOKEN_ID || undefined;
 const infoFarm = process.env.INFOFARM || '';
 const rate = process.env.RATE || 9500;
 let reward_at_week: [] = [];
 const rewards = process.env.REWARD_AMOUNT; //50000000;
 let user_points = new MichelsonMap();
 let user_stakes = new MichelsonMap();
-const total_weeks = process.env.WEEKS;
+const total_weeks = process.env.WEEKS; //5;
 
 
 async function orig() {
@@ -35,17 +35,17 @@ async function orig() {
         'admin': admin,
         'creation_time': creation_time,
         'farm_points': farm_points,
-        'input_fa2_token_id_opt': input_fa2_token_id_opt,
         'input_token_address': input_token_address,
+        'input_fa2_token_id_opt': input_token_id,
+        'reward_fa2_token_id_opt' : reward_fa2_token_id,
+        'reward_token_address': reward_token_address,
+        'reward_reserve_address': reward_reserve_address,
         'rate': rate,
         'reward_at_week': reward_at_week,
-        'reward_fa2_token_id_opt': reward_fa2_token_id_opt,        
-        'reward_reserve_address': reward_reserve_address,
-        'reward_token_address': reward_token_address,
         'total_reward': rewards,
-        'total_weeks': total_weeks,
         'user_points': user_points,
         'user_stakes': user_stakes,
+        'total_weeks': total_weeks,
     }
     try {
         const originated = await Tezos.contract.originate({

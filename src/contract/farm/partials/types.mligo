@@ -3,7 +3,7 @@ type week_in_seconds = nat
 type stake_param = nat
 type reward_param = nat
 type fa12_transfer = address * (address * nat)
-type fa2_transfer = address * (address * nat * nat)
+type fa2_transfer = address * (address * (nat * nat)) list
 
 
 type storage_farm = {

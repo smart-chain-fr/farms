@@ -1,6 +1,8 @@
 let only_admin : string = "Only the contract admin can change the contract administrator or increase reward"
 let unknown_input_token_entrypoint : string = "Cannot connect to the input token entrypoint"
+let unknown_input_fa2_token_entrypoint : string = "Cannot connect to the input FA2 token entrypoint"
 let unknown_reward_token_entrypoint : string = "Cannot connect to the reward token entrypoint"
+let unknown_reward_fa2_token_entrypoint : string = "Cannot connect to the reward FA2 token entrypoint"
 let amount_is_null : string = "The farm staking amount must be greater than zero"
 let increase_amount_is_null : string = "The increase amount must be greater than zero"
 let amount_must_be_zero_tez : string = "You must not send Tezos to the smart contract"

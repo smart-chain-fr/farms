@@ -42,13 +42,13 @@ let sendReward (token_amount : nat) (user_address : address) (reward_token_addre
         let op : operation = Tezos.transaction (transfer_param) 0mutez transfer_fa12 in
         op
     | Some(reward_fa2_token_id) -> // use FA2 
-        let fa2_contract_opt : fa2_transfer contract option = Tezos.get_entrypoint_opt "%transfer" reward_token_address in
-        let transfer_fa2 : fa2_transfer contract = match fa2_contract_opt with
+        let fa2_contract_opt : fa2_transfer list contract option = Tezos.get_entrypoint_opt "%transfer" reward_token_address in
+        let transfer_fa2 : fa2_transfer list contract = match fa2_contract_opt with
         | Some c -> c
-        | None -> (failwith unknown_reward_token_entrypoint: fa2_transfer contract)
+        | None -> (failwith unknown_reward_fa2_token_entrypoint: fa2_transfer list contract)
         in
-        let transfer_fa2_param : fa2_transfer = reward_reserve_address, (user_address, reward_fa2_token_id, token_amount) in 
-        let op_fa2 : operation = Tezos.transaction (transfer_fa2_param) 0mutez transfer_fa2 in
+        let transfer_fa2_param : fa2_transfer = reward_reserve_address, [(user_address, (reward_fa2_token_id, token_amount))] in 
+        let op_fa2 : operation = Tezos.transaction ([ transfer_fa2_param; ]) 0mutez transfer_fa2 in
         op_fa2
 
 
@@ -193,13 +193,13 @@ let stake_some (storage : storage_farm) (lp_amount : nat) : return =
         let op : operation = Tezos.transaction (transfer_param) 0mutez transfer_fa12 in
         [ op; ]
     | Some(tokenid) -> // FA2
-        let input_fa2_contract_opt : fa2_transfer contract option = Tezos.get_entrypoint_opt "%transfer" input_token_address in
-        let transfer_fa2 : fa2_transfer contract = match input_fa2_contract_opt with
+        let input_fa2_contract_opt : fa2_transfer list contract option = Tezos.get_entrypoint_opt "%transfer" input_token_address in
+        let transfer_fa2 : fa2_transfer list contract = match input_fa2_contract_opt with
         | Some c -> c
-        | None -> (failwith unknown_input_token_entrypoint:  fa2_transfer contract)
+        | None -> (failwith unknown_input_fa2_token_entrypoint:  fa2_transfer list contract)
         in
-        let transfer_fa2_param : fa2_transfer = sender_address, (Tezos.self_address, tokenid, lp_amount) in 
-        let op_fa2 : operation = Tezos.transaction (transfer_fa2_param) 0mutez transfer_fa2 in
+        let transfer_fa2_param : fa2_transfer = sender_address, [(Tezos.self_address, (tokenid, lp_amount))] in 
+        let op_fa2 : operation = Tezos.transaction ([ transfer_fa2_param; ]) 0mutez transfer_fa2 in
         [ op_fa2; ]
     in
     
@@ -277,13 +277,13 @@ let unstake_some (storage : storage_farm) (lp_amount : nat) : return =
         let op_fa12 : operation = Tezos.transaction (transfer_fa12_param) 0mutez transfer_fa12 in
         [ op_fa12; ]
     | Some (tokenid) -> // FA2
-        let lp_contract_fa2_opt : fa2_transfer contract option = Tezos.get_entrypoint_opt "%transfer" input_token_address in
-        let transfer_fa2 : fa2_transfer contract = match lp_contract_fa2_opt with
+        let lp_contract_fa2_opt : fa2_transfer list contract option = Tezos.get_entrypoint_opt "%transfer" input_token_address in
+        let transfer_fa2 : fa2_transfer list contract = match lp_contract_fa2_opt with
         | Some c -> c
-        | None -> (failwith unknown_input_token_entrypoint: fa2_transfer contract)
+        | None -> (failwith unknown_input_token_entrypoint: fa2_transfer list contract)
         in
-        let transfer_fa2_param : fa2_transfer = Tezos.self_address, (sender_address, tokenid, lp_amount) in    
-        let op_fa2 : operation = Tezos.transaction (transfer_fa2_param) 0mutez transfer_fa2 in
+        let transfer_fa2_param : fa2_transfer = Tezos.self_address, [(sender_address, (tokenid, lp_amount))] in    
+        let op_fa2 : operation = Tezos.transaction ([ transfer_fa2_param; ]) 0mutez transfer_fa2 in
         [ op_fa2; ]
     in
 
