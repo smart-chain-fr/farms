@@ -52,6 +52,7 @@ The campaign of testing must deal with 4 kind of farms:
 
 FA1.2 and FA2 contracts can be deploy using specific scripts `deploy_fa12_input.ts` and `deploy_fa2.ts`.
 
+
 ## Deploy contracts for testing Launchpools
 
 The Launch pool requires:
@@ -145,8 +146,6 @@ node unapprove_fa2_reward.js
 This script authorize the `reward_fa2_contract` address to use the minted tokens (owned by admin)
 
 
-
-
 ### Staking
 
 ![Staking schema - night mode](smartlink_with_FA2.png)
@@ -173,8 +172,38 @@ This script authorize the `reward_fa2_contract` address to use the minted tokens
 
 # Scenario for testing FARMs
 
-## FARM (input: FA12, reward: FA2)
-### deploy all contracts
+The deployment of contracts (for testing) can be done by executing one script (`deploy_full_test_env.ts`) or by executing each step with a separate script
+
+## Setup test contract envirronment (all in one) with deploy_full_test_env.ts
+
+The script `deploy_full_test_env.ts` deploys 4 contracts
+- an input token
+- a reward token
+- a farm database 
+- a farm
+
+The campaign of testing must deal with 4 kind of farms:
+
+| kind           | input | reward |
+|----------------|-------|--------|
+| farm_fa12_fa12 | FA1.2 | FA1.2  |
+| farm_fa12_fa2  | FA1.2 | FA2    |
+| farm_fa2_fa12  | FA2   | FA1.2  |
+| farm_fa2_fa2   | FA2   | FA2    |
+
+
+This script works with .env files. There are 4 .env files:
+.env.farm_fa12_fa12 
+.env.farm_fa2_fa12
+.env.farm_fa12_fa2
+.env.farm_fa2_fa2
+
+
+One must specify in the script the correct .env file inside the script `deploy_full_test_env.ts` and recompile the script with `tsc deploy_full_test_env.ts --resolveJsonModule -esModuleInterop` before executing it with `node deploy_full_test_env.js`
+
+## Setup test contract envirronment (step by step)
+
+### deploy contracts (input: FA12, reward: FA2)
 
 - deploy input fa12
 ```
@@ -277,9 +306,7 @@ Pair (Pair <admin>
 - claim your reward
 
 
-## FARM (input: FA12, reward: FA12)
-### deploy all contracts
-
+## deploy contracts (input: FA12, reward: FA12)
 
 - deploy input fa12
 ```

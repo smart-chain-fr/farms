@@ -92,7 +92,6 @@ web_modules/
 .env
 .env.test
 .env.production
-.env.farm_fa2_fa2
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
