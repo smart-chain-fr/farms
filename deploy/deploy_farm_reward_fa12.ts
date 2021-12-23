@@ -37,6 +37,7 @@ async function orig() {
         'farm_points': farm_points,
         'input_token_address': input_token_address,
         'input_fa2_token_id_opt': input_token_id,
+        'initialized': false,
         'reward_fa2_token_id_opt' : reward_fa2_token_id,
         'reward_token_address': reward_token_address,
         'reward_reserve_address': reward_reserve_address,

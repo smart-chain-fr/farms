@@ -126,11 +126,45 @@ let initialize (storage : storage_farm) : return =
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
     let _check_current_week : unit = assert_with_error (initialized_creation_time < creation_time + int(week_in_seconds)) no_week_left in
     let _check_if_unitialized : unit = assert_with_error (List.size reward_at_week = 0n) contract_already_initialized in
+    let _check_if_unitialized2 : unit = assert_with_error (storage.initialized = false) contract_already_initialized in
 
     let new_reward_at_week : nat list = compute_new_rewards total_reward total_weeks rate in
-    
+
+    let _input_transfer_check : bool = match storage.input_fa2_token_id_opt with 
+    | None -> // FA12 
+        let input_transfer_contract_opt : fa12_transfer contract option = Tezos.get_entrypoint_opt "%transfer" storage.input_token_address in
+        let _input_transfer_fa12 : fa12_transfer contract = match input_transfer_contract_opt with
+        | Some c -> c
+        | None -> (failwith unknown_input_token_entrypoint:  fa12_transfer contract)
+        in
+        true
+    | Some(_tokenid) -> // FA2
+        let input_fa2_contract_opt : fa2_transfer list contract option = Tezos.get_entrypoint_opt "%transfer" storage.input_token_address in
+        let _input_transfer_fa2 : fa2_transfer list contract = match input_fa2_contract_opt with
+        | Some c -> c
+        | None -> (failwith unknown_input_fa2_token_entrypoint:  fa2_transfer list contract)
+        in
+        true
+    in
+    let _reward_transfer_check : bool = match storage.reward_fa2_token_id_opt with
+    | None -> //use FA12
+        let reward_fa12_contract_opt : fa12_transfer contract option = Tezos.get_entrypoint_opt "%transfer" storage.reward_token_address in
+        let _reward_transfer_fa12 : fa12_transfer contract = match reward_fa12_contract_opt with
+        | Some c -> c
+        | None -> (failwith unknown_reward_token_entrypoint: fa12_transfer contract)
+        in
+        true
+    | Some(_reward_fa2_token_id) -> // use FA2 
+        let reward_fa2_contract_opt : fa2_transfer list contract option = Tezos.get_entrypoint_opt "%transfer" storage.reward_token_address in
+        let _reward_transfer_fa2 : fa2_transfer list contract = match reward_fa2_contract_opt with
+        | Some c -> c
+        | None -> (failwith unknown_reward_fa2_token_entrypoint: fa2_transfer list contract)
+        in
+        true
+    in
     let final_storage = { storage with reward_at_week = new_reward_at_week ;
-                                       creation_time = initialized_creation_time } in
+                                       creation_time = initialized_creation_time;
+                                       initialized = true } in
     (no_operation, final_storage)
 
 let increase_reward (storage : storage_farm) (added_new_reward : nat ) : return =
@@ -144,6 +178,7 @@ let increase_reward (storage : storage_farm) (added_new_reward : nat ) : return 
     let rate : nat = storage.rate in 
     let reward_at_week : nat list = storage.reward_at_week in
 
+    let _check_if_initialized : unit = assert_with_error (storage.initialized = true) contract_not_initialized in
     let _check_if_admin : unit = assert_with_error (Tezos.sender = storage.admin) only_admin in
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
     let _check_current_week : unit = assert_with_error (current_time < creation_time + int(total_weeks * week_in_seconds)) no_week_left in
@@ -176,6 +211,7 @@ let stake_some (storage : storage_farm) (lp_amount : nat) : return =
     let current_week : nat = get_current_week(storage) in
     let endofweek_in_seconds : timestamp = storage.creation_time + int(current_week * week_in_seconds) in
 
+    let _check_if_initialized : unit = assert_with_error (storage.initialized = true) contract_not_initialized in
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
     let _check_amount_positive : unit = assert_with_error (lp_amount > 0n) amount_is_null in
     let _check_current_week : unit = assert_with_error (current_time < storage.creation_time + int(storage.total_weeks * week_in_seconds)) no_week_left in
@@ -245,6 +281,7 @@ let stake_some (storage : storage_farm) (lp_amount : nat) : return =
     (operations, final_storage)
 
 let unstake_some (storage : storage_farm) (lp_amount : nat) : return =
+    let _check_if_initialized : unit = assert_with_error (storage.initialized = true) contract_not_initialized in
     let input_token_address : address = storage.input_token_address in
     let current_time : timestamp = Tezos.now in
     let current_week : nat = get_current_week(storage) in
@@ -326,6 +363,7 @@ let unstake_some (storage : storage_farm) (lp_amount : nat) : return =
         (operations, final_storage)
 
 let claim_all (storage : storage_farm) : return = 
+    let _check_if_initialized : unit = assert_with_error (storage.initialized = true) contract_not_initialized in
     let farm_points : nat list = storage.farm_points in
     let user_points : (address, nat list) big_map = storage.user_points in
     let sender_address : address = Tezos.sender in // Avoids recalculating Tezos.sender each time for gas
