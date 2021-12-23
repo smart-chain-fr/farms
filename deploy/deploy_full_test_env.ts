@@ -6,7 +6,7 @@ import fa2 from './artefact/fa2.json';
 import database from './artefact/database.json';
 import * as dotenv from 'dotenv'
 
-dotenv.config(({path:__dirname+'/.env.farm_fa12_fa2'}))
+dotenv.config(({path:__dirname+'/.env.farm_fa2_fa2'}))
 
 const rpc = process.env.RPC; //"http://127.0.0.1:8732"
 const pk: string = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
@@ -51,6 +51,7 @@ let fa12_reward_allowances = new MichelsonMap();
 const fa12_reward_total_supply = process.env.REWARD_AMOUNT || 30000000;
 let fa12_reward_metadata = new MichelsonMap();
 let fa12_reward_token_metadata = new MichelsonMap();
+fa12_reward_tokens.set(reward_reserve_address, rewards);
 
 // FA2 reward
 let fa2_reward_paused = false
@@ -176,6 +177,7 @@ async function orig() {
             
             farm_store.reward_token_address = reward_token_address;
         }
+
         // Originate farm database 
         const database_originated = await Tezos.contract.originate({
             code: database,
