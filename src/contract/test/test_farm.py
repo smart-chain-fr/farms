@@ -50,6 +50,7 @@ no_stakes = "You did not stake any token yet"
 unstake_more_than_stake = "You cannot unstake more than your farm staking"
 no_week_left = "There are no more weeks left for staking in the farm"
 contract_already_initialized = "The contract is already initialized"
+contract_not_initialized = "The contract is not initialized"
 
 def verify_fa12_stake_tx(tx, account, farm_addr, amount):
     assert(account == tx[0]['string'])
@@ -215,6 +216,15 @@ class FarmsContractTest(TestCase):
         # Execute entrypoint
         with self.raisesMichelsonError(no_week_left):
             res = self.farms.increase_reward(20_000_000).interpret(storage=init_storage, sender=admin, now=int(sec_week * 20 + sec_week/2))
+
+    def test_increase_reward_if_farm_not_initialized_should_fail(self):
+        # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["reward_at_week"] = [6555697, 4916773, 3687580, 2765685, 2074263]
+        init_storage["initialized"] = False
+        # Execute entrypoint
+        with self.raisesMichelsonError(contract_not_initialized):
+            res = self.farms.increase_reward(20_000_000).interpret(storage=init_storage, sender=fox, now=int(sec_week + sec_week/2))
 
     ######################
     # Tests for Staking #
@@ -386,6 +396,14 @@ class FarmsContractTest(TestCase):
         init_storage = deepcopy(initial_storage)
         # Execute entrypoint
         with self.raisesMichelsonError(no_week_left):
+            self.farms.stake(10).interpret(storage=init_storage, sender=alice, now=int(5 * sec_week + sec_week/2))
+
+    def test_stake_with_farm_not_initialized_should_fail(self):
+        # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["initialized"] = False
+        # Execute entrypoint
+        with self.raisesMichelsonError(contract_not_initialized):
             self.farms.stake(10).interpret(storage=init_storage, sender=alice, now=int(5 * sec_week + sec_week/2))
 
     #####################
@@ -806,8 +824,16 @@ class FarmsContractTest(TestCase):
         self.assertEqual(res3.storage["farm_points"], expected_farmpoint)
         self.assertEqual(res3.storage["user_stakes"][alice], 0)
         
-
-
+    def test_unstake_with_farm_not_initialized_should_fail(self):
+       # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["user_stakes"][alice] = 500
+        init_storage["user_points"][alice] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["farm_points"] = [int(500 * sec_week/2), 500 * sec_week, 500 * sec_week, 500 * sec_week, 500 * sec_week]
+        init_storage["initialized"] = False
+        # Execute entrypoint
+        with self.raisesMichelsonError(contract_not_initialized):
+            self.farms.unstake(500).interpret(sender=alice, storage=init_storage, now=int(sec_week + sec_week / 2))
 
     ######################
     # Tests for ClaimAll #
@@ -1214,3 +1240,24 @@ class FarmsContractTest(TestCase):
         self.assertEqual(res2.storage["user_points"][alice], expected_userpoint_alice)
         self.assertEqual(res2.storage["user_stakes"][alice], 0)
         self.assertEqual(res2.storage["farm_points"], init_storage["farm_points"])
+
+
+    def test_claimall_with_farm_not_initialized_should_work(self):
+        # Init
+        init_storage = deepcopy(initial_storage)
+        init_storage["reward_at_week"] = [6555697, 4916773, 3687580, 2765685, 2074263]
+        init_storage["creation_time"] = 0
+        init_storage["user_stakes"][alice] = 0
+        init_storage["user_points"][alice] = [int(500 * sec_week/2), int(500 * sec_week) +  int(500 * sec_week / 2 ) - int(1000 * sec_week / 3 ), 0, 0, 0]
+        init_storage["farm_points"] = [int(500 * sec_week/2), int(500 * sec_week) +  int(500 * sec_week / 2 ) - int(1000 * sec_week / 3 ), 0, 0, 0]
+        ############### FOR FA2   ################################
+        reward_token_id = 5
+        input_fa2_token_id_opt : Optional[int] = None
+        reward_fa2_token_id : Optional[int] = reward_token_id
+        init_storage["input_fa2_token_id_opt"] = input_fa2_token_id_opt
+        init_storage["reward_fa2_token_id_opt"] = reward_fa2_token_id
+        reward_expected = init_storage["reward_at_week"][1]        
+        init_storage["initialized"] = False
+        # Execute entrypoint
+        with self.raisesMichelsonError(contract_not_initialized):
+            self.farms.claim_all().interpret(sender=alice, storage=init_storage, now=int(sec_week + sec_week*3/4))
