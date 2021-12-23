@@ -4,17 +4,28 @@
         (or (nat %stake) (nat %unstake))) ;
   storage
     (pair (pair (pair (pair (address %admin) (timestamp %creation_time))
-                      (pair (list %farm_points nat) (option %input_fa2_token_id_opt nat)))
-                (pair (pair (address %input_token_address) (nat %rate))
-                      (pair (list %reward_at_week nat) (option %reward_fa2_token_id_opt nat))))
-          (pair (pair (pair (address %reward_reserve_address) (address %reward_token_address))
-                      (pair (nat %total_reward) (nat %total_weeks)))
-                (pair (big_map %user_points address (list nat)) (big_map %user_stakes address nat)))) ;
+                      (pair (list %farm_points nat) (bool %initialized)))
+                (pair (pair (option %input_fa2_token_id_opt nat) (address %input_token_address))
+                      (pair (nat %rate) (list %reward_at_week nat))))
+          (pair (pair (pair (option %reward_fa2_token_id_opt nat) (address %reward_reserve_address))
+                      (pair (address %reward_token_address) (nat %total_reward)))
+                (pair (pair (nat %total_weeks) (big_map %user_points address (list nat)))
+                      (big_map %user_stakes address nat)))) ;
   code { UNPAIR ;
          IF_LEFT
            { IF_LEFT
                { IF_LEFT
                    { DROP ;
+                     PUSH string "The contract is not initialized" ;
+                     PUSH bool True ;
+                     DUP 3 ;
+                     CAR ;
+                     CAR ;
+                     CDR ;
+                     CDR ;
+                     COMPARE ;
+                     EQ ;
+                     IF { DROP } { FAILWITH } ;
                      SENDER ;
                      SWAP ;
                      DUP ;
@@ -53,6 +64,7 @@
                      CDR ;
                      CDR ;
                      CAR ;
+                     CDR ;
                      DUP 3 ;
                      GET ;
                      IF_NONE
@@ -61,7 +73,7 @@
                          CAR ;
                          CDR ;
                          CDR ;
-                         CAR ;
+                         CDR ;
                          DUP 5 ;
                          CAR ;
                          CAR ;
@@ -153,18 +165,18 @@
                          DUP 5 ;
                          CDR ;
                          CAR ;
-                         CAR ;
                          CDR ;
+                         CAR ;
                          DUP 6 ;
                          CDR ;
                          CAR ;
                          CAR ;
-                         CAR ;
+                         CDR ;
                          DUP 7 ;
+                         CDR ;
                          CAR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
+                         CAR ;
+                         CAR ;
                          IF_NONE
                            { SWAP ;
                              CONTRACT %transfer (pair address (pair address nat)) ;
@@ -245,10 +257,17 @@
                               CDR ;
                               CDR ;
                               CAR ;
+                              CDR ;
                               DIG 2 ;
                               SOME ;
                               DIG 4 ;
                               UPDATE ;
+                              DUP 4 ;
+                              CDR ;
+                              CDR ;
+                              CAR ;
+                              CAR ;
+                              PAIR ;
                               PAIR ;
                               DUP 3 ;
                               CDR ;
@@ -265,9 +284,9 @@
                      DUP ;
                      DUG 2 ;
                      CDR ;
+                     CDR ;
                      CAR ;
-                     CDR ;
-                     CDR ;
+                     CAR ;
                      NOW ;
                      DUP 4 ;
                      CAR ;
@@ -289,6 +308,16 @@
                      IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
                      CAR ;
                      ADD ;
+                     PUSH string "The contract is not initialized" ;
+                     PUSH bool True ;
+                     DUP 8 ;
+                     CAR ;
+                     CAR ;
+                     CDR ;
+                     CDR ;
+                     COMPARE ;
+                     EQ ;
+                     IF { DROP } { FAILWITH } ;
                      PUSH string
                           "Only the contract admin can change the contract administrator or increase reward" ;
                      DUP 7 ;
@@ -334,8 +363,8 @@
                      DUP 6 ;
                      CAR ;
                      CDR ;
-                     CAR ;
                      CDR ;
+                     CAR ;
                      NIL nat ;
                      DUP 3 ;
                      PAIR ;
@@ -542,7 +571,7 @@
                      CAR ;
                      CDR ;
                      CDR ;
-                     CAR ;
+                     CDR ;
                      PAIR ;
                      PAIR ;
                      LEFT (list nat) ;
@@ -579,18 +608,18 @@
                      DUP 5 ;
                      CDR ;
                      CDR ;
-                     DUP 6 ;
+                     DUP 5 ;
+                     DUP 7 ;
                      CDR ;
                      CAR ;
                      CDR ;
                      CDR ;
-                     DUP 6 ;
-                     DUP 8 ;
-                     CDR ;
-                     CAR ;
-                     CDR ;
-                     CAR ;
                      ADD ;
+                     DUP 7 ;
+                     CDR ;
+                     CAR ;
+                     CDR ;
+                     CAR ;
                      PAIR ;
                      DUP 7 ;
                      CDR ;
@@ -603,14 +632,13 @@
                      PAIR ;
                      DUP ;
                      CDR ;
-                     SWAP ;
-                     DUP ;
                      DUG 2 ;
+                     DUP ;
+                     DUG 3 ;
                      CAR ;
                      CDR ;
                      CDR ;
-                     CDR ;
-                     DIG 3 ;
+                     CAR ;
                      PAIR ;
                      DUP 3 ;
                      CAR ;
@@ -706,8 +734,18 @@
                      CAR ;
                      CDR ;
                      CDR ;
-                     CAR ;
+                     CDR ;
                      SIZE ;
+                     COMPARE ;
+                     EQ ;
+                     IF { DROP } { FAILWITH } ;
+                     PUSH string "The contract is already initialized" ;
+                     PUSH bool False ;
+                     DUP 4 ;
+                     CAR ;
+                     CAR ;
+                     CDR ;
+                     CDR ;
                      COMPARE ;
                      EQ ;
                      IF { DROP } { FAILWITH } ;
@@ -715,14 +753,14 @@
                      DUP ;
                      DUG 2 ;
                      CDR ;
+                     CDR ;
                      CAR ;
-                     CDR ;
-                     CDR ;
+                     CAR ;
                      DUP 3 ;
                      CAR ;
                      CDR ;
-                     CAR ;
                      CDR ;
+                     CAR ;
                      NIL nat ;
                      DUP 3 ;
                      PAIR ;
@@ -886,7 +924,7 @@
                               CDR ;
                               CAR ;
                               CDR ;
-                              CAR ;
+                              CDR ;
                               DIG 3 ;
                               MUL ;
                               MUL ;
@@ -904,13 +942,69 @@
                      DIG 2 ;
                      DROP 2 ;
                      DUP 3 ;
+                     CAR ;
                      CDR ;
+                     CAR ;
+                     CAR ;
+                     IF_NONE
+                       { DUP 3 ;
+                         CAR ;
+                         CDR ;
+                         CAR ;
+                         CDR ;
+                         CONTRACT %transfer (pair address (pair address nat)) ;
+                         IF_NONE
+                           { PUSH string "Cannot connect to the input token entrypoint" ; FAILWITH }
+                           { DROP } ;
+                         PUSH bool True }
+                       { DROP ;
+                         DUP 3 ;
+                         CAR ;
+                         CDR ;
+                         CAR ;
+                         CDR ;
+                         CONTRACT %transfer (list (pair address (list (pair address (pair nat nat))))) ;
+                         IF_NONE
+                           { PUSH string "Cannot connect to the input FA2 token entrypoint" ; FAILWITH }
+                           { DROP } ;
+                         PUSH bool True } ;
+                     DROP ;
+                     DUP 3 ;
+                     CDR ;
+                     CAR ;
+                     CAR ;
+                     CAR ;
+                     IF_NONE
+                       { DUP 3 ;
+                         CDR ;
+                         CAR ;
+                         CDR ;
+                         CAR ;
+                         CONTRACT %transfer (pair address (pair address nat)) ;
+                         IF_NONE
+                           { PUSH string "Cannot connect to the reward token entrypoint" ; FAILWITH }
+                           { DROP } ;
+                         PUSH bool True }
+                       { DROP ;
+                         DUP 3 ;
+                         CDR ;
+                         CAR ;
+                         CDR ;
+                         CAR ;
+                         CONTRACT %transfer (list (pair address (list (pair address (pair nat nat))))) ;
+                         IF_NONE
+                           { PUSH string "Cannot connect to the reward FA2 token entrypoint" ; FAILWITH }
+                           { DROP } ;
+                         PUSH bool True } ;
+                     DROP ;
+                     DUP 3 ;
+                     CDR ;
+                     SWAP ;
                      DUP 4 ;
                      CAR ;
                      CDR ;
                      CDR ;
-                     CDR ;
-                     DIG 2 ;
+                     CAR ;
                      PAIR ;
                      DUP 4 ;
                      CAR ;
@@ -940,6 +1034,27 @@
                      CAR ;
                      CAR ;
                      PAIR ;
+                     PAIR ;
+                     PAIR ;
+                     PAIR ;
+                     DUP ;
+                     CDR ;
+                     SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     CAR ;
+                     CDR ;
+                     PUSH bool True ;
+                     DUP 4 ;
+                     CAR ;
+                     CAR ;
+                     CDR ;
+                     CAR ;
+                     PAIR ;
+                     DIG 3 ;
+                     CAR ;
+                     CAR ;
+                     CAR ;
                      PAIR ;
                      PAIR ;
                      PAIR ;
@@ -992,7 +1107,7 @@
                  CAR ;
                  CDR ;
                  CAR ;
-                 CAR ;
+                 CDR ;
                  NOW ;
                  SENDER ;
                  DUP 5 ;
@@ -1004,6 +1119,7 @@
                  CDR ;
                  CDR ;
                  CAR ;
+                 CDR ;
                  DUP 7 ;
                  CAR ;
                  CAR ;
@@ -1031,6 +1147,16 @@
                  CAR ;
                  CDR ;
                  ADD ;
+                 PUSH string "The contract is not initialized" ;
+                 PUSH bool True ;
+                 DUP 11 ;
+                 CAR ;
+                 CAR ;
+                 CDR ;
+                 CDR ;
+                 COMPARE ;
+                 EQ ;
+                 IF { DROP } { FAILWITH } ;
                  PUSH string "You must not send Tezos to the smart contract" ;
                  PUSH mutez 0 ;
                  AMOUNT ;
@@ -1047,9 +1173,9 @@
                  PUSH nat 604800 ;
                  DUP 11 ;
                  CDR ;
+                 CDR ;
                  CAR ;
-                 CDR ;
-                 CDR ;
+                 CAR ;
                  MUL ;
                  INT ;
                  DUP 11 ;
@@ -1072,9 +1198,9 @@
                  IF { DROP } { FAILWITH } ;
                  DUP 9 ;
                  CAR ;
+                 CDR ;
                  CAR ;
-                 CDR ;
-                 CDR ;
+                 CAR ;
                  IF_NONE
                    { DIG 6 ;
                      CONTRACT %transfer (pair address (pair address nat)) ;
@@ -1138,9 +1264,9 @@
                  NIL nat ;
                  DUP 10 ;
                  CDR ;
+                 CDR ;
                  CAR ;
-                 CDR ;
-                 CDR ;
+                 CAR ;
                  PAIR ;
                  LEFT (list nat) ;
                  LOOP_LEFT
@@ -1278,6 +1404,12 @@
                  SOME ;
                  DIG 6 ;
                  UPDATE ;
+                 DUP 3 ;
+                 CDR ;
+                 CDR ;
+                 CAR ;
+                 CAR ;
+                 PAIR ;
                  PAIR ;
                  SWAP ;
                  DUP ;
@@ -1311,13 +1443,23 @@
                  PAIR ;
                  SWAP ;
                  PAIR }
-               { SWAP ;
+               { PUSH string "The contract is not initialized" ;
+                 PUSH bool True ;
+                 DUP 4 ;
+                 CAR ;
+                 CAR ;
+                 CDR ;
+                 CDR ;
+                 COMPARE ;
+                 EQ ;
+                 IF { DROP } { FAILWITH } ;
+                 SWAP ;
                  DUP ;
                  DUG 2 ;
                  CAR ;
                  CDR ;
                  CAR ;
-                 CAR ;
+                 CDR ;
                  NOW ;
                  DUP 4 ;
                  CAR ;
@@ -1338,6 +1480,7 @@
                  CDR ;
                  CDR ;
                  CAR ;
+                 CDR ;
                  PUSH string "You must not send Tezos to the smart contract" ;
                  PUSH mutez 0 ;
                  AMOUNT ;
@@ -1381,9 +1524,9 @@
                  UPDATE ;
                  DUP 9 ;
                  CAR ;
+                 CDR ;
                  CAR ;
-                 CDR ;
-                 CDR ;
+                 CAR ;
                  IF_NONE
                    { DIG 6 ;
                      CONTRACT %transfer (pair address (pair address nat)) ;
@@ -1442,9 +1585,9 @@
                       NIL nat ;
                       DUP 9 ;
                       CDR ;
+                      CDR ;
                       CAR ;
-                      CDR ;
-                      CDR ;
+                      CAR ;
                       PAIR ;
                       LEFT (list nat) ;
                       LOOP_LEFT
@@ -1580,6 +1723,12 @@
                       SOME ;
                       DIG 6 ;
                       UPDATE ;
+                      DUP 3 ;
+                      CDR ;
+                      CDR ;
+                      CAR ;
+                      CAR ;
+                      PAIR ;
                       PAIR ;
                       SWAP ;
                       DUP ;

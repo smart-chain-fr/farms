@@ -31,6 +31,7 @@ initial_storage["user_stakes"] = {}
 initial_storage["user_points"] = {}
 initial_storage["farm_points"] = []
 initial_storage["creation_time"] = 0
+initial_storage["initialized"] = True
 
 input_fa2_token_id_opt : Optional[int] = None
 reward_fa2_token_id : Optional[int] = None
@@ -137,6 +138,7 @@ class FarmsContractTest(TestCase):
         init_storage["total_reward"] = 20_000_000
         init_storage["total_weeks"] = 5
         init_storage["rate"] = 7500
+        init_storage["initialized"] = False
         # Execute entrypoint
         res = self.farms.initialize().interpret(storage=init_storage, sender=admin)
         expected_rewards = [6555697, 4916773, 3687580, 2765685, 2074263]
@@ -148,6 +150,7 @@ class FarmsContractTest(TestCase):
         init_storage["total_reward"] = 30_000_000
         init_storage["total_weeks"] = 5
         init_storage["rate"] = 8000
+        init_storage["initialized"] = False
         # Execute entrypoint
         res = self.farms.initialize().interpret(storage=init_storage, sender=admin)
         expected_rewards = [8924321, 7139457, 5711565, 4569252, 3655402]
@@ -159,6 +162,7 @@ class FarmsContractTest(TestCase):
         init_storage["total_reward"] = 40_000_000
         init_storage["total_weeks"] = 3
         init_storage["rate"] = 6000
+        init_storage["initialized"] = False
         # Execute entrypoint
         res = self.farms.initialize().interpret(storage=init_storage, sender=admin)
         expected_rewards = [20408163, 12244897, 7346938]

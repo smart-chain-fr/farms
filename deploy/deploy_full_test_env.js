@@ -65,7 +65,7 @@ var fa12_json_1 = __importDefault(require("./artefact/fa12.json"));
 var fa2_json_1 = __importDefault(require("./artefact/fa2.json"));
 var database_json_1 = __importDefault(require("./artefact/database.json"));
 var dotenv = __importStar(require("dotenv"));
-dotenv.config(({ path: __dirname + '/.env.farm_fa12_fa2' }));
+dotenv.config(({ path: __dirname + '/.env.farm_fa2_fa2' }));
 var rpc = process.env.RPC; //"http://127.0.0.1:8732"
 var pk = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
 var Tezos = new taquito_1.TezosToolkit(rpc);
@@ -104,6 +104,7 @@ var fa12_reward_allowances = new taquito_1.MichelsonMap();
 var fa12_reward_total_supply = process.env.REWARD_AMOUNT || 30000000;
 var fa12_reward_metadata = new taquito_1.MichelsonMap();
 var fa12_reward_token_metadata = new taquito_1.MichelsonMap();
+fa12_reward_tokens.set(reward_reserve_address, rewards);
 // FA2 reward
 var fa2_reward_paused = false;
 var fa2_reward_ledger = new taquito_1.MichelsonMap();
@@ -125,6 +126,7 @@ function orig() {
                         'farm_points': farm_points,
                         'input_token_address': input_token_address,
                         'input_fa2_token_id_opt': input_token_id,
+                        'initialized': false,
                         'reward_fa2_token_id_opt': reward_fa2_token_id,
                         'reward_token_address': reward_token_address,
                         'reward_reserve_address': reward_reserve_address,
