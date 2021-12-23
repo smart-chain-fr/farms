@@ -72,6 +72,27 @@ So, for testing launch pools, one must:
 
 Now all smart contracts are deployed and setup for testing the staking/unstaking.
 
+### test on fa12
+
+- compile the deployment script `deploy_fa12.ts`
+```
+tsc deploy_fa12.ts --resolveJsonModule -esModuleInterop
+```
+
+- execute the deployment script `deploy_fa12.js`
+```
+node deploy_fa12.js
+```
+
+- test a transfer (locally with dry-runn)
+```
+ ligo compile contract src/contract/fa12/fa12.mligo
+ ligo compile storage src/contract/fa12/fa12.mligo '{tokens=Big_map.literal[(("tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE":address), 1000n)]; allowances=Big_map.literal[({owner=("tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE":address); spender=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5":address)},100n)]; admin=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5":address); total_supply=1000n; metadata=(Big_map.empty : (string, bytes) big_map); token_metadata=(Big_map.empty : (nat, token_metadata_entry) big_map)}'
+ ligo compile parameter src/contract/fa12/fa12.mligo 'Transfer({address_from=("tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE":address); address_to=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5":address); value=11n})' 
+ ligo run dry-run src/contract/fa12/fa12.mligo 'Transfer({address_from=("tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE":address); address_to=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5":address); value=11n})' '{tokens=Big_map.literal[(("tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE":address), 1000n)]; allowances=Big_map.literal[({owner=("tz1XyFD11RWJXwkht624fBcnXfwx3rcKccTE":address); spender=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5":address)},100n)]; admin=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5":address); total_supply=1000n; metadata=(Big_map.empty : (string, bytes) big_map); token_metadata=(Big_map.empty : (nat, token_metadata_entry) big_map)}' --sender "tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5" 
+```
+The last command simulate a transfer (using allowance) => works fine
+
 ### deploy FA2 contract for input
 
 - compile the deployment script `deploy_fa2_input.ts`
