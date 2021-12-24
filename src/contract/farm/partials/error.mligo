@@ -12,3 +12,4 @@ let unstake_more_than_stake : string = "You cannot unstake more than your farm s
 let no_claim_first_week : string = "You cannot claim any reward before the first farm week as passed"
 let no_week_left : string = "There are no more weeks left for staking in the farm"
 let contract_already_initialized : string = "The contract is already initialized"
+let contract_not_initialized : string = "The contract is not initialized"
