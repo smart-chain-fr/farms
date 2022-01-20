@@ -6,7 +6,7 @@ import fa2 from './artefact/fa2.json';
 import database from './artefact/database.json';
 import * as dotenv from 'dotenv'
 
-dotenv.config(({path:__dirname+'/.env.farm_fa2_fa2'}))
+dotenv.config(({path:__dirname+'/.env.preprod.anti_anti'}))
 
 const rpc = process.env.RPC; //"http://127.0.0.1:8732"
 const pk: string = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
@@ -48,7 +48,7 @@ const fa2_input_operators_init: [] = [];
 // For FA1.2 reward
 let fa12_reward_tokens = new MichelsonMap();
 let fa12_reward_allowances = new MichelsonMap();
-const fa12_reward_total_supply = process.env.REWARD_AMOUNT || 30000000;
+const fa12_reward_total_supply = process.env.REWARD_AMOUNT || 50000000;
 let fa12_reward_metadata = new MichelsonMap();
 let fa12_reward_token_metadata = new MichelsonMap();
 fa12_reward_tokens.set(reward_reserve_address, rewards);
@@ -127,67 +127,74 @@ async function orig() {
     }
 
     try {
-
-        if (input_token_id === undefined) {
-            // Originate a FA1.2 as input
-            const fa12_input_originated = await Tezos.contract.originate({
-                code: fa12,
-                storage: fa12_input_store,
-            })
-            console.log(`Waiting for FA1.2 (as input) ${fa12_input_originated.contractAddress} to be confirmed...`);
-            await fa12_input_originated.confirmation(2);
-            console.log('confirmed fa12: ', fa12_input_originated.contractAddress);
-            input_token_address = fa12_input_originated.contractAddress;      
-            
-            farm_store.input_token_address = input_token_address;
-        } else {
-            // Originate a FA2 as input
-            const fa2_input_originated = await Tezos.contract.originate({
-                code: fa2,
-                storage: fa2_input_store,
-            })
-            console.log(`Waiting for FA2 (as input) ${fa2_input_originated.contractAddress} to be confirmed...`);
-            await fa2_input_originated.confirmation(2);
-            console.log('confirmed fa2: ', fa2_input_originated.contractAddress);
-            input_token_address = fa2_input_originated.contractAddress;
-            farm_store.input_token_address = input_token_address;
+        // INPUT TOKEN contract
+        if (input_token_address === undefined) {
+            if (input_token_id === undefined) {
+                // Originate a FA1.2 as input
+                const fa12_input_originated = await Tezos.contract.originate({
+                    code: fa12,
+                    storage: fa12_input_store,
+                })
+                console.log(`Waiting for FA1.2 (as input) ${fa12_input_originated.contractAddress} to be confirmed...`);
+                await fa12_input_originated.confirmation(2);
+                console.log('confirmed fa12: ', fa12_input_originated.contractAddress);
+                input_token_address = fa12_input_originated.contractAddress;      
+                
+                farm_store.input_token_address = input_token_address;
+            } else {
+                // Originate a FA2 as input
+                const fa2_input_originated = await Tezos.contract.originate({
+                    code: fa2,
+                    storage: fa2_input_store,
+                })
+                console.log(`Waiting for FA2 (as input) ${fa2_input_originated.contractAddress} to be confirmed...`);
+                await fa2_input_originated.confirmation(2);
+                console.log('confirmed fa2: ', fa2_input_originated.contractAddress);
+                input_token_address = fa2_input_originated.contractAddress;
+                farm_store.input_token_address = input_token_address;
+            }    
         }
 
-        if (reward_fa2_token_id === undefined){
-            // Originate a FA1.2 as reward
-            const fa12_reward_originated = await Tezos.contract.originate({
-                code: fa12,
-                storage: fa12_reward_store,
-            })
-            console.log(`Waiting for FA1.2 (as reward) ${fa12_reward_originated.contractAddress} to be confirmed...`);
-            await fa12_reward_originated.confirmation(2);
-            console.log('confirmed fa12 (as reward): ', fa12_reward_originated.contractAddress);
-            reward_token_address = fa12_reward_originated.contractAddress;      
-            
-            farm_store.reward_token_address = reward_token_address;
-        } else {
-            // Originate a FA2 as reward
-            const fa2_reward_originated = await Tezos.contract.originate({
-                code: fa2,
-                storage: fa2_reward_store,
-            })
-            console.log(`Waiting for FA2 (as reward) ${fa2_reward_originated.contractAddress} to be confirmed...`);
-            await fa2_reward_originated.confirmation(2);
-            console.log('confirmed fa2: ', fa2_reward_originated.contractAddress);
-            reward_token_address = fa2_reward_originated.contractAddress;
-            
-            farm_store.reward_token_address = reward_token_address;
+        // REWARD TOKEN contract
+        if (reward_token_address === undefined) {
+            if (reward_fa2_token_id === undefined){
+                // Originate a FA1.2 as reward
+                const fa12_reward_originated = await Tezos.contract.originate({
+                    code: fa12,
+                    storage: fa12_reward_store,
+                })
+                console.log(`Waiting for FA1.2 (as reward) ${fa12_reward_originated.contractAddress} to be confirmed...`);
+                await fa12_reward_originated.confirmation(2);
+                console.log('confirmed fa12 (as reward): ', fa12_reward_originated.contractAddress);
+                reward_token_address = fa12_reward_originated.contractAddress;      
+                
+                farm_store.reward_token_address = reward_token_address;
+            } else {
+                // Originate a FA2 as reward
+                const fa2_reward_originated = await Tezos.contract.originate({
+                    code: fa2,
+                    storage: fa2_reward_store,
+                })
+                console.log(`Waiting for FA2 (as reward) ${fa2_reward_originated.contractAddress} to be confirmed...`);
+                await fa2_reward_originated.confirmation(2);
+                console.log('confirmed fa2: ', fa2_reward_originated.contractAddress);
+                reward_token_address = fa2_reward_originated.contractAddress;
+                
+                farm_store.reward_token_address = reward_token_address;
+            }    
         }
 
-        // Originate farm database 
-        const database_originated = await Tezos.contract.originate({
-            code: database,
-            storage: database_store,
-        })
-        console.log(`Waiting for farm database ${database_originated.contractAddress} to be confirmed...`);
-        await database_originated.confirmation(2);
-        console.log("FARMS DATABASE=", database_originated.contractAddress);
-        database_address = database_originated.contractAddress
+        // Originate farm database
+        if (database_address === undefined) {
+            const database_originated = await Tezos.contract.originate({
+                code: database,
+                storage: database_store,
+            })
+            console.log(`Waiting for farm database ${database_originated.contractAddress} to be confirmed...`);
+            await database_originated.confirmation(2);
+            console.log("FARMS DATABASE=", database_originated.contractAddress);
+            database_address = database_originated.contractAddress    
+        } 
 
         // Originate Farm contract
         const farm_originated = await Tezos.contract.originate({
