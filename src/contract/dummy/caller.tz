@@ -1,0 +1,36 @@
+{ parameter (or (pair %callTransfer (pair address nat) nat) (unit %donothing)) ;
+  storage address ;
+  code { UNPAIR ;
+         IF_LEFT
+           { SWAP ;
+             DUP ;
+             DUG 2 ;
+             CONTRACT %transfer (list (pair address (list (pair address (pair nat nat))))) ;
+             IF_NONE { PUSH string "unknown entrypoint" ; FAILWITH } {} ;
+             NIL (pair address (pair nat nat)) ;
+             DUP 3 ;
+             CDR ;
+             DUP 4 ;
+             CAR ;
+             CDR ;
+             PAIR ;
+             DIG 3 ;
+             CAR ;
+             CAR ;
+             PAIR ;
+             CONS ;
+             SENDER ;
+             PAIR ;
+             SWAP ;
+             PUSH mutez 0 ;
+             NIL (pair address (list (pair address (pair nat nat)))) ;
+             DIG 3 ;
+             CONS ;
+             TRANSFER_TOKENS ;
+             SWAP ;
+             NIL operation ;
+             DIG 2 ;
+             CONS ;
+             PAIR }
+           { DROP ; NIL operation ; PAIR } } }
+
