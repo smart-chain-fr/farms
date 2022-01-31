@@ -79,11 +79,28 @@ _cf._ https://pypi.org/project/pytezos/
 - At root, with the latest LIGO version run `ligo compile contract src/contract/database/main.mligo > src/contract/test/compiled/database.tz`
 - OR with docker run `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.30.0 compile contract src/contract/database/main.mligo -e main > src/contract/test/compiled/database.tz`
 
+
 #### II.3) Tests
 
 - In the contract/test/ repository, run `pytest [-k "filename"] [-s]`
 - OR If you want to have more verbose run `python3 -m unittest test_farm.py -v` for Farm tests or `python3 -m unittest test_database.py -v` for Database tests
 - OR If you want to run a specific test, run `python3 -m unittest test_farm.py -v -k 'test_initializeReward_5week_20Kreward_75rate_initialization_should_work'`
+
+
+#### II.4) Simulate of the Database smart contract
+
+
+- compile empty storage  `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.30.0 compile storage src/contract/database/main.mligo  '{admin=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5":address); all_farms=(Set.empty: address set); all_farms_data=(Big_map.empty: (address, farm_metadata) big_map); inverse_farms=(Big_map.empty : (address, (address, string) map) big_map) }' -e main`
+
+- compile storage (containing a farm)  `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.30.0 compile storage src/contract/database/main.mligo  '{admin=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5":address); all_farms=(Set.add ("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address) Set.empty); all_farms_data=Big_map.literal[(("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address), {lp_address=("KT1CBGs21NgGZXymSKNW9MCxzopq9HpRHsh2":address); farm_lp_info="info"})]; inverse_farms=Big_map.literal[(("KT1CBGs21NgGZXymSKNW9MCxzopq9HpRHsh2":address), Map.literal[(("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address), "info")])] }' -e main`
+
+- compile Remove_farm entrypoint  `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.30.0 compile parameter src/contract/database/main.mligo 'Remove_farm({farm_address=("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address); lp_address=("KT1CBGs21NgGZXymSKNW9MCxzopq9HpRHsh2":address)})' -e main`
+
+
+- dry-run Remove_farm entrypoint `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.30.0 dry-run --sender=tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5 src/contract/database/main.mligo main 'Remove_farm({farm_address=("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address)})' '{admin=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5":address); all_farms=(Set.add ("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address) Set.empty); all_farms_data=Big_map.literal[(("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address), {lp_address=("KT1CBGs21NgGZXymSKNW9MCxzopq9HpRHsh2":address); farm_lp_info="info"})]; inverse_farms=Big_map.literal[(("KT1CBGs21NgGZXymSKNW9MCxzopq9HpRHsh2":address), Map.literal[(("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address), "info")])] }'`
+
+
+- dry-run Remove_farm entrypoint (with incomplete inverse_map) `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.30.0 dry-run --sender=tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5 src/contract/database/main.mligo main 'Remove_farm({farm_address=("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address)})' '{admin=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5":address); all_farms=(Set.add ("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address) Set.empty); all_farms_data=Big_map.literal[(("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address), {lp_address=("KT1CBGs21NgGZXymSKNW9MCxzopq9HpRHsh2":address); farm_lp_info="info"})]; inverse_farms=(Big_map.empty : (address, (address, string) map) big_map)  }'`
 
 ---
 
