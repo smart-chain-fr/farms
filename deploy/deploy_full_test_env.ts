@@ -6,9 +6,9 @@ import fa2 from './artefact/fa2.json';
 import database from './artefact/database.json';
 import * as dotenv from 'dotenv'
 
-dotenv.config(({path:__dirname+'/.env.preprod.fa12_anti'}))
+dotenv.config(({path:__dirname+'/.env.preprod.anti_anti'}))
 
-const rpc = process.env.RPC; //"http://127.0.0.1:8732"
+const rpc = process.env.RPC; // || "http://127.0.0.1:8732"
 const pk: string = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
 const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
@@ -142,6 +142,7 @@ async function orig() {
                 
                 farm_store.input_token_address = input_token_address;
             } else {
+                console.log("Attempt originate FA2")
                 // Originate a FA2 as input
                 const fa2_input_originated = await Tezos.contract.originate({
                     code: fa2,
