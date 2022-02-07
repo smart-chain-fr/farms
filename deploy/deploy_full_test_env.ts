@@ -6,7 +6,7 @@ import fa2 from './artefact/fa2.json';
 import database from './artefact/database.json';
 import * as dotenv from 'dotenv'
 
-dotenv.config(({path:__dirname+'/.env.preprod.anti_anti'}))
+dotenv.config(({path:__dirname+'/.env.preprod.anti_fa2'}))
 
 const rpc = process.env.RPC; // || "http://127.0.0.1:8732"
 const pk: string = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
@@ -21,7 +21,7 @@ const farm_points: [] = [];
 let input_token_address = process.env.INPUT_CONTRACT_ADDRESS || undefined; //'KT1V5U9hTaXArCKLAW2HC41epX8BXoZaFEQE';
 const input_token_id = process.env.INPUT_TOKEN_ID || undefined; //1;
 const reward_fa2_token_id = process.env.REWARD_TOKEN_ID || undefined; //1;
-let reward_token_address = process.env.REWARD_CONTRACT_ADDRESS; //"KT1WUc6Q1V8XzikB8qgQbCwL7PdWvJLEZE9s"
+let reward_token_address = process.env.REWARD_CONTRACT_ADDRESS || undefined; //"KT1WUc6Q1V8XzikB8qgQbCwL7PdWvJLEZE9s"
 const reward_reserve_address = process.env.REWARD_RESERVE_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
 const infoFarm = process.env.INFOFARM || '';
 const rate = process.env.RATE || 9500;
