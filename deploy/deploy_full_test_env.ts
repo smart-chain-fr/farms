@@ -30,6 +30,7 @@ const rewards = process.env.REWARD_AMOUNT; //50000000;
 let user_points = new MichelsonMap();
 let user_stakes = new MichelsonMap();
 const total_weeks = process.env.WEEKS; //5;
+const week_duration = process.env.WEEK_DURATION;
 
 let farm_address = process.env.FARM_ADDRESS || undefined;
 
@@ -83,6 +84,7 @@ async function orig() {
         'user_points': user_points,
         'user_stakes': user_stakes,
         'total_weeks': total_weeks,
+        'week_duration' : week_duration
     }
 
     const fa2_input_store = {

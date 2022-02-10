@@ -21,7 +21,8 @@ type storage_farm = {
     user_points : (address, nat list) big_map;
     user_stakes : (address, nat) big_map;
     total_weeks: nat;
-    initialized: bool
+    initialized: bool;
+    week_duration: nat
 }
 
 type no_operation = operation list

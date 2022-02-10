@@ -17,7 +17,7 @@ let rec print_elt_list (lst, indice : nat list * nat) : unit =
 // -----------------
 // --  CONSTANTS  --
 // -----------------
-let week_in_seconds : nat  = 604800n
+//let week_in_seconds : nat  = 600n
 let no_operation : operation list = []
 let empty_nat_list : nat list = []
 let add : bool = true
@@ -28,7 +28,7 @@ let subtract : bool = false
 // -----------------
 let get_current_week (storage : storage_farm) : nat = 
     let delay : nat = abs(Tezos.now - storage.creation_time) in
-    delay / week_in_seconds + 1n
+    delay / storage.week_duration + 1n
 
 let sendReward (token_amount : nat) (user_address : address) (reward_token_address : address) (reward_reserve_address : address) (reward_fa2_token_id_opt : nat option) : operation = 
     match reward_fa2_token_id_opt with
@@ -124,7 +124,7 @@ let initialize (storage : storage_farm) : return =
 
     let _check_if_admin : unit = assert_with_error (Tezos.sender = storage.admin) only_admin in
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
-    let _check_current_week : unit = assert_with_error (initialized_creation_time < creation_time + int(week_in_seconds)) no_week_left in
+    let _check_current_week : unit = assert_with_error (initialized_creation_time < creation_time + int(storage.week_duration)) no_week_left in
     let _check_if_unitialized : unit = assert_with_error (List.size reward_at_week = 0n) contract_already_initialized in
     let _check_if_unitialized2 : unit = assert_with_error (storage.initialized = false) contract_already_initialized in
 
@@ -181,7 +181,7 @@ let increase_reward (storage : storage_farm) (added_new_reward : nat ) : return 
     let _check_if_initialized : unit = assert_with_error (storage.initialized = true) contract_not_initialized in
     let _check_if_admin : unit = assert_with_error (Tezos.sender = storage.admin) only_admin in
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
-    let _check_current_week : unit = assert_with_error (current_time < creation_time + int(total_weeks * week_in_seconds)) no_week_left in
+    let _check_current_week : unit = assert_with_error (current_time < creation_time + int(total_weeks * storage.week_duration)) no_week_left in
     let _check_if_positive : unit = assert_with_error (added_new_reward > 0n) increase_amount_is_null in
 
     let remaining_weeks : nat = abs(total_weeks - current_week) + 1n in
@@ -209,12 +209,12 @@ let stake_some (storage : storage_farm) (lp_amount : nat) : return =
     let user_points : (address, nat list) big_map = storage.user_points in
     let total_weeks : nat = storage.total_weeks in
     let current_week : nat = get_current_week(storage) in
-    let endofweek_in_seconds : timestamp = storage.creation_time + int(current_week * week_in_seconds) in
+    let endofweek_in_seconds : timestamp = storage.creation_time + int(current_week * storage.week_duration) in
 
     let _check_if_initialized : unit = assert_with_error (storage.initialized = true) contract_not_initialized in
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
     let _check_amount_positive : unit = assert_with_error (lp_amount > 0n) amount_is_null in
-    let _check_current_week : unit = assert_with_error (current_time < storage.creation_time + int(storage.total_weeks * week_in_seconds)) no_week_left in
+    let _check_current_week : unit = assert_with_error (current_time < storage.creation_time + int(storage.total_weeks * storage.week_duration)) no_week_left in
     let _check_in_week : unit = assert_with_error (current_time - endofweek_in_seconds < 0) time_too_early in
 
     // create a transfer transaction (for LP token contract)
@@ -249,7 +249,7 @@ let stake_some (storage : storage_farm) (lp_amount : nat) : return =
 
     let before_end_week : nat = abs(current_time - endofweek_in_seconds) in 
     let points_current_week : nat = before_end_week * lp_amount in
-    let points_next_weeks : nat = week_in_seconds * lp_amount in
+    let points_next_weeks : nat = storage.week_duration * lp_amount in
     
     //create the point week list to add
     let rec calculate_new_points_by_week(total_weeks, acc : nat * nat list) : nat list =
@@ -290,7 +290,7 @@ let unstake_some (storage : storage_farm) (lp_amount : nat) : return =
     let total_weeks : nat = storage.total_weeks in
     let _check_if_no_tez : unit = assert_with_error (Tezos.amount = 0tez) amount_must_be_zero_tez in
     let sender_address : address = Tezos.sender in // Avoids recalculating Tezos.sender each time for gas
-    let endofweek_in_seconds : timestamp = storage.creation_time + int(current_week * week_in_seconds) in 
+    let endofweek_in_seconds : timestamp = storage.creation_time + int(current_week * storage.week_duration) in 
 
     // update current storage with updated user_stakes map
     let existing_bal_opt : nat option = Big_map.find_opt sender_address storage.user_stakes in
@@ -328,7 +328,7 @@ let unstake_some (storage : storage_farm) (lp_amount : nat) : return =
 
         let before_end_week : nat = abs(current_time - endofweek_in_seconds) in 
         let points_current_week : nat = before_end_week * lp_amount in
-        let points_next_weeks : nat = week_in_seconds * lp_amount in
+        let points_next_weeks : nat = storage.week_duration * lp_amount in
         
         //create the point week list to substract
         let rec calculate_new_points_by_week(total_weeks, acc : nat * nat list) : nat list =

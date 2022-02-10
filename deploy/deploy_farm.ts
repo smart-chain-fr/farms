@@ -27,7 +27,7 @@ const rewards = process.env.REWARD_AMOUNT; //50000000;
 let user_points = new MichelsonMap();
 let user_stakes = new MichelsonMap();
 const total_weeks = process.env.WEEKS;
-
+const week_duration = process.env.WEEK_DURATION;
 
 async function orig() {
 
@@ -47,6 +47,7 @@ async function orig() {
         'total_weeks': total_weeks,
         'user_points': user_points,
         'user_stakes': user_stakes,
+        'week_duration' : week_duration
     }
     try {
         const originated = await Tezos.contract.originate({
