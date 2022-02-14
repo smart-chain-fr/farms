@@ -6,9 +6,9 @@ import fa2 from './artefact/fa2.json';
 import database from './artefact/database.json';
 import * as dotenv from 'dotenv'
 
-dotenv.config(({path:__dirname+'/.env.preprod.fa12_anti'}))
+dotenv.config(({path:__dirname+'/.env.preprod.fa2_anti'}))
 
-const rpc = process.env.RPC; //"http://127.0.0.1:8732"
+const rpc = process.env.RPC; // || "http://127.0.0.1:8732"
 const pk: string = "edskRuatoqjfYJ2iY6cMKtYakCECcL537iM7U21Mz4ieW3J51L9AZcHaxziWPZSEq4A8hu5e5eJzvzTY1SdwKNF8Pkpg5M6Xev";
 const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
@@ -21,7 +21,7 @@ const farm_points: [] = [];
 let input_token_address = process.env.INPUT_CONTRACT_ADDRESS || undefined; //'KT1V5U9hTaXArCKLAW2HC41epX8BXoZaFEQE';
 const input_token_id = process.env.INPUT_TOKEN_ID || undefined; //1;
 const reward_fa2_token_id = process.env.REWARD_TOKEN_ID || undefined; //1;
-let reward_token_address = process.env.REWARD_CONTRACT_ADDRESS; //"KT1WUc6Q1V8XzikB8qgQbCwL7PdWvJLEZE9s"
+let reward_token_address = process.env.REWARD_CONTRACT_ADDRESS || undefined; //"KT1WUc6Q1V8XzikB8qgQbCwL7PdWvJLEZE9s"
 const reward_reserve_address = process.env.REWARD_RESERVE_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
 const infoFarm = process.env.INFOFARM || '';
 const rate = process.env.RATE || 9500;
@@ -30,6 +30,7 @@ const rewards = process.env.REWARD_AMOUNT; //50000000;
 let user_points = new MichelsonMap();
 let user_stakes = new MichelsonMap();
 const total_weeks = process.env.WEEKS; //5;
+const week_duration = process.env.WEEK_DURATION;
 
 let farm_address = process.env.FARM_ADDRESS || undefined;
 
@@ -83,6 +84,7 @@ async function orig() {
         'user_points': user_points,
         'user_stakes': user_stakes,
         'total_weeks': total_weeks,
+        'week_duration' : week_duration
     }
 
     const fa2_input_store = {
@@ -142,6 +144,7 @@ async function orig() {
                 
                 farm_store.input_token_address = input_token_address;
             } else {
+                console.log("Attempt originate FA2")
                 // Originate a FA2 as input
                 const fa2_input_originated = await Tezos.contract.originate({
                     code: fa2,

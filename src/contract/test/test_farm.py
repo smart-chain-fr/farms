@@ -26,6 +26,7 @@ initial_storage["reward_token_address"] = "KT1TwzD6zV3WeJ39ukuqxcfK2fJCnhvrdN1X"
 initial_storage["reward_reserve_address"] = "tz1fABJ97CJMSP2DKrQx2HAFazh6GgahQ7ZK"
 initial_storage["total_reward"] = 10000000
 initial_storage["total_weeks"] = 5
+initial_storage["week_duration"] = 604800
 initial_storage["rate"] = 7500
 initial_storage["user_stakes"] = {}
 initial_storage["user_points"] = {}

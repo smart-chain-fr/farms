@@ -10,7 +10,7 @@
           (pair (pair (pair (option %reward_fa2_token_id_opt nat) (address %reward_reserve_address))
                       (pair (address %reward_token_address) (nat %total_reward)))
                 (pair (pair (nat %total_weeks) (big_map %user_points address (list nat)))
-                      (big_map %user_stakes address nat)))) ;
+                      (pair (big_map %user_stakes address nat) (nat %week_duration))))) ;
   code { UNPAIR ;
          IF_LEFT
            { IF_LEFT
@@ -38,7 +38,11 @@
                      SUB ;
                      ABS ;
                      PUSH nat 1 ;
-                     PUSH nat 604800 ;
+                     DUP 4 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
                      DIG 2 ;
                      EDIV ;
                      IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
@@ -302,7 +306,11 @@
                      SUB ;
                      ABS ;
                      PUSH nat 1 ;
-                     PUSH nat 604800 ;
+                     DUP 7 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
                      DIG 2 ;
                      EDIV ;
                      IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
@@ -336,7 +344,11 @@
                      EQ ;
                      IF { DROP } { FAILWITH } ;
                      PUSH string "There are no more weeks left for staking in the farm" ;
-                     PUSH nat 604800 ;
+                     DUP 7 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
                      DUP 6 ;
                      MUL ;
                      INT ;
@@ -691,7 +703,11 @@
                      SUB ;
                      ABS ;
                      PUSH nat 1 ;
-                     PUSH nat 604800 ;
+                     DUP 4 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
                      DIG 2 ;
                      EDIV ;
                      IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
@@ -716,7 +732,11 @@
                      EQ ;
                      IF { DROP } { FAILWITH } ;
                      PUSH string "There are no more weeks left for staking in the farm" ;
-                     PUSH nat 604800 ;
+                     DUP 3 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
                      INT ;
                      DUP 4 ;
                      CAR ;
@@ -1129,13 +1149,21 @@
                  SUB ;
                  ABS ;
                  PUSH nat 1 ;
-                 PUSH nat 604800 ;
+                 DUP 9 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
                  DIG 2 ;
                  EDIV ;
                  IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
                  CAR ;
                  ADD ;
-                 PUSH nat 604800 ;
+                 DUP 8 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
@@ -1170,7 +1198,11 @@
                  GT ;
                  IF { DROP } { FAILWITH } ;
                  PUSH string "There are no more weeks left for staking in the farm" ;
-                 PUSH nat 604800 ;
+                 DUP 10 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
                  DUP 11 ;
                  CDR ;
                  CDR ;
@@ -1246,11 +1278,32 @@
                  CDR ;
                  CDR ;
                  CDR ;
+                 CAR ;
                  DUP 7 ;
                  GET ;
                  IF_NONE
-                   { DUP 9 ; CDR ; CDR ; CDR ; DUP 9 ; DUP 8 ; SWAP ; SOME ; SWAP ; UPDATE }
-                   { DUP 10 ; CDR ; CDR ; CDR ; SWAP ; DUP 10 ; ADD ; SOME ; DUP 8 ; UPDATE } ;
+                   { DUP 9 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CAR ;
+                     DUP 9 ;
+                     DUP 8 ;
+                     SWAP ;
+                     SOME ;
+                     SWAP ;
+                     UPDATE }
+                   { DUP 10 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CAR ;
+                     SWAP ;
+                     DUP 10 ;
+                     ADD ;
+                     SOME ;
+                     DUP 8 ;
+                     UPDATE } ;
                  DIG 2 ;
                  DIG 7 ;
                  SUB ;
@@ -1259,7 +1312,11 @@
                  SWAP ;
                  MUL ;
                  DIG 7 ;
-                 PUSH nat 604800 ;
+                 DUP 9 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
                  MUL ;
                  NIL nat ;
                  DUP 10 ;
@@ -1382,7 +1439,13 @@
                           IF_CONS
                             { DIG 2 ; SWAP ; CONS ; SWAP ; PAIR ; LEFT (list nat) }
                             { RIGHT (pair (list nat) (list nat)) } } } ;
-                 DIG 2 ;
+                 DUP 7 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 DIG 3 ;
+                 PAIR ;
                  DUP 7 ;
                  CDR ;
                  CDR ;
@@ -1470,7 +1533,11 @@
                  SUB ;
                  ABS ;
                  PUSH nat 1 ;
-                 PUSH nat 604800 ;
+                 DUP 6 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
                  DIG 2 ;
                  EDIV ;
                  IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
@@ -1488,7 +1555,11 @@
                  EQ ;
                  IF { DROP } { FAILWITH } ;
                  SENDER ;
-                 PUSH nat 604800 ;
+                 DUP 7 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
                  DUP 4 ;
                  MUL ;
                  INT ;
@@ -1502,6 +1573,7 @@
                  CDR ;
                  CDR ;
                  CDR ;
+                 CAR ;
                  DUP 3 ;
                  GET ;
                  IF_NONE { PUSH string "You did not stake any token yet" ; FAILWITH } {} ;
@@ -1515,6 +1587,7 @@
                  CDR ;
                  CDR ;
                  CDR ;
+                 CAR ;
                  DUP 9 ;
                  DIG 2 ;
                  SUB ;
@@ -1580,7 +1653,11 @@
                       SWAP ;
                       MUL ;
                       DIG 6 ;
-                      PUSH nat 604800 ;
+                      DUP 8 ;
+                      CDR ;
+                      CDR ;
+                      CDR ;
+                      CDR ;
                       MUL ;
                       NIL nat ;
                       DUP 9 ;
@@ -1701,7 +1778,13 @@
                           IF_CONS
                             { DIG 2 ; SWAP ; CONS ; SWAP ; PAIR ; LEFT (list nat) }
                             { RIGHT (pair (list nat) (list nat)) } } ;
-                      DIG 3 ;
+                      DUP 7 ;
+                      CDR ;
+                      CDR ;
+                      CDR ;
+                      CDR ;
+                      DIG 4 ;
+                      PAIR ;
                       DUP 7 ;
                       CDR ;
                       CDR ;
@@ -1769,7 +1852,13 @@
                       DIG 6 ;
                       DIG 7 ;
                       DROP 6 ;
-                      SWAP ;
+                      DUP 3 ;
+                      CDR ;
+                      CDR ;
+                      CDR ;
+                      CDR ;
+                      DIG 2 ;
+                      PAIR ;
                       DUP 3 ;
                       CDR ;
                       CDR ;
