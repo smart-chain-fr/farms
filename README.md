@@ -102,6 +102,15 @@ _cf._ https://pypi.org/project/pytezos/
 
 - dry-run Remove_farm entrypoint (with incomplete inverse_map) `docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.30.0 dry-run --sender=tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5 src/contract/database/main.mligo main 'Remove_farm({farm_address=("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address)})' '{admin=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5":address); all_farms=(Set.add ("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address) Set.empty); all_farms_data=Big_map.literal[(("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address), {lp_address=("KT1CBGs21NgGZXymSKNW9MCxzopq9HpRHsh2":address); farm_lp_info="info"})]; inverse_farms=(Big_map.empty : (address, (address, string) map) big_map)  }'`
 
+- dry-run change admin 
+```
+docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.30.0 dry-run --sender=tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5 src/contract/database/main.mligo main 'Change_admin({new_admin=("tz1Tr5mdFTtGZp9p2KUuWXxJHB6HSAZBj15u":address)})' '{admin=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5":address); all_farms=(Set.add ("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address) Set.empty); all_farms_data=Big_map.literal[(("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address), {lp_address=("KT1CBGs21NgGZXymSKNW9MCxzopq9HpRHsh2":address); farm_lp_info="info"})]; inverse_farms=(Big_map.empty : (address, (address, string) map) big_map)  }'
+```
+
+```
+docker run --rm -v "$PWD":"$PWD" -w "$PWD" ligolang/ligo:0.30.0 dry-run --sender=tz1Tr5mdFTtGZp9p2KUuWXxJHB6HSAZBj15u src/contract/database/main.mligo main 'Change_admin({new_admin=("tz1Tr5mdFTtGZp9p2KUuWXxJHB6HSAZBj15u":address)})' '{admin=("tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5":address); all_farms=(Set.add ("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address) Set.empty); all_farms_data=Big_map.literal[(("KT1UxQFSXmhMG18fcoD9J5UzADEZwVshjQkM":address), {lp_address=("KT1CBGs21NgGZXymSKNW9MCxzopq9HpRHsh2":address); farm_lp_info="info"})]; inverse_farms=(Big_map.empty : (address, (address, string) map) big_map)  }'
+```
+
 ---
 
 ## III. Deployment

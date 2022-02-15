@@ -20,14 +20,23 @@ type removeFarmParameter = {
     farm_address: address
 }
 
+type changeAdminParameter = {
+    new_admin: address
+}
+
 type farms_entrypoints = 
 | Add_farm of addFarmParameter
+| Change_admin of changeAdminParameter
 | Remove_farm of removeFarmParameter
 
 
 let noOperations : operation list = []
 
 type return_farms = operation list * farms_storage
+
+let changeAdmin (p, s : changeAdminParameter * farms_storage) : return_farms =
+    let _check_admin : bool = if Tezos.sender = s.admin then true else (failwith("Only admin") : bool) in
+    (noOperations, { s with admin=p.new_admin })
 
 let addFarm(p, s : addFarmParameter * farms_storage) : return_farms =
     let _check_admin : bool = if Tezos.sender = s.admin then true else (failwith("Only admin") : bool) in
@@ -61,6 +70,7 @@ let removeFarm(p, s : removeFarmParameter * farms_storage) : return_farms =
 let main(action, store : farms_entrypoints * farms_storage) : return_farms =
     match action with
     | Add_farm(fp) -> addFarm(fp, store)
+    | Change_admin(a) -> changeAdmin(a, store)
     | Remove_farm(fp) -> removeFarm(fp, store)
 
 

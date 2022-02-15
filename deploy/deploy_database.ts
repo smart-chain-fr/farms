@@ -28,7 +28,7 @@ async function orig() {
         code: database,
         storage: store,
     })
-    console.log(`Waiting for farm ${originated.contractAddress} to be confirmed...`);
+    console.log(`Waiting for farm database ${originated.contractAddress} to be confirmed...`);
     await originated.confirmation(2);
     console.log("FARMS=", originated.contractAddress);
 }
