@@ -6,27 +6,27 @@ import fa2 from './artefact/fa2.json';
 import database from './artefact/database.json';
 import * as dotenv from 'dotenv'
 
-dotenv.config(({path:__dirname+'/.env.prod2.xtzsmak_doga'}))
+dotenv.config(({path:__dirname+'/.env'}))
 
-const rpc = process.env.RPC; // || "http://127.0.0.1:8732"
+const rpc = process.env.RPC; 
 const pk: string = process.env.SIGNER_PK;
 const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
 Tezos.setProvider({ signer: signer })
 
-let database_address = process.env.FARMSDB_ADDRESS || undefined; //"KT1HCLH3bCGnVrjZuVwP8aScgdMNr9qbjmSf";
-const admin = process.env.ADMIN_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
+let database_address = process.env.FARMSDB_ADDRESS || undefined; 
+const admin = process.env.ADMIN_ADDRESS; 
 const creation_time = new Date();
 const farm_points: [] = [];
-let input_token_address = process.env.INPUT_CONTRACT_ADDRESS || undefined; //'KT1V5U9hTaXArCKLAW2HC41epX8BXoZaFEQE';
-const input_token_id = process.env.INPUT_TOKEN_ID || undefined; //1;
-const reward_fa2_token_id = process.env.REWARD_TOKEN_ID || undefined; //1;
-let reward_token_address = process.env.REWARD_CONTRACT_ADDRESS || undefined; //"KT1WUc6Q1V8XzikB8qgQbCwL7PdWvJLEZE9s"
-const reward_reserve_address = process.env.REWARD_RESERVE_ADDRESS; //"tz1RyejUffjfnHzWoRp1vYyZwGnfPuHsD5F5";
+let input_token_address = process.env.INPUT_CONTRACT_ADDRESS || undefined; 
+const input_token_id = process.env.INPUT_TOKEN_ID || undefined; 
+const reward_fa2_token_id = process.env.REWARD_TOKEN_ID || undefined; 
+let reward_token_address = process.env.REWARD_CONTRACT_ADDRESS || undefined; 
+const reward_reserve_address = process.env.REWARD_RESERVE_ADDRESS; 
 const infoFarm = process.env.INFOFARM || '';
 const rate = process.env.RATE || 9500;
 let reward_at_week: [] = [];
-const rewards = process.env.REWARD_AMOUNT; //50000000;
+const rewards = process.env.REWARD_AMOUNT; 
 let user_points = new MichelsonMap();
 let user_stakes = new MichelsonMap();
 const total_weeks = process.env.NUMBER_OF_PERIODS; 
