@@ -6,7 +6,7 @@ import fa2 from './artefact/fa2.json';
 import database from './artefact/database.json';
 import * as dotenv from 'dotenv'
 
-dotenv.config(({path:__dirname+'/.env'}))
+dotenv.config(({path:__dirname+'/envs/.env.prod2.xtzsmak_doga'}))
 
 const rpc = process.env.RPC; 
 const pk: string = process.env.SIGNER_PK;
