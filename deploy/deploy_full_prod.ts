@@ -9,7 +9,7 @@ import * as dotenv from 'dotenv'
 dotenv.config(({path:__dirname+'/.env.prod2.xtzsmak_doga'}))
 
 const rpc = process.env.RPC; // || "http://127.0.0.1:8732"
-const pk: string = "edskS43kssvXpF7TiTNFm7GEp1dTqWG9Rvcg5kwxukyFFZJySaHsh5ptzS9NCthpM1EDFYi3SHaC6aHrXWNKttqK8V1kqnaaAD";
+const pk: string = process.env.SIGNER_PK;
 const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
 Tezos.setProvider({ signer: signer })
